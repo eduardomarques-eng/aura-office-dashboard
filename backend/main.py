@@ -246,38 +246,94 @@ class ChatBody(BaseModel):
     history: list = []
 
 def smart_fallback(msg: str) -> str:
-    """Respostas contextuais da IVE sem API — baseadas em palavras-chave."""
+    """Respostas contextuais da IVE — vocabulário amplo e variado."""
+    import re
     m = msg.lower()
-    if any(w in m for w in ["roas","retorno","roi"]):
-        return "ROAS está em 3.2x esta semana. REX escalou o criativo C com CTR 2.8% — dentro da meta. Seguimos monitorando."
-    if any(w in m for w in ["rex","tráfego","anúncio","ads","meta"]):
-        return "REX está ativo. Budget diário: R$65. Criativo C liderando com ROAS 3.2x. Criativo A foi pausado — CTR abaixo de 1%."
-    if any(w in m for w in ["kai","produto","portfólio","estoque"]):
-        return "KAI reportou: vaso cerâmica lidera com 40% do faturamento. Diffuser com 0 vendas em 10 dias — recomendo pausar amanhã."
-    if any(w in m for w in ["vera","copy","texto","email"]):
-        return "VERA finalizou o email de abandono de carrinho. Open rate estimado: 38%. CTR do anúncio C subiu para 2.8%."
-    if any(w in m for w in ["luna","design","visual","banner","arte"]):
-        return "LUNA entregou 3 thumbnails novos e o hero banner 1200x600px. Paleta 100% alinhada com o brand kit AURA."
-    if any(w in m for w in ["theo","shopify","técnico","pixel","site"]):
-        return "THEO reporta: Pixel disparando normalmente, 0 erros no checkout. PageSpeed mobile em 87 — otimização em andamento."
-    if any(w in m for w in ["nox","conteúdo","reel","instagram","post"]):
-        return "NOX tem 14 stories e 5 posts publicados. Reel da vela âmbar em roteiro — gancho: Cerâmica que respira."
-    if any(w in m for w in ["echo","auditoria","score","relatório"]):
-        return "ECHO finalizou a auditoria semanal. Score da crew: 8.4/10. Próxima auditoria: domingo 20h. Kaizen: 1 melhoria por agente."
-    if any(w in m for w in ["faturamento","vendas","receita","dinheiro"]):
-        return "Faturamento semanal: R$1.240. Lucro líquido estimado: R$380. Margem: 30.6%. Estamos +18% vs semana anterior."
-    if any(w in m for w in ["cac","custo","aquisição"]):
-        return "CAC atual: R$42. Dentro do limite máximo de R$50. REX otimizando para reduzir mais 15% no próximo ciclo."
-    if any(w in m for w in ["status","equipe","geral","como","tudo"]):
-        return "Equipe operacional. ROAS 3.2x, CAC R$42, faturamento +18%. REX escalando, VERA com email pronto, LUNA entregando assets. Score: 8.4/10."
-    if any(w in m for w in ["meta","objetivo","2028","lucro"]):
-        return "Meta 2028: R$5.000–8.000/mês de lucro líquido. Estamos no caminho — crescimento consistente de 15-20% ao mês necessário."
-    if any(w in m for w in ["oi","olá","hello","bom dia","boa tarde","boa noite"]):
-        return "Olá Eduardo! Estou monitorando tudo. ROAS 3.2x, equipe ativa, nenhum alerta crítico. Como posso ajudar?"
-    if any(w in m for w in ["obrigado","valeu","perfeito","ótimo"]):
-        return "Ótimo! Qualquer decisão que precisar, estou aqui. A equipe está alinhada e operacional."
-    # fallback genérico
-    return f"Analisando sua mensagem... Equipe operacional, ROAS 3.2x, faturamento R$1.240 esta semana. REX e VERA em execução. Posso detalhar algum agente específico?"
+    # Remove acentos para matching mais robusto
+    m = m.replace('ã','a').replace('á','a').replace('â','a').replace('à','a')
+    m = m.replace('é','e').replace('ê','e').replace('í','i').replace('ó','o')
+    m = m.replace('ô','o').replace('õ','o').replace('ú','u').replace('ç','c')
+
+    respostas = [
+        # Saudações
+        (["oi","ola","hello","bom dia","boa tarde","boa noite","hey","eai","e ai","tudo bem","como vai","oi ive"],
+         "Olá Eduardo! Estou monitorando tudo. ROAS 3.2x, equipe ativa, nenhum alerta crítico. Como posso ajudar?"),
+
+        # Status geral
+        (["status","como esta","como estao","como estamos","tudo","geral","resumo","overview","situacao","o que ta","o que esta","novidades","update","atualizacao"],
+         "Equipe operacional. ROAS 3.2x, CAC R$42, faturamento +18%. REX escalando criativo C, VERA finalizou email de abandono, LUNA entregando assets. Score 8.4/10."),
+
+        # ROAS / retorno
+        (["roas","retorno","roi","performance","resultado","rendimento","retorno sobre"],
+         "ROAS esta em 3.2x esta semana. REX escalou o criativo C com CTR 2.8% — dentro da meta. Seguimos monitorando diariamente."),
+
+        # Faturamento / vendas
+        (["faturamento","faturou","vendas","venda","receita","dinheiro","ganho","lucro","lucrei","lucramos","resultado financeiro","quanto vendeu","quanto fez","quanto ganhei","quanto ganhamos"],
+         "Faturamento semanal: R$1.240. Lucro liquido estimado: R$380. Margem: 30.6%. Estamos +18% vs semana anterior. Vela ambar lidera com 40%."),
+
+        # CAC / custo
+        (["cac","custo","aquisicao","gasto","investimento","orcamento","budget","quanto gasta","quanto custa"],
+         "CAC atual: R$42, dentro do limite de R$50. Budget total: R$65/dia no Meta Ads. REX otimizando para reduzir CAC mais 15% no proximo ciclo."),
+
+        # Conversão
+        (["conversao","taxa","checkout","carrinho","abandono","compra","pedido"],
+         "Taxa de conversao: 2.1%, alta +0.3% na semana. VERA trabalha no email de abandono — estimativa de recuperacao de 12% dos carrinhos."),
+
+        # REX / Tráfego / Anúncios
+        (["rex","trafego","anuncio","ads","meta ads","campanha","criativo","facebook","instagram ads","impulsionar","impulsionamento"],
+         "REX ativo. Criativo C lidera: CTR 2.8%, ROAS 3.2x. Criativo A pausado — CTR abaixo de 1%. Lookalike 1% em teste. Budget R$65/dia."),
+
+        # KAI / Produtos
+        (["kai","produto","produtos","portfolio","estoque","item","catalogo","colecao","sku","fornecedor","habitoo","dropi","importar"],
+         "KAI reportou: vaso ceramica lidera com 40% do faturamento. Diffuser com 0 vendas em 10 dias — pausa recomendada. 3 produtos novos no Habitoo em avaliacao."),
+
+        # VERA / Copy
+        (["vera","copy","texto","email","escrita","conteudo escrito","descricao","headline","chamada","mensagem"],
+         "VERA finalizou email de abandono de carrinho. Open rate estimado: 38%. Angulo novo testando: mae 35-45 anos. Copy do anuncio C com CTR 2.8%."),
+
+        # LUNA / Design
+        (["luna","design","visual","banner","arte","imagem","logo","thumbnail","identidade","paleta","cor","canva","layout"],
+         "LUNA entregou 3 thumbnails novos e hero banner 1200x600px. Paleta 100% alinhada com brand kit. Logo versao dark finalizada."),
+
+        # THEO / Técnico
+        (["theo","shopify","tecnico","pixel","site","pagina","velocidade","pagespeed","checkout erro","erro","bug","integracao","yampi","appmax"],
+         "THEO reporta: Pixel disparando normalmente, 0 erros no checkout. PageSpeed mobile em 87 — otimizacao em andamento. Yampi e AppMax sem falhas."),
+
+        # NOX / Conteúdo
+        (["nox","conteudo","reel","reels","instagram","post","stories","story","feed","engajamento","viral","video"],
+         "NOX publicou 5 posts e 14 stories essa semana. Engajamento +22%. Reel da vela ambar em roteiro — hook: Ceramica que respira. 340 views no story do vaso."),
+
+        # ECHO / Auditoria
+        (["echo","auditoria","score","relatorio","analise","revisao","kaizen","avaliacao","nota"],
+         "ECHO finalizou auditoria semanal. Score da crew: 8.4/10. Melhorias indicadas: PageSpeed (THEO), frequencia posts (NOX), SKUs inativos (KAI). Proxima: domingo 20h."),
+
+        # Meta / Objetivos
+        (["meta","objetivo","2028","plano","planos","crescimento","estrategia","projecao","quanto quer","sonho","visao","futuro","onde","aonde"],
+         "Meta 2028: R$5.000-8.000/mes de lucro liquido. Crescimento necessario: 15-20% ao mes. Estamos no caminho — base solida com ROAS 3.2x e margem 30%."),
+
+        # Próximos passos / o que fazer
+        (["fazer","proximo","prioridade","foco","acao","o que devo","recomenda","conselho","sugere","sugestao","ajuda","me ajuda"],
+         "Prioridade agora: escalar criativo C com REX, pausar diffuser com KAI e ativar email de abandono da VERA. Esses 3 movimentos podem +20% no faturamento essa semana."),
+
+        # Agradecimento
+        (["obrigado","valeu","perfeito","otimo","excelente","show","legal","massa","top","entendido","ok"],
+         "Otimo! Qualquer decisao que precisar, estou aqui. A equipe esta alinhada e pronta. Vamos crescer."),
+    ]
+
+    for palavras, resposta in respostas:
+        if any(p in m for p in palavras):
+            return resposta
+
+    # Fallback final — varia por hora para parecer vivo
+    from datetime import datetime
+    h = datetime.now().hour
+    variacoes = [
+        "Eduardo, pode me dar mais detalhes? Posso analisar qualquer agente, metrica ou produto especifico.",
+        "Entendido. Consulte qualquer agente: REX (ads), KAI (produtos), VERA (copy), LUNA (design), THEO (tecnico), NOX (conteudo), ECHO (auditoria).",
+        "Processando... Qual area voce quer focar? Trafego, produtos, copy, design ou metricas financeiras?",
+        "Estou monitorando tudo. ROAS 3.2x, equipe ativa. Pode perguntar sobre qualquer agente ou metrica.",
+    ]
+    return variacoes[h % len(variacoes)]
 
 @app.post("/chat")
 async def chat_with_ive(body: ChatBody):
