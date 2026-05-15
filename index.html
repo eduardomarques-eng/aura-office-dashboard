@@ -372,7 +372,7 @@ const AGENTS = [
   { id:'theo', name:'THEO', role:'Shopify · Técnico',   model:'Sonnet 4',  color:'#7A9076', bg:'#1A2A1A', status:'active', score:8,  x:15, y:52,
     tasks:[{done:true,label:'Yampi configurado'},{done:true,label:'AppMax integrado'},{done:true,label:'Pixel 4 eventos'},{done:false,running:true,label:'PageSpeed 90+'}],
     messages:['PageSpeed mobile: 87. Otimizando...','Dropi sincronizado. Tudo ok.','Checkout: 0 erros hoje.','Pixel disparando normalmente.','Monitorando pedidos...'] },
-  { id:'kai',  name:'KAI',  role:'Produtos · Curadoria',model:'Sonnet 4',  color:'#D4A574', bg:'#2A1F10', status:'idle',   score:7,  x:28, y:52,
+  { id:'kai',  name:'KAI',  role:'Produtos · Curadoria',model:'Sonnet 4',  color:'#D4A574', bg:'#2A1F10', status:'active', score:7,  x:28, y:52,
     tasks:[{done:true,label:'11 produtos ativos'},{done:true,label:'Precificação ×1.6'},{done:false,label:'Pausar 2 sem venda'},{done:false,label:'Buscar 3 novos'}],
     messages:['Diffuser: 0 vendas 10 dias.','Analisando portfólio...','Margem média: 42%. OK.','Vaso cerâmica: líder de vendas.','Habitoo: 3 produtos novos?'] },
   { id:'vera', name:'VERA', role:'Copy · Textos',        model:'Sonnet 4',  color:'#C9957A', bg:'#2A1A15', status:'active', score:9,  x:62, y:52,
@@ -381,13 +381,13 @@ const AGENTS = [
   { id:'luna', name:'LUNA', role:'Design · Visual',      model:'Haiku 4.5', color:'#EDE5D8', bg:'#252015', status:'active', score:8,  x:76, y:52,
     tasks:[{done:true,label:'Logo 3 versões PNG'},{done:true,label:'Hero banner'},{done:true,label:'Trust strip'},{done:false,running:true,label:'3 thumbnails novos'}],
     messages:['Thumbnail vaso: exportando PNG...','Paleta 100% consistente.','Stories da semana: 14 peças.','Brand kit salvo no Canva.','Hero banner 1200x600px ok.'] },
-  { id:'nox',  name:'NOX',  role:'Conteúdo · Reels',    model:'Sonnet 4',  color:'#5A7060', bg:'#101A12', status:'idle',   score:7,  x:30, y:30,
+  { id:'nox',  name:'NOX',  role:'Conteúdo · Reels',    model:'Sonnet 4',  color:'#5A7060', bg:'#101A12', status:'active', score:7,  x:30, y:30,
     tasks:[{done:true,label:'5 posts feed'},{done:true,label:'14 stories'},{done:false,label:'Reel vela âmbar'},{done:false,label:'Reel antes/depois'}],
     messages:['340 views story vaso.','Reel roteiro pronto.','Hook: "Cerâmica que respira."','Calendário 80% ok.','2 posts pendentes.'] },
   { id:'rex',  name:'REX',  role:'Tráfego · Meta Ads',  model:'Sonnet 4',  color:'#B87070', bg:'#2A1515', status:'active', score:8,  x:52, y:30,
     tasks:[{done:true,label:'Campanha ativa'},{done:true,label:'Criativo A pausado'},{done:false,running:true,label:'Escalando criativo C'},{done:false,label:'Lookalike compradores'}],
     messages:['CTR criativo C: 2.8%. Escalando.','ROAS semana: 3.2x.','CAC: R$42. Dentro do limite.','Budget: R$65/dia agora.','Campanha awareness ativa.'] },
-  { id:'echo', name:'ECHO', role:'Auditor · Semanal',   model:'Sonnet 4',  color:'#7A8090', bg:'#151820', status:'waiting',score:10, x:72, y:30,
+  { id:'echo', name:'ECHO', role:'Auditor · Semanal',   model:'Sonnet 4',  color:'#7A8090', bg:'#151820', status:'active', score:10, x:72, y:30,
     tasks:[{done:true,label:'Auditoria semana anterior'},{done:true,label:'Relatório IVE enviado'},{done:true,label:'Sugestões melhoria'},{done:false,label:'Próxima auditoria dom'}],
     messages:['Score crew: 8.4/10.','Monitorando sistema...','Próxima auditoria: domingo.','Todos agentes operacionais.','Kaizen: 1 melhoria/agente/sem.'] }
 ];
@@ -782,6 +782,13 @@ function handleBackendEvent(data) {
       const task = ag.tasks.find(t => t.label === data.task);
       if (task) { task.done = data.status === 'done'; task.running = data.status === 'running'; }
       renderTasks();
+      break;
+    }
+
+    case 'interaction': {
+      const fromAg = AGENTS.find(a => a.id === data.from);
+      const toAg   = AGENTS.find(a => a.id === data.to);
+      if (fromAg && toAg) drawLine(data.from, data.to, fromAg.color);
       break;
     }
 

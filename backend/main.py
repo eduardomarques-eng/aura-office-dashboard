@@ -66,27 +66,67 @@ Cite outros agentes quando relevante (ex: "REX deve escalar..."). Nunca use mark
 # ── Dados de atividade dos agentes (fallback sem CrewAI) ──────────────────────
 
 AGENT_ACTIVITY = {
-    "ive":  ["ROAS 3.2x confirmado. Escalando REX.", "Analisando métricas da semana...",
-             "KAI: pause produto diffuser.", "Faturamento +18% semana anterior."],
-    "theo": ["PageSpeed mobile: 87. Otimizando...", "Dropi sincronizado. Tudo ok.",
-             "Checkout: 0 erros hoje.", "Pixel disparando normalmente."],
-    "kai":  ["Diffuser: 0 vendas 10 dias.", "Margem média: 42%. OK.",
-             "Vaso cerâmica: líder de vendas.", "Analisando portfólio..."],
-    "vera": ["Escrevendo email abandono...", "Open rate: 38%. Excelente!",
-             "CTR anúncio C: 2.8%.", "Copy produto vela pronta."],
-    "luna": ["Thumbnail vaso: exportando PNG...", "Paleta 100% consistente.",
-             "Stories da semana: 14 peças.", "Hero banner 1200x600px ok."],
-    "nox":  ["340 views story vaso.", "Reel roteiro pronto.",
-             'Hook: "Cerâmica que respira."', "2 posts pendentes."],
-    "rex":  ["CTR criativo C: 2.8%. Escalando.", "ROAS semana: 3.2x.",
-             "CAC: R$42. Dentro do limite.", "Budget: R$65/dia agora."],
-    "echo": ["Score crew: 8.4/10.", "Próxima auditoria: domingo.",
-             "Todos agentes operacionais.", "Kaizen: 1 melhoria/agente/sem."],
+    "ive":  [
+        "ROAS 3.2x confirmado. Escalando REX.", "Analisando métricas da semana...",
+        "KAI: pause produto diffuser.", "Faturamento +18% semana anterior.",
+        "REX: aumenta budget +30%.", "Reunião de alinhamento: todos os agentes.",
+        "Meta junho: R$2.000 faturamento.", "IVE aprovando copy da VERA.",
+    ],
+    "theo": [
+        "PageSpeed mobile: 87. Otimizando...", "Dropi sincronizado. Tudo ok.",
+        "Checkout: 0 erros hoje.", "Pixel disparando normalmente.",
+        "AppMax: 3 Pix confirmados.", "Yampi: 0 erros de frete.",
+        "SSL renovado. Seguro.", "Core Web Vitals: LCP 2.1s.",
+    ],
+    "kai":  [
+        "Diffuser: 0 vendas 10 dias.", "Margem média: 42%. OK.",
+        "Vaso cerâmica: líder de vendas.", "Analisando portfólio...",
+        "3 produtos novos no Habitoo.", "Markup: x1.6 aplicado.",
+        "Vela âmbar: 40% do faturamento.", "Pausando diffuser amanhã.",
+    ],
+    "vera": [
+        "Escrevendo email abandono...", "Open rate: 38%. Excelente!",
+        "CTR anúncio C: 2.8%.", "Copy produto vela pronta.",
+        "Headline: Cerâmica que transforma.", "Sequência nurturing: 3 emails.",
+        "Angle novo: mãe 35-45 anos.", "A/B test copy iniciado.",
+    ],
+    "luna": [
+        "Thumbnail vaso: exportando PNG...", "Paleta 100% consistente.",
+        "Stories da semana: 14 peças.", "Hero banner 1200x600px ok.",
+        "Logo versão dark pronta.", "Trust badges atualizados.",
+        "Mockup produto finalizado.", "Grid Instagram alinhado.",
+    ],
+    "nox":  [
+        "340 views story vaso.", "Reel roteiro pronto.",
+        "Hook: Cerâmica que respira.", "2 posts pendentes.",
+        "Engajamento +22% essa semana.", "Collab: @decorminimal aprovada.",
+        "Reel antes/depois: gravando.", "Caption vela âmbar pronta.",
+    ],
+    "rex":  [
+        "CTR criativo C: 2.8%. Escalando.", "ROAS semana: 3.2x.",
+        "CAC: R$42. Dentro do limite.", "Budget: R$65/dia agora.",
+        "Lookalike 1%: testando.", "Criativo D em revisão.",
+        "Frequência: 1.8. Saudável.", "Campanha awareness +15% alcance.",
+    ],
+    "echo": [
+        "Score crew: 8.4/10.", "Próxima auditoria: domingo.",
+        "Todos agentes operacionais.", "Kaizen: 1 melhoria/agente/sem.",
+        "THEO: melhorar PageSpeed.", "KAI: reduzir SKUs inativos.",
+        "NOX: aumentar frequência posts.", "Relatório semanal enviado à IVE.",
+    ],
 }
 
 AGENT_ORDER = list(AGENT_ACTIVITY.keys())
 
-# ── Background loop: atividade dos agentes ────────────────────────────────────
+# ── Pares de interação entre agentes ─────────────────────────────────────────
+INTERACTION_PAIRS = [
+    ("ive", "rex"), ("ive", "kai"), ("ive", "vera"), ("ive", "echo"),
+    ("rex", "nox"), ("vera", "kai"), ("luna", "nox"), ("theo", "ive"),
+    ("echo", "ive"), ("kai", "vera"), ("luna", "vera"), ("rex", "ive"),
+    ("nox", "luna"), ("kai", "ive"), ("echo", "rex"),
+]
+
+# ── Background loop: atividade individual dos agentes ────────────────────────
 
 async def agent_activity_loop():
     idx = 0
@@ -106,7 +146,23 @@ async def agent_activity_loop():
             "timestamp": datetime.now().strftime("%H:%M"),
         })
 
-        await asyncio.sleep(random.uniform(6, 10))
+        await asyncio.sleep(random.uniform(3, 6))
+
+# ── Background loop: interações entre pares ───────────────────────────────────
+
+async def interaction_loop():
+    pair_idx = 0
+    await asyncio.sleep(2)
+    while True:
+        pair = INTERACTION_PAIRS[pair_idx % len(INTERACTION_PAIRS)]
+        pair_idx += 1
+        await manager.broadcast({
+            "type": "interaction",
+            "from": pair[0],
+            "to": pair[1],
+            "timestamp": datetime.now().strftime("%H:%M"),
+        })
+        await asyncio.sleep(random.uniform(5, 8))
 
 # ── Background loop: métricas flutuantes ──────────────────────────────────────
 
@@ -167,6 +223,7 @@ async def run_crew_weekly():
 @app.on_event("startup")
 async def startup():
     asyncio.create_task(agent_activity_loop())
+    asyncio.create_task(interaction_loop())
     asyncio.create_task(metrics_loop())
     asyncio.create_task(run_crew_weekly())
 
