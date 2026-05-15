@@ -24,8 +24,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client        = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-groq_client   = Groq(api_key=os.getenv("GROQ_API_KEY"))
+_anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+_groq_key      = os.getenv("GROQ_API_KEY")
+
+client      = Anthropic(api_key=_anthropic_key) if _anthropic_key else None
+groq_client = Groq(api_key=_groq_key)          if _groq_key      else None
 
 # ── WebSocket manager ──────────────────────────────────────────────────────────
 
@@ -371,8 +374,7 @@ async def chat_with_ive(body: ChatBody):
 
     # 1. Tenta Groq (gratuito, rápido — Llama 3.3 70B)
     try:
-        groq_key = os.getenv("GROQ_API_KEY")
-        if groq_key:
+        if groq_client:
             msgs_groq = [{"role": "system", "content": IVE_SYSTEM}] + messages
             resp = groq_client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
@@ -387,8 +389,7 @@ async def chat_with_ive(body: ChatBody):
     # 2. Tenta Claude (se tiver créditos)
     if not reply:
         try:
-            api_key = os.getenv("ANTHROPIC_API_KEY")
-            if api_key:
+            if client:
                 response = client.messages.create(
                     model="claude-opus-4-5",
                     max_tokens=300,
