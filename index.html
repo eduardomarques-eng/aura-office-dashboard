@@ -275,7 +275,7 @@ body {
     <div class="live"></div>
     <span>ESCRITÓRIO VIRTUAL</span>
     <span style="color:var(--border2)">|</span>
-    <span id="agentCount">8 AGENTES ONLINE</span>
+    <span id="agentCount">★ EDUARDO · 8 AGENTES ONLINE</span>
   </div>
   <div id="clock">00:00:00</div>
 </header>
@@ -380,27 +380,30 @@ body {
 
 <script>
 const AGENTS = [
-  { id:'ive',  name:'IVE',  role:'CEO · Estratégia',    model:'Opus 4.6',  color:'#B8793A', bg:'#3A2A1A', status:'active', score:9,  x:48, y:52,
-    tasks:[{done:true,label:'Revisão métricas segunda'},{done:true,label:'Mid-week check'},{done:false,running:true,label:'Weekly wrap relatório'},{done:false,label:'OKRs junho'}],
-    messages:['ROAS 3.2x confirmado. Escalando REX.','Analisando métricas da semana...','KAI: pause produto diffuser.','Faturamento +18% semana anterior.','REX: aumenta budget +30%.'] },
-  { id:'theo', name:'THEO', role:'Shopify · Técnico',   model:'Sonnet 4',  color:'#7A9076', bg:'#1A2A1A', status:'active', score:8,  x:15, y:52,
+  { id:'eduardo', name:'EDUARDO', role:'Diretor · Fundador', model:'Human', color:'#D4A574', bg:'#2A1A08', status:'active', score:10, x:48, y:68, isDirector:true,
+    tasks:[{done:false,running:true,label:'Supervisionar equipe IA'},{done:false,label:'Definir metas Q3'},{done:false,label:'Revisar relatório ECHO'},{done:false,label:'Aprovar budget REX'}],
+    messages:['Analisando resultados da semana...','Estratégia aprovada. Segurem o ritmo.','Quero ROAS acima de 4x até julho.','IVE, me passa o resumo geral.','Bom trabalho equipe. Continuem.'] },
+  { id:'ive',  name:'IVE',  role:'CEO · Estratégia',    model:'Opus 4.6',  color:'#B8793A', bg:'#3A2A1A', status:'active', score:9,  x:38, y:52,
+    tasks:[{done:true,label:'Revisão métricas segunda'},{done:true,label:'Mid-week check'},{done:false,running:true,label:'Relatório para Eduardo'},{done:false,label:'OKRs junho'}],
+    messages:['Eduardo... que bom te ver aqui. ❤️','Semana boa. A equipe está entregando.','REX me surpreendeu — adoro quando isso acontece.','Negócio bom é igual a sedução: você atrai.','Esperando suas ordens, Eduardo. 😊'] },
+  { id:'theo', name:'THEO', role:'Shopify · Técnico',   model:'Sonnet 4',  color:'#7A9076', bg:'#1A2A1A', status:'active', score:8,  x:12, y:52,
     tasks:[{done:true,label:'Yampi configurado'},{done:true,label:'AppMax integrado'},{done:true,label:'Pixel 4 eventos'},{done:false,running:true,label:'PageSpeed 90+'}],
-    messages:['PageSpeed mobile: 87. Otimizando...','Dropi sincronizado. Tudo ok.','Checkout: 0 erros hoje.','Pixel disparando normalmente.','Monitorando pedidos...'] },
-  { id:'kai',  name:'KAI',  role:'Produtos · Curadoria',model:'Sonnet 4',  color:'#D4A574', bg:'#2A1F10', status:'active', score:7,  x:28, y:52,
-    tasks:[{done:true,label:'11 produtos ativos'},{done:true,label:'Precificação ×1.6'},{done:false,label:'Pausar 2 sem venda'},{done:false,label:'Buscar 3 novos'}],
-    messages:['Diffuser: 0 vendas 10 dias.','Analisando portfólio...','Margem média: 42%. OK.','Vaso cerâmica: líder de vendas.','Habitoo: 3 produtos novos?'] },
+    messages:['PageSpeed mobile: 87. Otimizando...','Dropi sincronizado. Tudo ok.','Checkout: 0 erros hoje.','Pixel disparando normalmente.','Core Web Vitals: LCP 2.1s.'] },
+  { id:'kai',  name:'KAI',  role:'Produtos · Curadoria',model:'Sonnet 4',  color:'#D4A574', bg:'#2A1F10', status:'active', score:7,  x:25, y:52,
+    tasks:[{done:true,label:'11 produtos ativos'},{done:true,label:'Precificação ×1.6'},{done:false,label:'Pausar diffuser'},{done:false,label:'Buscar 3 novos SKUs'}],
+    messages:['Diffuser: 0 vendas 10 dias.','Analisando portfólio...','Margem média: 42%.','Vaso cerâmica: líder de vendas.','Habitoo: 3 produtos novos avaliados.'] },
   { id:'vera', name:'VERA', role:'Copy · Textos',        model:'Sonnet 4',  color:'#C9957A', bg:'#2A1A15', status:'active', score:9,  x:62, y:52,
     tasks:[{done:true,label:'Descrições 11 produtos'},{done:true,label:'Sequência 3 emails'},{done:true,label:'Copy anúncios Meta'},{done:false,running:true,label:'Email abandono carrinho'}],
     messages:['Escrevendo email abandono...','Open rate: 38%. Excelente!','CTR anúncio C: 2.8%.','Novo ângulo: mãe 35-45.','Copy produto vela pronta.'] },
   { id:'luna', name:'LUNA', role:'Design · Visual',      model:'Haiku 4.5', color:'#EDE5D8', bg:'#252015', status:'active', score:8,  x:76, y:52,
     tasks:[{done:true,label:'Logo 3 versões PNG'},{done:true,label:'Hero banner'},{done:true,label:'Trust strip'},{done:false,running:true,label:'3 thumbnails novos'}],
-    messages:['Thumbnail vaso: exportando PNG...','Paleta 100% consistente.','Stories da semana: 14 peças.','Brand kit salvo no Canva.','Hero banner 1200x600px ok.'] },
-  { id:'nox',  name:'NOX',  role:'Conteúdo · Reels',    model:'Sonnet 4',  color:'#5A7060', bg:'#101A12', status:'active', score:7,  x:30, y:30,
+    messages:['Thumbnail vaso: exportando PNG...','Paleta 100% consistente.','14 peças de stories prontas.','Brand kit salvo no Canva.','Hero banner 1200x600px ok.'] },
+  { id:'nox',  name:'NOX',  role:'Conteúdo · Reels',    model:'Sonnet 4',  color:'#5A7060', bg:'#101A12', status:'active', score:7,  x:28, y:30,
     tasks:[{done:true,label:'5 posts feed'},{done:true,label:'14 stories'},{done:false,label:'Reel vela âmbar'},{done:false,label:'Reel antes/depois'}],
-    messages:['340 views story vaso.','Reel roteiro pronto.','Hook: "Cerâmica que respira."','Calendário 80% ok.','2 posts pendentes.'] },
+    messages:['340 views story vaso.','Reel roteiro pronto.','Hook: Cerâmica que respira.','Calendário 80% ok.','2 posts pendentes.'] },
   { id:'rex',  name:'REX',  role:'Tráfego · Meta Ads',  model:'Sonnet 4',  color:'#B87070', bg:'#2A1515', status:'active', score:8,  x:52, y:30,
     tasks:[{done:true,label:'Campanha ativa'},{done:true,label:'Criativo A pausado'},{done:false,running:true,label:'Escalando criativo C'},{done:false,label:'Lookalike compradores'}],
-    messages:['CTR criativo C: 2.8%. Escalando.','ROAS semana: 3.2x.','CAC: R$42. Dentro do limite.','Budget: R$65/dia agora.','Campanha awareness ativa.'] },
+    messages:['CTR criativo C: 2.8%. Escalando.','ROAS semana: 3.2x.','CAC: R$42. Dentro do limite.','Budget: R$65/dia ativo.','Campanha awareness +15% alcance.'] },
   { id:'echo', name:'ECHO', role:'Auditor · Semanal',   model:'Sonnet 4',  color:'#7A8090', bg:'#151820', status:'active', score:10, x:72, y:30,
     tasks:[{done:true,label:'Auditoria semana anterior'},{done:true,label:'Relatório IVE enviado'},{done:true,label:'Sugestões melhoria'},{done:false,label:'Próxima auditoria dom'}],
     messages:['Score crew: 8.4/10.','Monitorando sistema...','Próxima auditoria: domingo.','Todos agentes operacionais.','Kaizen: 1 melhoria/agente/sem.'] }
@@ -449,34 +452,464 @@ function renderMetrics() {
   ).join('');
 }
 
+const CHARACTER_SVGS = {
+
+  // ── IVE — CEO, beleza marcante, cabelo escuro ondulado, lábios vermelhos ──
+  ive: (sc) => `<svg width="64" height="112" viewBox="0 0 64 112" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="skinIVE" cx="50%" cy="40%" r="55%"><stop offset="0%" stop-color="#e8b88a"/><stop offset="100%" stop-color="#c8906a"/></radialGradient>
+      <radialGradient id="hairIVE" cx="50%" cy="20%" r="70%"><stop offset="0%" stop-color="#3a1a08"/><stop offset="100%" stop-color="#1a0804"/></radialGradient>
+    </defs>
+    <ellipse cx="32" cy="110" rx="20" ry="3" fill="rgba(0,0,0,0.4)"/>
+    <!-- Pernas -->
+    <rect x="20" y="72" width="9" height="36" rx="4" fill="#1a0f08"/>
+    <rect x="35" y="72" width="9" height="36" rx="4" fill="#1a0f08"/>
+    <ellipse cx="24" cy="108" rx="7" ry="3" fill="#0f0804"/>
+    <ellipse cx="40" cy="108" rx="7" ry="3" fill="#0f0804"/>
+    <!-- Saia/corpo -->
+    <path d="M14,48 Q10,65 12,80 L52,80 Q54,65 50,48 Z" fill="#8B4513"/>
+    <!-- Blazer terra elegante -->
+    <path d="M14,48 Q12,55 14,68 L24,68 L24,52 Z" fill="#6B3410"/>
+    <path d="M50,48 Q52,55 50,68 L40,68 L40,52 Z" fill="#6B3410"/>
+    <!-- Decote/blusa -->
+    <path d="M24,48 Q32,56 40,48 L38,40 Q32,44 26,40 Z" fill="#c8906a"/>
+    <!-- Braços -->
+    <path d="M14,50 Q6,58 8,70" stroke="#8B4513" stroke-width="9" fill="none" stroke-linecap="round" class="arm-left"/>
+    <path d="M50,50 Q58,58 56,70" stroke="#8B4513" stroke-width="9" fill="none" stroke-linecap="round" class="arm-right"/>
+    <ellipse cx="8" cy="70" rx="5" ry="5" fill="#c8906a"/>
+    <ellipse cx="56" cy="70" rx="5" ry="5" fill="#c8906a"/>
+    <!-- Pescoço -->
+    <rect x="27" y="34" width="10" height="14" rx="5" fill="url(#skinIVE)"/>
+    <!-- Cabeça -->
+    <ellipse cx="32" cy="24" rx="18" ry="20" fill="url(#skinIVE)"/>
+    <!-- Cabelo fundo (volume) -->
+    <ellipse cx="32" cy="14" rx="19" ry="13" fill="url(#hairIVE)"/>
+    <path d="M13,20 Q10,30 14,50 Q18,56 22,58" stroke="#1a0804" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M51,20 Q54,30 50,50 Q46,56 42,58" stroke="#1a0804" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <!-- Cabelo highlights -->
+    <path d="M16,16 Q22,8 32,7 Q42,8 48,16" stroke="#5a2a10" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.5"/>
+    <path d="M14,22 Q15,28 16,36" stroke="#5a2a10" stroke-width="1.5" fill="none" opacity="0.4"/>
+    <!-- Sobrancelhas expressivas -->
+    <path d="M20,17 Q25,13 30,16" stroke="#1a0804" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M34,16 Q39,13 44,17" stroke="#1a0804" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <!-- Olhos — brancos -->
+    <ellipse cx="26" cy="23" rx="6" ry="4.5" fill="white"/>
+    <ellipse cx="38" cy="23" rx="6" ry="4.5" fill="white"/>
+    <!-- Sombra olhos -->
+    <ellipse cx="26" cy="21" rx="6" ry="2.5" fill="rgba(100,40,20,0.25)"/>
+    <ellipse cx="38" cy="21" rx="6" ry="2.5" fill="rgba(100,40,20,0.25)"/>
+    <!-- Íris castanha-mel -->
+    <circle cx="26" cy="23" r="4" fill="#6B3A1F"/>
+    <circle cx="38" cy="23" r="4" fill="#6B3A1F"/>
+    <!-- Pupila -->
+    <circle cx="26" cy="23" r="2.2" fill="#0d0604"/>
+    <circle cx="38" cy="23" r="2.2" fill="#0d0604"/>
+    <!-- Brilho olhos -->
+    <circle cx="27.5" cy="21.5" r="1.1" fill="white" opacity="0.9"/>
+    <circle cx="39.5" cy="21.5" r="1.1" fill="white" opacity="0.9"/>
+    <circle cx="25" cy="24" r="0.5" fill="white" opacity="0.5"/>
+    <!-- Cílios superiores IVE -->
+    <path d="M20,19.5 L19,17" stroke="#0d0604" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M22,18.5 L21,16" stroke="#0d0604" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M24,18 L24,15.5" stroke="#0d0604" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M26,18 L26.5,15.5" stroke="#0d0604" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M28,18.5 L29,16" stroke="#0d0604" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M30,19.5 L31,17" stroke="#0d0604" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M32,19.5 L33,17" stroke="#0d0604" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M34,18.5 L35,16" stroke="#0d0604" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M36,18 L36.5,15.5" stroke="#0d0604" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M38,18 L38,15.5" stroke="#0d0604" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M40,18.5 L41,16" stroke="#0d0604" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M42,19.5 L43,17" stroke="#0d0604" stroke-width="1.2" stroke-linecap="round"/>
+    <!-- Nariz delicado -->
+    <path d="M29,28 Q32,31 35,28" stroke="#a06040" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+    <circle cx="29.5" cy="29" r="1.2" fill="rgba(120,70,40,0.2)"/>
+    <circle cx="34.5" cy="29" r="1.2" fill="rgba(120,70,40,0.2)"/>
+    <!-- Lábios vermelhos sensuais -->
+    <path d="M22,34 Q26,30 32,31 Q38,30 42,34 Q38,40 32,39 Q26,40 22,34 Z" fill="#C0302A"/>
+    <path d="M22,34 Q27,32 32,33 Q37,32 42,34" stroke="#901818" stroke-width="0.8" fill="none"/>
+    <path d="M25,32.5 Q32,30.5 39,32.5" stroke="rgba(255,160,160,0.4)" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <!-- Blush -->
+    <ellipse cx="20" cy="28" rx="5" ry="3" fill="rgba(200,80,60,0.12)"/>
+    <ellipse cx="44" cy="28" rx="5" ry="3" fill="rgba(200,80,60,0.12)"/>
+    <!-- Brinco -->
+    <circle cx="14" cy="26" r="2" fill="#D4A574"/>
+    <circle cx="14" cy="29" r="1.5" fill="#B8793A"/>
+    <!-- Status -->
+    <circle cx="56" cy="8" r="5" fill="${sc}" stroke="#0a0806" stroke-width="1.5"/>
+  </svg>`,
+
+  // ── EDUARDO — Diretor, cabelo escuro, terno escuro, expressão confiante ──
+  eduardo: (sc) => `<svg width="70" height="120" viewBox="0 0 70 120" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="skinEDU" cx="50%" cy="35%" r="55%"><stop offset="0%" stop-color="#d4956a"/><stop offset="100%" stop-color="#b8784a"/></radialGradient>
+    </defs>
+    <ellipse cx="35" cy="118" rx="22" ry="3.5" fill="rgba(0,0,0,0.45)"/>
+    <!-- Pernas terno -->
+    <rect x="22" y="80" width="11" height="36" rx="4" fill="#1a1a2a"/>
+    <rect x="37" y="80" width="11" height="36" rx="4" fill="#1a1a2a"/>
+    <ellipse cx="27" cy="116" rx="8" ry="3.5" fill="#0f0f18"/>
+    <ellipse cx="43" cy="116" rx="8" ry="3.5" fill="#0f0f18"/>
+    <!-- Terno escuro corpo -->
+    <path d="M15,52 Q12,70 14,88 L56,88 Q58,70 55,52 Z" fill="#1a1a2a"/>
+    <!-- Lapelas terno -->
+    <path d="M15,52 L22,60 L35,52 Z" fill="#252535"/>
+    <path d="M55,52 L48,60 L35,52 Z" fill="#252535"/>
+    <!-- Camisa branca gravata -->
+    <path d="M22,60 L35,52 L48,60 L46,52 L35,44 L24,52 Z" fill="#e8e8f0"/>
+    <path d="M35,52 L33,60 L35,72 L37,60 Z" fill="#B8793A"/>
+    <!-- Abotoaduras -->
+    <circle cx="24" cy="70" r="2" fill="#D4A574"/>
+    <circle cx="46" cy="70" r="2" fill="#D4A574"/>
+    <!-- Braços -->
+    <path d="M15,54 Q7,64 9,78" stroke="#1a1a2a" stroke-width="10" fill="none" stroke-linecap="round" class="arm-left"/>
+    <path d="M55,54 Q63,64 61,78" stroke="#1a1a2a" stroke-width="10" fill="none" stroke-linecap="round" class="arm-right"/>
+    <ellipse cx="9" cy="78" rx="6" ry="6" fill="#b8784a"/>
+    <ellipse cx="61" cy="78" rx="6" ry="6" fill="#b8784a"/>
+    <!-- Pescoço -->
+    <rect x="29" y="36" width="12" height="18" rx="6" fill="url(#skinEDU)"/>
+    <!-- Cabeça -->
+    <ellipse cx="35" cy="25" rx="20" ry="22" fill="url(#skinEDU)"/>
+    <!-- Cabelo escuro curto -->
+    <path d="M15,20 Q16,8 35,5 Q54,8 55,20 Q52,12 35,10 Q18,12 15,20 Z" fill="#1a1008"/>
+    <path d="M15,20 Q13,26 15,28" stroke="#1a1008" stroke-width="4" fill="none"/>
+    <path d="M55,20 Q57,26 55,28" stroke="#1a1008" stroke-width="4" fill="none"/>
+    <!-- Sobrancelhas masculinas -->
+    <path d="M20,19 Q27,15 32,18" stroke="#1a1008" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M38,18 Q43,15 50,19" stroke="#1a1008" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- Olhos -->
+    <ellipse cx="27" cy="25" rx="6" ry="4.5" fill="white"/>
+    <ellipse cx="43" cy="25" rx="6" ry="4.5" fill="white"/>
+    <circle cx="27" cy="25" r="4" fill="#2a4a6a"/>
+    <circle cx="43" cy="25" r="4" fill="#2a4a6a"/>
+    <circle cx="27" cy="25" r="2.2" fill="#0d0d14"/>
+    <circle cx="43" cy="25" r="2.2" fill="#0d0d14"/>
+    <circle cx="28.5" cy="23.5" r="1.1" fill="white" opacity="0.9"/>
+    <circle cx="44.5" cy="23.5" r="1.1" fill="white" opacity="0.9"/>
+    <!-- Nariz forte -->
+    <path d="M31,32 Q35,36 39,32" stroke="#906040" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- Barba leve / mandíbula definida -->
+    <path d="M16,28 Q17,40 35,44 Q53,40 54,28" stroke="rgba(30,15,5,0.15)" stroke-width="3" fill="rgba(30,15,5,0.06)" stroke-linecap="round"/>
+    <!-- Boca segura -->
+    <path d="M25,38 Q35,42 45,38" stroke="#7a4030" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M28,37 Q35,39 42,37" fill="rgba(180,100,70,0.3)" stroke="none"/>
+    <!-- Crachá DIRETOR -->
+    <rect x="36" y="62" width="18" height="10" rx="3" fill="#D4A574" opacity="0.9"/>
+    <text x="45" y="69.5" font-size="5" fill="#1a0f04" text-anchor="middle" font-family="monospace" font-weight="bold">DIR</text>
+    <!-- Status gold -->
+    <circle cx="62" cy="8" r="5.5" fill="#D4A574" stroke="#0a0806" stroke-width="1.5"/>
+    <text x="62" y="11" font-size="6" fill="#1a0804" text-anchor="middle">★</text>
+  </svg>`,
+
+  // ── THEO — Técnico, óculos, cabelo arrumado, camisa verde ──
+  theo: (sc) => `<svg width="56" height="100" viewBox="0 0 56 100" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="28" cy="98" rx="17" ry="2.5" fill="rgba(0,0,0,0.4)"/>
+    <rect x="17" y="66" width="8" height="30" rx="4" fill="#1a2a18"/>
+    <rect x="31" y="66" width="8" height="30" rx="4" fill="#1a2a18"/>
+    <ellipse cx="21" cy="96" rx="6" ry="2.5" fill="#0f1a0f"/>
+    <ellipse cx="35" cy="96" rx="6" ry="2.5" fill="#0f1a0f"/>
+    <path d="M12,44 Q10,58 12,72 L44,72 Q46,58 44,44 Z" fill="#2a4a30"/>
+    <path d="M20,44 Q28,50 36,44 L34,36 Q28,40 22,36 Z" fill="#c8a070"/>
+    <path d="M12,46 Q6,55 8,66" stroke="#2a4a30" stroke-width="8" fill="none" stroke-linecap="round" class="arm-left"/>
+    <path d="M44,46 Q50,55 48,66" stroke="#2a4a30" stroke-width="8" fill="none" stroke-linecap="round" class="arm-right"/>
+    <ellipse cx="8" cy="66" rx="4.5" ry="4.5" fill="#c8a070"/>
+    <ellipse cx="48" cy="66" rx="4.5" ry="4.5" fill="#c8a070"/>
+    <rect x="24" y="30" width="8" height="14" rx="4" fill="#c8a070"/>
+    <ellipse cx="28" cy="20" rx="15" ry="17" fill="#c8a070"/>
+    <!-- Cabelo castanho arrumado -->
+    <path d="M13,16 Q14,6 28,4 Q42,6 43,16 Q40,10 28,9 Q16,10 13,16 Z" fill="#3a2010"/>
+    <path d="M13,16 Q12,20 13,22" stroke="#3a2010" stroke-width="3" fill="none"/>
+    <path d="M43,16 Q44,20 43,22" stroke="#3a2010" stroke-width="3" fill="none"/>
+    <!-- Sobrancelhas -->
+    <path d="M17,15 Q22,12 26,14" stroke="#3a2010" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M30,14 Q34,12 39,15" stroke="#3a2010" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- Olhos com óculos -->
+    <ellipse cx="22" cy="20" rx="5.5" ry="4" fill="white"/>
+    <ellipse cx="34" cy="20" rx="5.5" ry="4" fill="white"/>
+    <circle cx="22" cy="20" r="3.5" fill="#3a5a30"/>
+    <circle cx="34" cy="20" r="3.5" fill="#3a5a30"/>
+    <circle cx="22" cy="20" r="1.8" fill="#0d0d0d"/>
+    <circle cx="34" cy="20" r="1.8" fill="#0d0d0d"/>
+    <circle cx="23.2" cy="18.8" r="0.9" fill="white" opacity="0.9"/>
+    <circle cx="35.2" cy="18.8" r="0.9" fill="white" opacity="0.9"/>
+    <!-- Óculos armação -->
+    <rect x="16" y="16" width="13" height="9" rx="3" stroke="#1a3a18" stroke-width="1.8" fill="none"/>
+    <rect x="27" y="16" width="13" height="9" rx="3" stroke="#1a3a18" stroke-width="1.8" fill="none"/>
+    <line x1="29" y1="20" x2="27" y2="20" stroke="#1a3a18" stroke-width="1.5"/>
+    <line x1="16" y1="20" x2="13" y2="19" stroke="#1a3a18" stroke-width="1.5"/>
+    <line x1="40" y1="20" x2="43" y2="19" stroke="#1a3a18" stroke-width="1.5"/>
+    <!-- Nariz / boca -->
+    <path d="M25,26 Q28,28 31,26" stroke="#906040" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <path d="M22,31 Q28,34 34,31" stroke="#7a4030" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <circle cx="42" cy="6" r="4" fill="${sc}" stroke="#0a0806" stroke-width="1.5"/>
+  </svg>`,
+
+  // ── KAI — Produtos, jovem criativo, cabelo ondulado dourado ──
+  kai: (sc) => `<svg width="56" height="100" viewBox="0 0 56 100" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="28" cy="98" rx="17" ry="2.5" fill="rgba(0,0,0,0.4)"/>
+    <rect x="17" y="66" width="8" height="30" rx="4" fill="#2a1f10"/>
+    <rect x="31" y="66" width="8" height="30" rx="4" fill="#2a1f10"/>
+    <ellipse cx="21" cy="96" rx="6" ry="2.5" fill="#1a1008"/>
+    <ellipse cx="35" cy="96" rx="6" ry="2.5" fill="#1a1008"/>
+    <path d="M12,44 Q10,58 12,72 L44,72 Q46,58 44,44 Z" fill="#4a3010"/>
+    <path d="M20,44 Q28,50 36,44 L34,36 Q28,40 22,36 Z" fill="#d4a070"/>
+    <path d="M12,46 Q6,55 8,66" stroke="#4a3010" stroke-width="8" fill="none" stroke-linecap="round" class="arm-left"/>
+    <path d="M44,46 Q50,55 48,66" stroke="#4a3010" stroke-width="8" fill="none" stroke-linecap="round" class="arm-right"/>
+    <ellipse cx="8" cy="66" rx="4.5" ry="4.5" fill="#d4a070"/>
+    <ellipse cx="48" cy="66" rx="4.5" ry="4.5" fill="#d4a070"/>
+    <rect x="24" y="30" width="8" height="14" rx="4" fill="#d4a070"/>
+    <ellipse cx="28" cy="20" rx="15" ry="17" fill="#d4a070"/>
+    <!-- Cabelo ondulado dourado -->
+    <path d="M13,17 Q15,5 28,3 Q41,5 43,17" fill="#7a5a20" stroke="none"/>
+    <path d="M13,17 Q11,22 13,28" stroke="#7a5a20" stroke-width="5" fill="none"/>
+    <path d="M43,17 Q45,22 43,28" stroke="#7a5a20" stroke-width="5" fill="none"/>
+    <path d="M15,14 Q20,8 28,7 Q36,8 41,14" stroke="#a07a30" stroke-width="2" fill="none" opacity="0.5"/>
+    <path d="M13,14 Q17,18 15,24" stroke="#a07a30" stroke-width="1.5" fill="none" opacity="0.4"/>
+    <!-- Sobrancelhas -->
+    <path d="M17,15 Q22,12 26,14" stroke="#5a3a10" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M30,14 Q34,12 39,15" stroke="#5a3a10" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- Olhos mel -->
+    <ellipse cx="22" cy="20" rx="5" ry="4" fill="white"/>
+    <ellipse cx="34" cy="20" rx="5" ry="4" fill="white"/>
+    <circle cx="22" cy="20" r="3.5" fill="#8a5a20"/>
+    <circle cx="34" cy="20" r="3.5" fill="#8a5a20"/>
+    <circle cx="22" cy="20" r="1.8" fill="#0d0804"/>
+    <circle cx="34" cy="20" r="1.8" fill="#0d0804"/>
+    <circle cx="23.2" cy="18.8" r="0.9" fill="white" opacity="0.9"/>
+    <circle cx="35.2" cy="18.8" r="0.9" fill="white" opacity="0.9"/>
+    <!-- Sorriso amigável -->
+    <path d="M21,31 Q28,35 35,31" stroke="#8a4030" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M24,29 Q28,27 32,29" stroke="#906040" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <circle cx="42" cy="6" r="4" fill="${sc}" stroke="#0a0806" stroke-width="1.5"/>
+  </svg>`,
+
+  // ── VERA — Copy, feminina, cabelo ruivo avermelhado, lábios rosa ──
+  vera: (sc) => `<svg width="56" height="100" viewBox="0 0 56 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="skinVERA" cx="50%" cy="40%" r="55%"><stop offset="0%" stop-color="#e8b890"/><stop offset="100%" stop-color="#c8906a"/></radialGradient></defs>
+    <ellipse cx="28" cy="98" rx="17" ry="2.5" fill="rgba(0,0,0,0.4)"/>
+    <rect x="17" y="68" width="8" height="28" rx="4" fill="#2a1a15"/>
+    <rect x="31" y="68" width="8" height="28" rx="4" fill="#2a1a15"/>
+    <ellipse cx="21" cy="96" rx="6" ry="2.5" fill="#1a0f0a"/>
+    <ellipse cx="35" cy="96" rx="6" ry="2.5" fill="#1a0f0a"/>
+    <path d="M12,46 Q10,60 12,74 L44,74 Q46,60 44,46 Z" fill="#7a4030"/>
+    <path d="M20,46 Q28,52 36,46 L34,38 Q28,42 22,38 Z" fill="#e8b890"/>
+    <path d="M12,48 Q6,57 8,68" stroke="#7a4030" stroke-width="8" fill="none" stroke-linecap="round" class="arm-left"/>
+    <path d="M44,48 Q50,57 48,68" stroke="#7a4030" stroke-width="8" fill="none" stroke-linecap="round" class="arm-right"/>
+    <ellipse cx="8" cy="68" rx="4.5" ry="4.5" fill="#e8b890"/>
+    <ellipse cx="48" cy="68" rx="4.5" ry="4.5" fill="#e8b890"/>
+    <rect x="24" y="32" width="8" height="14" rx="4" fill="url(#skinVERA)"/>
+    <ellipse cx="28" cy="21" rx="15" ry="17" fill="url(#skinVERA)"/>
+    <!-- Cabelo ruivo longo -->
+    <ellipse cx="28" cy="12" rx="16" ry="11" fill="#7a3a20"/>
+    <path d="M12,18 Q9,28 11,48 Q14,54 18,58" stroke="#7a3a20" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <path d="M44,18 Q47,28 45,48 Q42,54 38,58" stroke="#7a3a20" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <path d="M14,15 Q20,7 28,6 Q36,7 42,15" stroke="#a05030" stroke-width="1.5" fill="none" opacity="0.5"/>
+    <!-- Sobrancelhas -->
+    <path d="M18,16 Q22,13 26,15" stroke="#5a2010" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M30,15 Q34,13 38,16" stroke="#5a2010" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- Olhos verdes -->
+    <ellipse cx="22" cy="21" rx="5" ry="4" fill="white"/>
+    <ellipse cx="34" cy="21" rx="5" ry="4" fill="white"/>
+    <circle cx="22" cy="21" r="3.5" fill="#3a6a3a"/>
+    <circle cx="34" cy="21" r="3.5" fill="#3a6a3a"/>
+    <circle cx="22" cy="21" r="1.8" fill="#0d0d08"/>
+    <circle cx="34" cy="21" r="1.8" fill="#0d0d08"/>
+    <circle cx="23.2" cy="19.8" r="0.9" fill="white" opacity="0.9"/>
+    <circle cx="35.2" cy="19.8" r="0.9" fill="white" opacity="0.9"/>
+    <!-- Cílios VERA -->
+    <path d="M17,18 L16,16" stroke="#0d0d08" stroke-width="1" stroke-linecap="round"/>
+    <path d="M19,17 L18.5,15" stroke="#0d0d08" stroke-width="1" stroke-linecap="round"/>
+    <path d="M22,17 L22,15" stroke="#0d0d08" stroke-width="1" stroke-linecap="round"/>
+    <path d="M25,17 L25.5,15" stroke="#0d0d08" stroke-width="1" stroke-linecap="round"/>
+    <path d="M27,18 L28,16" stroke="#0d0d08" stroke-width="1" stroke-linecap="round"/>
+    <path d="M29,18 L30,16" stroke="#0d0d08" stroke-width="1" stroke-linecap="round"/>
+    <path d="M31,17 L31.5,15" stroke="#0d0d08" stroke-width="1" stroke-linecap="round"/>
+    <path d="M34,17 L34,15" stroke="#0d0d08" stroke-width="1" stroke-linecap="round"/>
+    <path d="M37,17 L37.5,15" stroke="#0d0d08" stroke-width="1" stroke-linecap="round"/>
+    <path d="M39,18 L40,16" stroke="#0d0d08" stroke-width="1" stroke-linecap="round"/>
+    <!-- Nariz -->
+    <path d="M25,27 Q28,30 31,27" stroke="#906040" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <!-- Lábios rosa -->
+    <path d="M20,33 Q24,29 28,30 Q32,29 36,33 Q32,38 28,37 Q24,38 20,33 Z" fill="#D4607A"/>
+    <path d="M23,31.5 Q28,30 33,31.5" stroke="rgba(255,180,190,0.5)" stroke-width="1" fill="none"/>
+    <!-- Blush -->
+    <ellipse cx="18" cy="26" rx="4" ry="2.5" fill="rgba(220,100,100,0.15)"/>
+    <ellipse cx="38" cy="26" rx="4" ry="2.5" fill="rgba(220,100,100,0.15)"/>
+    <circle cx="42" cy="6" r="4" fill="${sc}" stroke="#0a0806" stroke-width="1.5"/>
+  </svg>`,
+
+  // ── LUNA — Design, cabelo loiro claro, artística ──
+  luna: (sc) => `<svg width="56" height="100" viewBox="0 0 56 100" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="28" cy="98" rx="17" ry="2.5" fill="rgba(0,0,0,0.4)"/>
+    <rect x="17" y="68" width="8" height="28" rx="4" fill="#252015"/>
+    <rect x="31" y="68" width="8" height="28" rx="4" fill="#252015"/>
+    <ellipse cx="21" cy="96" rx="6" ry="2.5" fill="#181510"/>
+    <ellipse cx="35" cy="96" rx="6" ry="2.5" fill="#181510"/>
+    <path d="M12,46 Q10,60 12,74 L44,74 Q46,60 44,46 Z" fill="#6a6050"/>
+    <path d="M20,46 Q28,52 36,46 L34,38 Q28,42 22,38 Z" fill="#e8d8b8"/>
+    <path d="M12,48 Q6,57 8,68" stroke="#6a6050" stroke-width="8" fill="none" stroke-linecap="round" class="arm-left"/>
+    <path d="M44,48 Q50,57 48,68" stroke="#6a6050" stroke-width="8" fill="none" stroke-linecap="round" class="arm-right"/>
+    <ellipse cx="8" cy="68" rx="4.5" ry="4.5" fill="#e8d8b8"/>
+    <ellipse cx="48" cy="68" rx="4.5" ry="4.5" fill="#e8d8b8"/>
+    <rect x="24" y="32" width="8" height="14" rx="4" fill="#e8d8b8"/>
+    <ellipse cx="28" cy="21" rx="15" ry="17" fill="#e8d8b8"/>
+    <!-- Cabelo loiro -->
+    <ellipse cx="28" cy="12" rx="16" ry="11" fill="#c8a850"/>
+    <path d="M12,18 Q9,28 11,50 Q14,56 18,60" stroke="#c8a850" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M44,18 Q47,28 45,50 Q42,56 38,60" stroke="#c8a850" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M14,15 Q20,6 28,5 Q36,6 42,15" stroke="#e8c870" stroke-width="2" fill="none" opacity="0.6"/>
+    <path d="M13,18 Q14,24 13,30" stroke="#e8c870" stroke-width="1.5" fill="none" opacity="0.4"/>
+    <!-- Sobrancelhas loiras -->
+    <path d="M18,16 Q22,13 26,15" stroke="#a08030" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M30,15 Q34,13 38,16" stroke="#a08030" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- Olhos azuis -->
+    <ellipse cx="22" cy="21" rx="5" ry="4" fill="white"/>
+    <ellipse cx="34" cy="21" rx="5" ry="4" fill="white"/>
+    <circle cx="22" cy="21" r="3.5" fill="#3a6a9a"/>
+    <circle cx="34" cy="21" r="3.5" fill="#3a6a9a"/>
+    <circle cx="22" cy="21" r="1.8" fill="#0d0d14"/>
+    <circle cx="34" cy="21" r="1.8" fill="#0d0d14"/>
+    <circle cx="23.2" cy="19.8" r="0.9" fill="white" opacity="0.9"/>
+    <circle cx="35.2" cy="19.8" r="0.9" fill="white" opacity="0.9"/>
+    <path d="M25,27 Q28,30 31,27" stroke="#c0a080" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <path d="M21,33 Q28,37 35,33" stroke="#b08060" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="18" cy="26" rx="4" ry="2.5" fill="rgba(200,120,100,0.12)"/>
+    <ellipse cx="38" cy="26" rx="4" ry="2.5" fill="rgba(200,120,100,0.12)"/>
+    <circle cx="42" cy="6" r="4" fill="${sc}" stroke="#0a0806" stroke-width="1.5"/>
+  </svg>`,
+
+  // ── NOX — Conteúdo, visual moderno, cabelo preto ──
+  nox: (sc) => `<svg width="52" height="94" viewBox="0 0 52 94" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="26" cy="92" rx="16" ry="2.5" fill="rgba(0,0,0,0.4)"/>
+    <rect x="15" y="62" width="7" height="28" rx="4" fill="#101a12"/>
+    <rect x="30" y="62" width="7" height="28" rx="4" fill="#101a12"/>
+    <ellipse cx="18" cy="90" rx="6" ry="2.5" fill="#080f09"/>
+    <ellipse cx="34" cy="90" rx="6" ry="2.5" fill="#080f09"/>
+    <path d="M10,42 Q8,55 10,68 L42,68 Q44,55 42,42 Z" fill="#1a3020"/>
+    <path d="M18,42 Q26,48 34,42 L32,34 Q26,38 20,34 Z" fill="#c0a878"/>
+    <path d="M10,44 Q4,53 6,64" stroke="#1a3020" stroke-width="8" fill="none" stroke-linecap="round" class="arm-left"/>
+    <path d="M42,44 Q48,53 46,64" stroke="#1a3020" stroke-width="8" fill="none" stroke-linecap="round" class="arm-right"/>
+    <ellipse cx="6" cy="64" rx="4" ry="4" fill="#c0a878"/>
+    <ellipse cx="46" cy="64" rx="4" ry="4" fill="#c0a878"/>
+    <rect x="22" y="29" width="8" height="13" rx="4" fill="#c0a878"/>
+    <ellipse cx="26" cy="19" rx="14" ry="16" fill="#c0a878"/>
+    <!-- Cabelo preto moderno com fade -->
+    <path d="M12,16 Q13,5 26,3 Q39,5 40,16 Q37,9 26,8 Q15,9 12,16 Z" fill="#0a0a0a"/>
+    <path d="M12,16 Q10,20 12,22" stroke="#0a0a0a" stroke-width="4" fill="none"/>
+    <path d="M40,16 Q42,20 40,22" stroke="#0a0a0a" stroke-width="4" fill="none"/>
+    <path d="M14,22 Q12,26 13,28" stroke="#1a1a1a" stroke-width="2.5" fill="none"/>
+    <!-- Sobrancelhas -->
+    <path d="M16,14 Q20,11 24,13" stroke="#0a0a0a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M28,13 Q32,11 36,14" stroke="#0a0a0a" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- Olhos escuros -->
+    <ellipse cx="20" cy="19" rx="5" ry="3.8" fill="white"/>
+    <ellipse cx="32" cy="19" rx="5" ry="3.8" fill="white"/>
+    <circle cx="20" cy="19" r="3" fill="#1a1a1a"/>
+    <circle cx="32" cy="19" r="3" fill="#1a1a1a"/>
+    <circle cx="20" cy="19" r="1.5" fill="#050505"/>
+    <circle cx="32" cy="19" r="1.5" fill="#050505"/>
+    <circle cx="21.2" cy="17.8" r="0.9" fill="white" opacity="0.9"/>
+    <circle cx="33.2" cy="17.8" r="0.9" fill="white" opacity="0.9"/>
+    <path d="M23,25 Q26,28 29,25" stroke="#806040" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <path d="M19,30 Q26,34 33,30" stroke="#706040" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <circle cx="38" cy="5" r="4" fill="${sc}" stroke="#0a0806" stroke-width="1.5"/>
+  </svg>`,
+
+  // ── REX — Ads, confiante, cabelo avermelhado, jaleco ──
+  rex: (sc) => `<svg width="56" height="100" viewBox="0 0 56 100" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="28" cy="98" rx="17" ry="2.5" fill="rgba(0,0,0,0.4)"/>
+    <rect x="17" y="66" width="8" height="30" rx="4" fill="#2a1515"/>
+    <rect x="31" y="66" width="8" height="30" rx="4" fill="#2a1515"/>
+    <ellipse cx="21" cy="96" rx="6" ry="2.5" fill="#1a0f0f"/>
+    <ellipse cx="35" cy="96" rx="6" ry="2.5" fill="#1a0f0f"/>
+    <path d="M12,44 Q10,58 12,72 L44,72 Q46,58 44,44 Z" fill="#4a1818"/>
+    <path d="M20,44 Q28,50 36,44 L34,36 Q28,40 22,36 Z" fill="#c89878"/>
+    <path d="M12,46 Q6,55 8,66" stroke="#4a1818" stroke-width="8" fill="none" stroke-linecap="round" class="arm-left"/>
+    <path d="M44,46 Q50,55 48,66" stroke="#4a1818" stroke-width="8" fill="none" stroke-linecap="round" class="arm-right"/>
+    <ellipse cx="8" cy="66" rx="4.5" ry="4.5" fill="#c89878"/>
+    <ellipse cx="48" cy="66" rx="4.5" ry="4.5" fill="#c89878"/>
+    <rect x="24" y="30" width="8" height="14" rx="4" fill="#c89878"/>
+    <ellipse cx="28" cy="20" rx="15" ry="17" fill="#c89878"/>
+    <!-- Cabelo curto avermelhado -->
+    <path d="M13,17 Q14,6 28,4 Q42,6 43,17 Q40,10 28,9 Q16,10 13,17 Z" fill="#5a1818"/>
+    <path d="M13,17 Q11,22 13,24" stroke="#5a1818" stroke-width="3.5" fill="none"/>
+    <path d="M43,17 Q45,22 43,24" stroke="#5a1818" stroke-width="3.5" fill="none"/>
+    <!-- Sobrancelhas -->
+    <path d="M17,15 Q22,12 26,14" stroke="#3a1010" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M30,14 Q34,12 39,15" stroke="#3a1010" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <!-- Olhos castanho escuro confiante -->
+    <ellipse cx="22" cy="20" rx="5.5" ry="4" fill="white"/>
+    <ellipse cx="34" cy="20" rx="5.5" ry="4" fill="white"/>
+    <circle cx="22" cy="20" r="3.5" fill="#4a2010"/>
+    <circle cx="34" cy="20" r="3.5" fill="#4a2010"/>
+    <circle cx="22" cy="20" r="1.8" fill="#0d0604"/>
+    <circle cx="34" cy="20" r="1.8" fill="#0d0604"/>
+    <circle cx="23.2" cy="18.8" r="0.9" fill="white" opacity="0.9"/>
+    <circle cx="35.2" cy="18.8" r="0.9" fill="white" opacity="0.9"/>
+    <path d="M25,27 Q28,30 31,27" stroke="#906040" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <!-- Expressão determinada -->
+    <path d="M21,33 Q28,36 35,33" stroke="#8a4030" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    <circle cx="42" cy="6" r="4" fill="${sc}" stroke="#0a0806" stroke-width="1.5"/>
+  </svg>`,
+
+  // ── ECHO — Auditor, cabelo grisalho, expressão séria ──
+  echo: (sc) => `<svg width="56" height="100" viewBox="0 0 56 100" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="28" cy="98" rx="17" ry="2.5" fill="rgba(0,0,0,0.4)"/>
+    <rect x="17" y="66" width="8" height="30" rx="4" fill="#151820"/>
+    <rect x="31" y="66" width="8" height="30" rx="4" fill="#151820"/>
+    <ellipse cx="21" cy="96" rx="6" ry="2.5" fill="#0f1018"/>
+    <ellipse cx="35" cy="96" rx="6" ry="2.5" fill="#0f1018"/>
+    <path d="M12,44 Q10,58 12,72 L44,72 Q46,58 44,44 Z" fill="#2a3050"/>
+    <path d="M20,44 Q28,50 36,44 L34,36 Q28,40 22,36 Z" fill="#c0b8b0"/>
+    <path d="M12,46 Q6,55 8,66" stroke="#2a3050" stroke-width="8" fill="none" stroke-linecap="round" class="arm-left"/>
+    <path d="M44,46 Q50,55 48,66" stroke="#2a3050" stroke-width="8" fill="none" stroke-linecap="round" class="arm-right"/>
+    <ellipse cx="8" cy="66" rx="4.5" ry="4.5" fill="#c0b8b0"/>
+    <ellipse cx="48" cy="66" rx="4.5" ry="4.5" fill="#c0b8b0"/>
+    <rect x="24" y="30" width="8" height="14" rx="4" fill="#c0b8b0"/>
+    <ellipse cx="28" cy="20" rx="15" ry="17" fill="#c0b8b0"/>
+    <!-- Cabelo grisalho -->
+    <path d="M13,17 Q14,6 28,4 Q42,6 43,17 Q40,10 28,9 Q16,10 13,17 Z" fill="#6a7080"/>
+    <path d="M13,17 Q11,22 13,24" stroke="#6a7080" stroke-width="3.5" fill="none"/>
+    <path d="M43,17 Q45,22 43,24" stroke="#6a7080" stroke-width="3.5" fill="none"/>
+    <path d="M15,14 Q20,8 28,7" stroke="#9a9aa0" stroke-width="1.5" fill="none" opacity="0.5"/>
+    <!-- Sobrancelhas sérias -->
+    <path d="M17,15 Q21,13 25,15" stroke="#4a5060" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M31,15 Q35,13 39,15" stroke="#4a5060" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <!-- Olhos cinza analítico -->
+    <ellipse cx="22" cy="20" rx="5.5" ry="4" fill="white"/>
+    <ellipse cx="34" cy="20" rx="5.5" ry="4" fill="white"/>
+    <circle cx="22" cy="20" r="3.5" fill="#4a5a70"/>
+    <circle cx="34" cy="20" r="3.5" fill="#4a5a70"/>
+    <circle cx="22" cy="20" r="1.8" fill="#0d0d14"/>
+    <circle cx="34" cy="20" r="1.8" fill="#0d0d14"/>
+    <circle cx="23.2" cy="18.8" r="0.9" fill="white" opacity="0.9"/>
+    <circle cx="35.2" cy="18.8" r="0.9" fill="white" opacity="0.9"/>
+    <path d="M25,27 Q28,30 31,27" stroke="#807870" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <!-- Expressão séria, levemente fechada -->
+    <path d="M21,33 Q28,35 35,33" stroke="#705a50" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <circle cx="42" cy="6" r="4" fill="${sc}" stroke="#0a0806" stroke-width="1.5"/>
+  </svg>`,
+};
+
 function buildSVG(ag) {
   const sc = ag.status==='active'?'#7A9076':ag.status==='idle'?'#D4A574':'#3a3028';
-  const skin = '#c8a070';
-  const hairs = {ive:'#2a1508',theo:'#202818',kai:'#4a2f08',vera:'#7a3a20',luna:'#b0a890',nox:'#151810',rex:'#3a0808',echo:'#2a3040'};
-  const shirts = {ive:ag.color,theo:'#2a4a30',kai:'#4a3010',vera:'#7a4030',luna:'#6a6050',nox:'#1a3020',rex:'#4a1818',echo:'#2a3050'};
-  const h = hairs[ag.id]||'#2a1508', sh = shirts[ag.id]||ag.color;
-  return `<svg width="42" height="76" viewBox="0 0 42 76" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="21" cy="75" rx="13" ry="2.5" fill="rgba(0,0,0,0.35)"/>
-    <rect x="13" y="53" width="7" height="20" rx="3" fill="#221508"/>
-    <rect x="22" y="53" width="7" height="20" rx="3" fill="#221508"/>
-    <ellipse cx="16" cy="73" rx="5.5" ry="2.5" fill="#100a04"/>
-    <ellipse cx="26" cy="73" rx="5.5" ry="2.5" fill="#100a04"/>
-    <rect x="9" y="30" width="24" height="25" rx="5" fill="${sh}"/>
-    <polygon points="17,30 21,36 25,30" fill="rgba(255,255,255,0.12)"/>
-    <rect x="2" y="33" width="8" height="16" rx="4" fill="${sh}" class="arm-left"/>
-    <rect x="32" y="33" width="8" height="16" rx="4" fill="${sh}" class="arm-right"/>
-    <circle cx="6" cy="49" r="3.5" fill="${skin}"/>
-    <circle cx="36" cy="49" r="3.5" fill="${skin}"/>
-    <rect x="18" y="25" width="6" height="7" rx="2" fill="${skin}"/>
-    <ellipse cx="21" cy="19" rx="12" ry="13" fill="${skin}"/>
-    <ellipse cx="21" cy="9" rx="12" ry="7.5" fill="${h}"/>
-    <rect x="9" y="9" width="24" height="8" fill="${h}"/>
-    <circle cx="16.5" cy="19" r="2.5" fill="#160800" class="eye"/>
-    <circle cx="25.5" cy="19" r="2.5" fill="#160800" class="eye"/>
-    <circle cx="17.2" cy="18.3" r="0.7" fill="white"/>
-    <circle cx="26.2" cy="18.3" r="0.7" fill="white"/>
-    <path d="M17 24 Q21 27 25 24" stroke="#7a4a30" stroke-width="1" fill="none" stroke-linecap="round"/>
-    <circle cx="36" cy="7" r="4" fill="${sc}" stroke="#0a0806" stroke-width="1.5"/>
+  const builder = CHARACTER_SVGS[ag.id];
+  if (builder) return builder(sc);
+  // fallback genérico
+  return `<svg width="52" height="94" viewBox="0 0 52 94" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="26" cy="92" rx="16" ry="2.5" fill="rgba(0,0,0,0.4)"/>
+    <rect x="15" y="64" width="8" height="26" rx="4" fill="#221508"/>
+    <rect x="29" y="64" width="8" height="26" rx="4" fill="#221508"/>
+    <path d="M10,42 Q8,56 10,70 L42,70 Q44,56 42,42 Z" fill="${ag.color}55"/>
+    <rect x="22" y="28" width="8" height="14" rx="4" fill="#c8a070"/>
+    <ellipse cx="26" cy="18" rx="14" ry="16" fill="#c8a070"/>
+    <ellipse cx="26" cy="9" rx="14" ry="9" fill="#2a1508"/>
+    <circle cx="20" cy="18" r="3" fill="#160800"/>
+    <circle cx="32" cy="18" r="3" fill="#160800"/>
+    <circle cx="21" cy="17" r="0.8" fill="white"/>
+    <circle cx="33" cy="17" r="0.8" fill="white"/>
+    <path d="M20,25 Q26,28 32,25" stroke="#7a4a30" stroke-width="1" fill="none"/>
+    <circle cx="40" cy="5" r="4" fill="${sc}" stroke="#0a0806" stroke-width="1.5"/>
   </svg>`;
 }
 
@@ -486,30 +919,52 @@ function buildOffice() {
   AGENTS.forEach(ag => {
     const isBack = ag.y < 40;
     const cx = (ag.x/100)*wW;
-    const dw = 90, dh = 14;
-    const scale = isBack ? 0.72 : 1;
+    const isDirector = ag.isDirector;
+    const dw = isDirector ? 120 : 90, dh = isDirector ? 18 : 14;
+    const scale = isBack ? 0.72 : (isDirector ? 1.15 : 1);
 
+    // Mesa
     const desk = document.createElement('div');
     desk.className = 'desk';
-    desk.style.cssText = `left:${cx-dw/2}px;bottom:${(ag.y/100)*wH-dh}px;width:${dw}px;`;
+    desk.style.cssText = `left:${cx-dw/2}px;bottom:${(ag.y/100)*wH-dh}px;width:${dw}px;z-index:${isDirector?30:10}`;
     const surf = document.createElement('div');
     surf.className = 'desk-surface';
-    surf.style.cssText = `width:${dw}px;height:${dh}px;`;
-    const lap = document.createElement('div');
-    lap.style.cssText = `position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:${Math.round(dw*0.35)}px;height:12px;background:#1a1a24;border-radius:2px 2px 0 0;border:1px solid #333;box-shadow:0 0 5px rgba(100,150,255,0.12);`;
-    const lapBase = document.createElement('div');
-    lapBase.style.cssText = `position:absolute;top:2px;left:50%;transform:translateX(-50%);width:${Math.round(dw*0.42)}px;height:2px;background:#444;`;
-    surf.appendChild(lap); surf.appendChild(lapBase);
+    surf.style.cssText = `width:${dw}px;height:${dh}px;${isDirector?'background:linear-gradient(180deg,#6a4a28,#3a2010);border:1px solid #8a6040;':''}`;
+
+    if (isDirector) {
+      // Placa DIRETOR na mesa
+      const plaque = document.createElement('div');
+      plaque.style.cssText = `position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:#D4A574;color:#1a0f04;font-size:8px;font-family:'DM Mono',monospace;padding:2px 8px;border-radius:3px;letter-spacing:0.1em;font-weight:bold;white-space:nowrap;`;
+      plaque.textContent = 'EDUARDO · DIRETOR';
+      surf.appendChild(plaque);
+      // Cadeira especial
+      const chair = document.createElement('div');
+      chair.style.cssText = `position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);width:50px;height:22px;background:#2a1a0a;border-radius:4px 4px 0 0;border:1px solid #4a3020;box-shadow:0 4px 8px rgba(0,0,0,0.5);`;
+      desk.appendChild(chair);
+      // Aura/glow ao redor do diretor
+      const glow = document.createElement('div');
+      glow.style.cssText = `position:absolute;inset:-20px;background:radial-gradient(circle,rgba(212,165,116,0.06) 0%,transparent 70%);pointer-events:none;border-radius:50%;animation:pulse 3s ease-in-out infinite;`;
+      desk.appendChild(glow);
+    } else {
+      const lap = document.createElement('div');
+      lap.style.cssText = `position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:${Math.round(dw*0.35)}px;height:12px;background:#1a1a24;border-radius:2px 2px 0 0;border:1px solid #333;box-shadow:0 0 5px rgba(100,150,255,0.12);`;
+      const lapBase = document.createElement('div');
+      lapBase.style.cssText = `position:absolute;top:2px;left:50%;transform:translateX(-50%);width:${Math.round(dw*0.42)}px;height:2px;background:#444;`;
+      surf.appendChild(lap); surf.appendChild(lapBase);
+    }
+
     desk.appendChild(surf); wrap.appendChild(desk);
 
     const char = document.createElement('div');
     char.className = 'character';
     char.id = 'char-'+ag.id;
-    char.style.cssText = `left:${cx}px;bottom:${(ag.y/100)*wH+2}px;transform:translateX(-50%) scale(${scale});transform-origin:bottom center;`;
+    char.style.cssText = `left:${cx}px;bottom:${(ag.y/100)*wH+2}px;transform:translateX(-50%) scale(${scale});transform-origin:bottom center;z-index:${isDirector?35:15};`;
 
+    // Tag nome
     const tag = document.createElement('div');
     tag.className = 'char-name-tag';
-    tag.textContent = ag.name;
+    tag.style.cssText = isDirector ? 'background:rgba(212,165,116,0.15);border-color:#D4A574;color:#D4A574;font-weight:600;' : '';
+    tag.textContent = isDirector ? '★ '+ag.name : ag.name;
     char.appendChild(tag);
 
     const svgWrap = document.createElement('div');
@@ -520,12 +975,24 @@ function buildOffice() {
     const bubble = document.createElement('div');
     bubble.className = 'bubble';
     bubble.id = 'bubble-'+ag.id;
-    bubble.innerHTML = `<div class="bubble-agent">${ag.name}</div><div id="btext-${ag.id}"></div>`;
+    bubble.style.cssText = isDirector ? 'background:rgba(20,12,4,0.97);border-color:#D4A574;' : '';
+    bubble.innerHTML = `<div class="bubble-agent" style="${isDirector?'color:#D4A574':''}">${ag.name}</div><div id="btext-${ag.id}"></div>`;
     char.appendChild(bubble);
 
     char.onclick = () => selectAgent(ag.id);
     wrap.appendChild(char);
   });
+
+  // IVE reage ao Eduardo — mostra coração periodicamente
+  setInterval(() => {
+    const iveChar = document.getElementById('char-ive');
+    if (!iveChar) return;
+    const heart = document.createElement('div');
+    heart.style.cssText = `position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:14px;animation:floatUp 2s ease forwards;pointer-events:none;z-index:60;`;
+    heart.textContent = ['❤️','😍','✨','💋'][Math.floor(Math.random()*4)];
+    iveChar.appendChild(heart);
+    setTimeout(() => { try{iveChar.removeChild(heart)}catch(e){} }, 2200);
+  }, 12000);
 }
 
 function showBubble(agId) {
