@@ -709,36 +709,148 @@ function removeIveTyping() {
   if(el) el.remove();
 }
 
-function sendUserMessage() {
-  const input=document.getElementById('userChatInput');
-  const msg=input.value.trim();
-  if(!msg) return;
-  input.value='';
-  addChatMessage('Eduardo', msg, '#2a1a05', '#D4A574', true);
-  showIveTyping();
-  setTimeout(()=>{
-    removeIveTyping();
-    const response=IVE_RESPONSES[iveIdx%IVE_RESPONSES.length]; iveIdx++;
-    addChatMessage('IVE', response, '#3A2A1A', '#B8793A', false);
-    showBubble('ive');
-    const char=document.getElementById('char-ive');
-    if(char){char.style.filter='drop-shadow(0 0 14px rgba(184,121,58,1))';setTimeout(()=>char.style.filter='',2500);}
-    addFeedItem(AGENTS[0], response);
-  }, 1500+Math.random()*800);
+// ── Backend config ────────────────────────────────────────────────────────────
+const BACKEND = 'http://localhost:8000';
+const WS_URL  = 'ws://localhost:8000/ws';
+
+let chatHistory = [];
+let ws = null;
+let backendOnline = false;
+
+// ── WebSocket connection ──────────────────────────────────────────────────────
+function connectWS() {
+  try {
+    ws = new WebSocket(WS_URL);
+
+    ws.onopen = () => {
+      backendOnline = true;
+      document.getElementById('agentCount').textContent = '8 AGENTES ONLINE · BACKEND ●';
+    };
+
+    ws.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      handleBackendEvent(data);
+    };
+
+    ws.onclose = () => {
+      backendOnline = false;
+      document.getElementById('agentCount').textContent = '8 AGENTES · MODO LOCAL';
+      setTimeout(connectWS, 4000);
+    };
+
+    ws.onerror = () => ws.close();
+
+  } catch(err) {
+    setTimeout(connectWS, 5000);
+  }
 }
 
+function handleBackendEvent(data) {
+  switch(data.type) {
+
+    case 'agent_message': {
+      const ag = AGENTS.find(a => a.id === data.agent_id);
+      if (!ag) break;
+      // Atualiza bubble no escritório
+      const bubble = document.getElementById('bubble-'+ag.id);
+      const tEl    = document.getElementById('btext-'+ag.id);
+      if (bubble && tEl) {
+        tEl.innerHTML = data.message + ' <span class="typing"><span></span><span></span><span></span></span>';
+        bubble.classList.add('show');
+        clearTimeout(bubbleTimers[ag.id]);
+        bubbleTimers[ag.id] = setTimeout(() => bubble.classList.remove('show'), 4500);
+      }
+      addFeedItem(ag, data.message);
+      break;
+    }
+
+    case 'metrics_update': {
+      const m = data.metrics;
+      METRICS[0].val = m.faturamento;
+      METRICS[1].val = m.roas;
+      METRICS[2].val = m.cac;
+      METRICS[3].val = m.conversao;
+      renderMetrics();
+      break;
+    }
+
+    case 'task_update': {
+      const ag = AGENTS.find(a => a.id === data.agent_id);
+      if (!ag) break;
+      const task = ag.tasks.find(t => t.label === data.task);
+      if (task) { task.done = data.status === 'done'; task.running = data.status === 'running'; }
+      renderTasks();
+      break;
+    }
+
+    case 'crew_result': {
+      addChatMessage('IVE', '✅ Rodada CrewAI concluída: ' + data.message.slice(0, 120) + '...', '#3A2A1A', '#B8793A', false);
+      break;
+    }
+  }
+}
+
+// ── Chat com IVE (Claude API real via backend) ────────────────────────────────
+async function sendUserMessage() {
+  const input = document.getElementById('userChatInput');
+  const msg   = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+
+  addChatMessage('Eduardo', msg, '#2a1a05', '#D4A574', true);
+  chatHistory.push({ role: 'user', content: msg });
+
+  showIveTyping();
+
+  if (backendOnline) {
+    try {
+      const res = await fetch(`${BACKEND}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, history: chatHistory.slice(-6) }),
+      });
+      const json = await res.json();
+      removeIveTyping();
+      const reply = json.reply;
+      chatHistory.push({ role: 'assistant', content: reply });
+      addChatMessage('IVE', reply, '#3A2A1A', '#B8793A', false);
+      showBubble('ive');
+      const char = document.getElementById('char-ive');
+      if (char) { char.style.filter='drop-shadow(0 0 14px rgba(184,121,58,1))'; setTimeout(()=>char.style.filter='',2500); }
+    } catch(err) {
+      removeIveTyping();
+      fallbackIveResponse();
+    }
+  } else {
+    setTimeout(() => { removeIveTyping(); fallbackIveResponse(); }, 1500 + Math.random() * 800);
+  }
+}
+
+function fallbackIveResponse() {
+  const response = IVE_RESPONSES[iveIdx % IVE_RESPONSES.length]; iveIdx++;
+  chatHistory.push({ role: 'assistant', content: response });
+  addChatMessage('IVE', response, '#3A2A1A', '#B8793A', false);
+  showBubble('ive');
+  addFeedItem(AGENTS[0], response);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
 renderMetrics();
 buildOffice();
 renderAgentsList();
 renderTasks();
 
-setTimeout(()=>addChatMessage('IVE','Olá Eduardo! Estou online e monitorando tudo. ROAS 3.2x esta semana — dentro do esperado. Como posso ajudar?','#3A2A1A','#B8793A'),600);
+setTimeout(()=>addChatMessage('IVE','Olá Eduardo! Conectando ao backend... ROAS 3.2x esta semana. Como posso ajudar?','#3A2A1A','#B8793A'),600);
 AGENTS.slice(0,4).forEach((ag,i)=>setTimeout(()=>addFeedItem(ag,ag.messages[0]),i*400));
 
 animLoop();
+connectWS();
+
+// Loops locais (fallback quando backend offline)
 triggerInteraction();
 setInterval(triggerInteraction, 5500);
 setInterval(()=>{
+  if (backendOnline) return;
   const active=AGENTS.filter(a=>a.status==='active');
   if(active.length) showBubble(active[Math.floor(Math.random()*active.length)].id);
 },8000);
