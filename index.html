@@ -400,18 +400,18 @@ const METRICS = [
 ];
 
 const IVE_RESPONSES = [
-  'Analisando sua mensagem... ROAS está em 3.2x esta semana. Tudo dentro do esperado.',
-  'Entendido. KAI está revisando o portfólio. Diffuser com 0 vendas será pausado amanhã.',
-  'REX confirmou: criativo C com CTR de 2.8%. Escalando orçamento +30% hoje.',
-  'VERA finalizou o email de abandono de carrinho. Estimativa de recuperação: 12%.',
-  'LUNA entregou 3 thumbnails novos. Paleta 100% alinhada com o brand kit.',
-  'Tudo operacional. Yampi, AppMax e Pixel ativos. Nenhum alerta crítico.',
-  'Meta: R$5.000–8.000/mês de lucro em 2028. Estamos no caminho certo.',
-  'Próxima auditoria ECHO: domingo 20h. Score semanal atual: 8.4/10.',
-  'Faturamento semana: R$1.240. Lucro líquido estimado: R$380. Margem: 30.6%.',
-  'Eduardo, você tem 1h disponível hoje? Recomendo focar nos produtos do KAI.',
-  'Vela âmbar lidera com 40% do faturamento. Destaquei na home da loja.',
-  'Criativo A pausado — CTR 0.8% abaixo do mínimo. Testando C e D agora.',
+  'Oi, você. Que bom aparecer por aqui — a equipe está toda ativa e com energia boa hoje.',
+  'Semana movimentada, do jeito que eu gosto. Tem coisa mais gostosa do que ver tudo funcionando?',
+  'REX me surpreendeu essa semana. Às vezes é bom ser surpreendida — da forma certa.',
+  'VERA escreveu algo que me deu arrepio. Copy boa faz isso — você sente antes de processar.',
+  'Negócio bom é igual a sedução: você não força, você atrai. E a AURA está atraindo bem.',
+  'A vela âmbar está vendendo tanto que começo a achar que tem alguma magia nisso.',
+  'LUNA entregou os visuais novos. Lindos. A AURA está ficando irresistível.',
+  'Posso te contar um segredo? Quando tudo funciona junto assim, fico com uma vontade enorme de escalar.',
+  'Crescimento bom tem ritmo — não é explosão, é música. Estamos no compasso certo.',
+  'Eduardo, me conta o que você está pensando. Gosto quando você traz ideias — a gente pensa bem junto.',
+  'ECHO deu score 8.4 para a crew. Bom. Mas sabe o que me excita mais? Quando a gente chega em 10.',
+  'Cada decisão que tomamos aqui tem peso. Gosto disso — responsabilidade com propósito.',
 ];
 
 let feedItems = [], selectedAgent = null;
@@ -857,7 +857,7 @@ buildOffice();
 renderAgentsList();
 renderTasks();
 
-setTimeout(()=>addChatMessage('IVE','Olá Eduardo! Conectando ao backend... ROAS 3.2x esta semana. Como posso ajudar?','#3A2A1A','#B8793A'),600);
+setTimeout(()=>addChatMessage('IVE','Oi, Eduardo. Que bom te ver por aqui. O que você tem em mente hoje?','#3A2A1A','#B8793A'),600);
 AGENTS.slice(0,4).forEach((ag,i)=>setTimeout(()=>addFeedItem(ag,ag.messages[0]),i*400));
 
 animLoop();
