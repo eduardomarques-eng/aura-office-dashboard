@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from anthropic import Anthropic
+from groq import Groq
 
 app = FastAPI(title="AURA decor — Backend")
 
@@ -23,7 +24,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+client        = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+groq_client   = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 # ── WebSocket manager ──────────────────────────────────────────────────────────
 
@@ -342,21 +344,37 @@ async def chat_with_ive(body: ChatBody):
 
     reply = None
 
-    # Tenta Claude API
+    # 1. Tenta Groq (gratuito, rápido — Llama 3.3 70B)
     try:
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-        if api_key:
-            response = client.messages.create(
-                model="claude-opus-4-5",
+        groq_key = os.getenv("GROQ_API_KEY")
+        if groq_key:
+            msgs_groq = [{"role": "system", "content": IVE_SYSTEM}] + messages
+            resp = groq_client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=msgs_groq,
                 max_tokens=300,
-                system=IVE_SYSTEM,
-                messages=messages,
+                temperature=0.7,
             )
-            reply = response.content[0].text
+            reply = resp.choices[0].message.content
     except Exception:
-        pass  # cai no fallback
+        pass
 
-    # Fallback inteligente
+    # 2. Tenta Claude (se tiver créditos)
+    if not reply:
+        try:
+            api_key = os.getenv("ANTHROPIC_API_KEY")
+            if api_key:
+                response = client.messages.create(
+                    model="claude-opus-4-5",
+                    max_tokens=300,
+                    system=IVE_SYSTEM,
+                    messages=messages,
+                )
+                reply = response.content[0].text
+        except Exception:
+            pass
+
+    # 3. Fallback por palavras-chave
     if not reply:
         reply = smart_fallback(body.message)
 
