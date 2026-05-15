@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURA decor — Office Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0a0806;
+  --card: #13100d;
+  --border: #2a2018;
+  --border2: #3a3025;
+  --terra: #B8793A;
+  --terra2: #d4956a;
+  --terra3: #7a4f20;
+  --offwhite: #F5F0EB;
+  --sand: #EDE5D8;
+  --text: #c8b8a8;
+  --text2: #8a7a6a;
+  --text3: #4a3a2a;
+  --green: #7A9076;
+  --gold: #D4A574;
+  --rose: #C9957A;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  height: 50px;
+  background: rgba(10,8,6,0.95);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  flex-shrink: 0;
+  z-index: 100;
+}
+.logo { display:flex; align-items:baseline; gap:8px; }
+.logo-a { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:600; color:var(--offwhite); }
+.logo-d { font-size:11px; color:var(--terra); letter-spacing:0.3em; }
+.hcenter { display:flex; align-items:center; gap:12px; font-size:12px; color:var(--text2); font-family:'DM Mono',monospace; }
+.live { width:8px; height:8px; background:var(--green); border-radius:50%; animation:blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+#clock { font-family:'DM Mono',monospace; font-size:13px; color:var(--terra); }
+
+.metrics-sidebar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 12px 16px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+  flex-shrink: 0;
+}
+.metric-pill {
+  display: flex;
+  flex-direction: column;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--accent,var(--terra));
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+.metric-val { font-family:'DM Mono',monospace; font-size:14px; color:var(--offwhite); line-height:1.1; }
+.metric-lbl { font-size:9px; color:var(--text2); letter-spacing:0.05em; text-transform:uppercase; margin-top:1px; }
+.metric-delta { font-size:9px; font-family:'DM Mono',monospace; margin-top:1px; }
+.delta-up { color:var(--green); }
+.delta-dn { color:#c9607a; }
+
+.layout { flex:1; display:flex; overflow:hidden; }
+
+.sidebar-left {
+  width: 380px;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  z-index: 80;
+}
+.sidebar-right {
+  width: 320px;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  z-index: 80;
+}
+
+.sidebar-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sidebar-title { font-family:'Cormorant Garamond',serif; font-size:18px; color:var(--offwhite); font-weight:600; }
+
+.sidebar-tabs { display:flex; border-bottom:1px solid var(--border); }
+.tab { flex:1; padding:10px 4px; text-align:center; font-size:11px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--text2); cursor:pointer; border-bottom:2px solid transparent; transition:all 0.2s; }
+.tab:hover { color:var(--offwhite); background:rgba(255,255,255,0.02); }
+.tab.active { color:var(--terra); border-bottom-color:var(--terra); background:rgba(184,121,58,0.08); }
+
+.tab-content { flex:1; overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--border2) transparent; display:flex; flex-direction:column; }
+.tab-content::-webkit-scrollbar { width:4px; }
+.tab-content::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+.tab-panel { display:none; flex:1; flex-direction:column; }
+.tab-panel.active { display:flex; animation:fadeIn 0.3s ease; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+.chat-input-box {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  gap: 8px;
+}
+.chat-input-box input {
+  flex:1; background:var(--card); border:1px solid var(--border2); color:var(--offwhite);
+  padding:10px 14px; border-radius:20px; outline:none; font-family:'DM Sans',sans-serif; font-size:13px;
+}
+.chat-input-box input:focus { border-color:var(--terra); }
+.chat-input-box button {
+  background:var(--terra); color:#1a1005; border:none; width:40px; height:40px;
+  border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-size:16px; transition:transform 0.2s;
+}
+.chat-input-box button:hover { transform:scale(1.1); }
+
+.office-wrap { flex:1; position:relative; overflow:hidden; background:#0f0d0a; }
+
+.office-bg { position:absolute; inset:0; background:radial-gradient(circle at 50% 30%, #1c1511 0%, #0d0a07 100%); }
+.wall-texture { position:absolute; inset:0; opacity:0.04; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.wall-deco { position:absolute; top:0; left:0; right:0; height:50%; background:linear-gradient(180deg,#181512 0%,#110e0c 100%); border-bottom:2px solid #2a2018; }
+.wood-panel { position:absolute; top:0; height:50%; width:20%; border-right:1px solid rgba(0,0,0,0.5); border-left:1px solid rgba(255,255,255,0.02); }
+.whiteboard { position:absolute; top:15%; left:20%; width:140px; height:80px; background:#E8E8E8; border:4px solid #3a2a1a; border-radius:4px; box-shadow:2px 8px 15px rgba(0,0,0,0.8); display:flex; flex-direction:column; padding:8px; opacity:0.9; }
+.wb-line { height:2px; background:rgba(0,0,0,0.2); margin-bottom:5px; border-radius:2px; }
+.frame { position:absolute; top:20%; background:#111; border:3px solid #000; border-radius:2px; box-shadow:0 5px 10px rgba(0,0,0,0.6); }
+.frame-1 { right:28%; width:40px; height:50px; }
+.frame-2 { right:22%; width:35px; height:35px; top:25%; }
+.floor { position:absolute; bottom:0; left:0; right:0; height:50%; background:linear-gradient(180deg,#1c1511 0%,#0d0a07 100%); }
+.rug { position:absolute; bottom:5%; left:10%; right:10%; height:40%; background:rgba(184,121,58,0.04); border:1px solid rgba(184,121,58,0.08); transform:perspective(700px) rotateX(45deg); border-radius:30px; }
+.rug-center { position:absolute; bottom:25%; left:40%; right:40%; height:20%; background:rgba(212,175,55,0.03); border:1px solid rgba(212,175,55,0.1); transform:perspective(700px) rotateX(45deg); border-radius:50%; }
+.floor-grid { position:absolute; bottom:0; left:0; right:0; height:50%; opacity:0.15; background-image:linear-gradient(rgba(184,121,58,0.2) 1px,transparent 1px),linear-gradient(90deg,rgba(184,121,58,0.2) 1px,transparent 1px); background-size:60px 30px; transform:perspective(500px) rotateX(40deg); transform-origin:bottom; }
+.window { position:absolute; top:8%; right:8%; width:120px; height:100px; background:linear-gradient(135deg,#0f1a2a,#060b15); border:4px solid #1a1a20; border-radius:2px; overflow:hidden; }
+.window-cross { position:absolute; inset:0; }
+.window-cross::before { content:''; position:absolute; left:33%;top:0;bottom:0; width:2px;background:#1a1a20; }
+.window-cross::after { content:''; position:absolute; left:66%;top:0;bottom:0; width:2px;background:#1a1a20; }
+.window-glow { position:absolute; inset:0; background:radial-gradient(ellipse at 20% 50%,rgba(120,160,255,0.1),transparent 80%); animation:windowPulse 6s ease-in-out infinite; }
+@keyframes windowPulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
+.wall-logo { position:absolute; top:8%; left:50%; transform:translateX(-50%); font-family:'Cormorant Garamond',serif; font-size:28px; font-weight:600; color:rgba(245,240,235,0.08); letter-spacing:0.3em; text-transform:uppercase; }
+.plant { position:absolute; bottom:45%; }
+.plant-pot { width:22px; height:18px; background:linear-gradient(180deg,#4a2a10,#2a1508); border-radius:0 0 4px 4px; margin:0 auto; border:1px solid #5a3515; }
+.plant-leaf { width:8px; height:26px; background:linear-gradient(180deg,#5a8a60,#2a4030); border-radius:50% 50% 0 0; position:absolute; bottom:15px; transform-origin:bottom center; }
+
+.desk { position:absolute; bottom:20%; z-index:10; }
+.desk-surface { background:linear-gradient(180deg,#4a3520,#2a1a0a); border-radius:6px 6px 0 0; border:1px solid #5a402a; border-bottom:2px solid #1a0f05; position:relative; box-shadow:0 8px 15px rgba(0,0,0,0.6); }
+
+.character { position:absolute; bottom:0; display:flex; flex-direction:column; align-items:center; cursor:pointer; transition:filter 0.3s; z-index:15; }
+.character:hover { z-index:20; }
+.char-name-tag { background:rgba(0,0,0,0.85); border:1px solid var(--border2); border-radius:12px; padding:2px 8px; font-size:9px; color:var(--text); letter-spacing:0.1em; margin-bottom:4px; font-family:'DM Mono',monospace; white-space:nowrap; }
+.char-svg { position:relative; }
+@keyframes blinkEye { 0%,96%,100%{transform:scaleY(1)} 97%,99%{transform:scaleY(0.1)} }
+.eye { transform-origin:center; animation:blinkEye 4s infinite; }
+@keyframes typeArmL { 0%,100%{transform:rotate(10deg)} 50%{transform:rotate(5deg)} }
+@keyframes typeArmR { 0%,100%{transform:rotate(-10deg)} 50%{transform:rotate(-5deg)} }
+.arm-left { transform-origin:top center; animation:typeArmL 0.3s infinite alternate; }
+.arm-right { transform-origin:top center; animation:typeArmR 0.35s infinite alternate; }
+
+.bubble { position:absolute; background:rgba(13,10,8,0.95); border:1px solid var(--border2); border-radius:12px 12px 12px 2px; padding:8px 12px; font-size:11px; color:var(--text); line-height:1.4; max-width:180px; min-width:80px; word-break:break-word; bottom:100%; left:50%; transform:translateX(-10px); margin-bottom:6px; opacity:0; transition:opacity 0.4s ease; pointer-events:none; z-index:50; box-shadow:0 4px 15px rgba(0,0,0,0.8); }
+.bubble.show { opacity:1; }
+.bubble-agent { font-size:9px; color:var(--terra); font-family:'DM Mono',monospace; margin-bottom:4px; letter-spacing:0.1em; font-weight:bold; }
+
+.particle { position:absolute; border-radius:50%; pointer-events:none; animation:floatUp 2s ease forwards; }
+@keyframes floatUp { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-50px) scale(0)} }
+.status-pip { position:absolute; bottom:2px; right:2px; width:8px; height:8px; border-radius:50%; border:2px solid #0a0806; }
+.pip-active { background:var(--green); animation:blink 2s infinite; }
+.pip-idle { background:var(--gold); }
+.pip-wait { background:var(--text3); }
+
+.agent-row { display:flex; align-items:center; gap:10px; padding:10px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.2s; }
+.agent-row:hover { background:rgba(184,121,58,0.05); }
+.agent-row.selected { background:rgba(184,121,58,0.1); border-left:3px solid var(--terra); }
+.ar-avatar { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:14px; font-weight:600; color:var(--offwhite); flex-shrink:0; position:relative; }
+.ar-info { flex:1; min-width:0; }
+.ar-name { font-size:12px; font-weight:600; color:var(--offwhite); }
+.ar-task { font-size:11px; color:var(--text2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+.ar-score { font-family:'DM Mono',monospace; font-size:11px; color:var(--terra); flex-shrink:0; font-weight:500; }
+.ar-bar { height:3px; background:var(--border); border-radius:2px; margin-top:4px; overflow:hidden; }
+.ar-bar-fill { height:100%; border-radius:2px; transition:width 1s ease; }
+
+.feed-item { padding:10px 16px; border-bottom:1px solid var(--border); animation:feedSlide 0.4s ease; }
+@keyframes feedSlide { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:translateX(0)} }
+.feed-header { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+.feed-av { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:10px; font-weight:600; color:var(--offwhite); flex-shrink:0; }
+.feed-agent { font-size:11px; font-weight:600; color:var(--terra); }
+.feed-time { font-family:'DM Mono',monospace; font-size:10px; color:var(--text3); margin-left:auto; }
+.feed-msg { font-size:11px; color:var(--text2); line-height:1.4; }
+
+.chat-container { flex:1; overflow-y:auto; display:flex; flex-direction:column-reverse; padding-bottom:10px; scrollbar-width:thin; scrollbar-color:var(--border2) transparent; }
+.chat-item { display:flex; gap:8px; padding:10px 16px; animation:chatFadeIn 1.2s cubic-bezier(0.1,0.9,0.2,1) forwards; opacity:0; }
+@keyframes chatFadeIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+.chat-av { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Cormorant Garamond',serif; font-size:14px; font-weight:600; color:var(--offwhite); flex-shrink:0; }
+.chat-content { flex:1; }
+.chat-header { display:flex; align-items:baseline; gap:6px; margin-bottom:4px; }
+.chat-name { font-size:12px; font-weight:600; color:var(--offwhite); }
+.chat-time { font-family:'DM Mono',monospace; font-size:10px; color:var(--text3); }
+.chat-bubble { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); padding:10px 14px; border-radius:4px 16px 16px 16px; font-size:13px; color:var(--text); line-height:1.5; display:inline-block; transition:background 0.3s; }
+.chat-bubble:hover { background:rgba(255,255,255,0.06); }
+.chat-item.user-msg { flex-direction:row-reverse; text-align:right; }
+.chat-item.user-msg .chat-header { flex-direction:row-reverse; }
+.chat-item.user-msg .chat-bubble { background:rgba(184,121,58,0.1); border-color:rgba(184,121,58,0.2); color:var(--offwhite); border-radius:16px 4px 16px 16px; }
+
+.task-item { display:flex; align-items:center; gap:10px; padding:10px 16px; border-bottom:1px solid var(--border); font-size:11px; }
+.task-check { width:16px; height:16px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; flex-shrink:0; }
+.tc-done { background:rgba(122,144,118,0.2); color:var(--green); border:1px solid rgba(122,144,118,0.3); }
+.tc-run { background:rgba(184,121,58,0.15); color:var(--terra); border:1px solid rgba(184,121,58,0.3); animation:blink 1s infinite; }
+.tc-wait { background:rgba(42,32,22,0.5); color:var(--text3); border:1px solid var(--border); }
+.task-label { flex:1; }
+.task-label.done { color:var(--text3); text-decoration:line-through; }
+.task-agent-tag { font-size:9px; color:var(--text3); font-family:'DM Mono',monospace; }
+
+.typing { display:inline-flex; gap:3px; align-items:center; }
+.typing span { width:4px; height:4px; background:var(--terra); border-radius:50%; animation:typingDot 1.2s infinite; }
+.typing span:nth-child(2){animation-delay:0.2s}
+.typing span:nth-child(3){animation-delay:0.4s}
+@keyframes typingDot{0%,80%,100%{opacity:0.3;transform:scale(0.8)}40%{opacity:1;transform:scale(1)}}
+
+.api-row { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.api-info { display:flex; flex-direction:column; gap:3px; }
+.api-title { font-size:12px; font-weight:600; color:var(--offwhite); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.api-desc { font-size:10px; color:var(--text2); }
+.api-status { font-family:'DM Mono',monospace; font-size:9px; color:var(--green); padding:2px 6px; background:rgba(122,144,118,0.1); border-radius:4px; border:1px solid rgba(122,144,118,0.3); }
+.api-btn { background:var(--bg); border:1px solid var(--border2); color:var(--text); padding:4px 10px; border-radius:4px; font-size:10px; cursor:pointer; transition:0.2s; font-family:'DM Mono',monospace; flex-shrink:0; }
+.api-btn:hover { border-color:var(--terra); color:var(--terra); }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <span class="logo-a">AURA</span>
+    <span class="logo-d">decor</span>
+  </div>
+  <div class="hcenter">
+    <div class="live"></div>
+    <span>ESCRITÓRIO VIRTUAL</span>
+    <span style="color:var(--border2)">|</span>
+    <span id="agentCount">8 AGENTES ONLINE</span>
+  </div>
+  <div id="clock">00:00:00</div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR ESQUERDA — CHAT COM IVE -->
+  <div class="sidebar-left">
+    <div class="sidebar-header">
+      <span class="sidebar-title">Chat com IVE</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="live"></div>
+        <span style="font-size:9px;color:var(--text2);font-family:'DM Mono',monospace">CEO · Opus 4.6</span>
+      </div>
+    </div>
+    <div class="tab-content">
+      <div class="tab-panel active" style="display:flex;flex-direction:column;height:100%">
+        <div class="chat-container" id="chatList"></div>
+        <div class="chat-input-box">
+          <input type="text" id="userChatInput" placeholder="Fale com a IVE..." onkeypress="if(event.key==='Enter') sendUserMessage()">
+          <button onclick="sendUserMessage()">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESCRITÓRIO CENTRAL -->
+  <div class="office-wrap" id="officeWrap">
+    <div class="office-bg"></div>
+    <div class="wall-texture"></div>
+    <div class="wall-deco"></div>
+    <div class="wood-panel" style="left:0"></div>
+    <div class="wood-panel" style="right:0"></div>
+    <div class="frame frame-1"></div>
+    <div class="frame frame-2"></div>
+    <div class="floor"></div>
+    <div class="rug-center"></div>
+    <div class="rug"></div>
+    <div class="floor-grid"></div>
+    <div class="wall-logo">AURA</div>
+    <div class="whiteboard">
+      <div class="wb-line" style="width:80%"></div>
+      <div class="wb-line" style="width:60%"></div>
+      <div class="wb-line" style="width:90%"></div>
+      <div class="wb-line" style="width:40%"></div>
+      <div class="wb-line" style="width:70%;margin-top:8px"></div>
+      <div class="wb-line" style="width:50%"></div>
+    </div>
+    <div class="window">
+      <div class="window-cross"></div>
+      <div class="window-glow"></div>
+    </div>
+    <div class="plant" style="left:3%;bottom:43%">
+      <div style="position:relative;width:30px">
+        <div class="plant-leaf" style="left:4px;transform:rotate(-25deg);height:30px"></div>
+        <div class="plant-leaf" style="left:12px;transform:rotate(15deg);height:28px"></div>
+        <div class="plant-leaf" style="left:8px;transform:rotate(-5deg);height:35px"></div>
+        <div class="plant-pot"></div>
+      </div>
+    </div>
+    <div class="plant" style="right:3%;bottom:38%">
+      <div style="position:relative;width:25px">
+        <div class="plant-leaf" style="left:2px;transform:rotate(-20deg);height:24px"></div>
+        <div class="plant-leaf" style="left:10px;transform:rotate(20deg);height:22px"></div>
+        <div class="plant-leaf" style="left:6px;height:28px"></div>
+        <div class="plant-pot" style="width:18px;height:14px"></div>
+      </div>
+    </div>
+    <svg id="svgLines" style="position:absolute;inset:0;pointer-events:none;z-index:20" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="characters"></div>
+  </div>
+
+  <!-- SIDEBAR DIREITA — CONTROLE -->
+  <div class="sidebar-right">
+    <div class="sidebar-header">
+      <span class="sidebar-title">Controle</span>
+      <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--terra)">8.4/10</div>
+    </div>
+    <div id="metricsTopBar" class="metrics-sidebar"></div>
+    <div class="sidebar-tabs" id="tabs-right">
+      <div class="tab active" onclick="switchTabRight('equipe')">Equipe</div>
+      <div class="tab" onclick="switchTabRight('feed')">Feed</div>
+      <div class="tab" onclick="switchTabRight('tarefas')">Tarefas</div>
+      <div class="tab" onclick="switchTabRight('api')">APIs</div>
+    </div>
+    <div class="tab-content" style="flex:1">
+      <div class="tab-panel active" id="tab-equipe"><div id="agentsList"></div></div>
+      <div class="tab-panel" id="tab-feed"><div id="feedList"></div></div>
+      <div class="tab-panel" id="tab-tarefas"><div id="tasksList"></div></div>
+      <div class="tab-panel" id="tab-api">
+        <div class="api-row"><div class="api-info"><span class="api-title">Shopify <span class="api-status">ONLINE</span></span><span class="api-desc">Catálogo e métricas em tempo real</span></div><button class="api-btn">Config</button></div>
+        <div class="api-row"><div class="api-info"><span class="api-title">Claude API <span class="api-status">ONLINE</span></span><span class="api-desc">IVE + Agentes Opus/Sonnet</span></div><button class="api-btn">Config</button></div>
+        <div class="api-row"><div class="api-info"><span class="api-title">Meta Pixel <span class="api-status">ONLINE</span></span><span class="api-desc">4 eventos — Purchase, Cart, View</span></div><button class="api-btn">Config</button></div>
+        <div class="api-row"><div class="api-info"><span class="api-title">AppMax <span class="api-status">ONLINE</span></span><span class="api-desc">Pix + Cartão via Yampi</span></div><button class="api-btn">Config</button></div>
+        <div class="api-row"><div class="api-info"><span class="api-title">Dropi <span class="api-status">ONLINE</span></span><span class="api-desc">Estoque sincronizado</span></div><button class="api-btn">Config</button></div>
+        <div class="api-row"><div class="api-info"><span class="api-title">WhatsApp Z-API <span class="api-status" style="color:var(--gold);border-color:rgba(212,165,116,0.3);background:rgba(212,165,116,0.1)">PENDENTE</span></span><span class="api-desc">IVE no WhatsApp via Make.com</span></div><button class="api-btn">Configurar</button></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const AGENTS = [
+  { id:'ive',  name:'IVE',  role:'CEO · Estratégia',    model:'Opus 4.6',  color:'#B8793A', bg:'#3A2A1A', status:'active', score:9,  x:48, y:52,
+    tasks:[{done:true,label:'Revisão métricas segunda'},{done:true,label:'Mid-week check'},{done:false,running:true,label:'Weekly wrap relatório'},{done:false,label:'OKRs junho'}],
+    messages:['ROAS 3.2x confirmado. Escalando REX.','Analisando métricas da semana...','KAI: pause produto diffuser.','Faturamento +18% semana anterior.','REX: aumenta budget +30%.'] },
+  { id:'theo', name:'THEO', role:'Shopify · Técnico',   model:'Sonnet 4',  color:'#7A9076', bg:'#1A2A1A', status:'active', score:8,  x:15, y:52,
+    tasks:[{done:true,label:'Yampi configurado'},{done:true,label:'AppMax integrado'},{done:true,label:'Pixel 4 eventos'},{done:false,running:true,label:'PageSpeed 90+'}],
+    messages:['PageSpeed mobile: 87. Otimizando...','Dropi sincronizado. Tudo ok.','Checkout: 0 erros hoje.','Pixel disparando normalmente.','Monitorando pedidos...'] },
+  { id:'kai',  name:'KAI',  role:'Produtos · Curadoria',model:'Sonnet 4',  color:'#D4A574', bg:'#2A1F10', status:'idle',   score:7,  x:28, y:52,
+    tasks:[{done:true,label:'11 produtos ativos'},{done:true,label:'Precificação ×1.6'},{done:false,label:'Pausar 2 sem venda'},{done:false,label:'Buscar 3 novos'}],
+    messages:['Diffuser: 0 vendas 10 dias.','Analisando portfólio...','Margem média: 42%. OK.','Vaso cerâmica: líder de vendas.','Habitoo: 3 produtos novos?'] },
+  { id:'vera', name:'VERA', role:'Copy · Textos',        model:'Sonnet 4',  color:'#C9957A', bg:'#2A1A15', status:'active', score:9,  x:62, y:52,
+    tasks:[{done:true,label:'Descrições 11 produtos'},{done:true,label:'Sequência 3 emails'},{done:true,label:'Copy anúncios Meta'},{done:false,running:true,label:'Email abandono carrinho'}],
+    messages:['Escrevendo email abandono...','Open rate: 38%. Excelente!','CTR anúncio C: 2.8%.','Novo ângulo: mãe 35-45.','Copy produto vela pronta.'] },
+  { id:'luna', name:'LUNA', role:'Design · Visual',      model:'Haiku 4.5', color:'#EDE5D8', bg:'#252015', status:'active', score:8,  x:76, y:52,
+    tasks:[{done:true,label:'Logo 3 versões PNG'},{done:true,label:'Hero banner'},{done:true,label:'Trust strip'},{done:false,running:true,label:'3 thumbnails novos'}],
+    messages:['Thumbnail vaso: exportando PNG...','Paleta 100% consistente.','Stories da semana: 14 peças.','Brand kit salvo no Canva.','Hero banner 1200x600px ok.'] },
+  { id:'nox',  name:'NOX',  role:'Conteúdo · Reels',    model:'Sonnet 4',  color:'#5A7060', bg:'#101A12', status:'idle',   score:7,  x:30, y:30,
+    tasks:[{done:true,label:'5 posts feed'},{done:true,label:'14 stories'},{done:false,label:'Reel vela âmbar'},{done:false,label:'Reel antes/depois'}],
+    messages:['340 views story vaso.','Reel roteiro pronto.','Hook: "Cerâmica que respira."','Calendário 80% ok.','2 posts pendentes.'] },
+  { id:'rex',  name:'REX',  role:'Tráfego · Meta Ads',  model:'Sonnet 4',  color:'#B87070', bg:'#2A1515', status:'active', score:8,  x:52, y:30,
+    tasks:[{done:true,label:'Campanha ativa'},{done:true,label:'Criativo A pausado'},{done:false,running:true,label:'Escalando criativo C'},{done:false,label:'Lookalike compradores'}],
+    messages:['CTR criativo C: 2.8%. Escalando.','ROAS semana: 3.2x.','CAC: R$42. Dentro do limite.','Budget: R$65/dia agora.','Campanha awareness ativa.'] },
+  { id:'echo', name:'ECHO', role:'Auditor · Semanal',   model:'Sonnet 4',  color:'#7A8090', bg:'#151820', status:'waiting',score:10, x:72, y:30,
+    tasks:[{done:true,label:'Auditoria semana anterior'},{done:true,label:'Relatório IVE enviado'},{done:true,label:'Sugestões melhoria'},{done:false,label:'Próxima auditoria dom'}],
+    messages:['Score crew: 8.4/10.','Monitorando sistema...','Próxima auditoria: domingo.','Todos agentes operacionais.','Kaizen: 1 melhoria/agente/sem.'] }
+];
+
+const METRICS = [
+  { val:'R$1.240', lbl:'Faturamento', delta:'▲ +18%', up:true,  accent:'#B8793A' },
+  { val:'3.2x',    lbl:'ROAS',        delta:'▲ +0.4x',up:true,  accent:'#7A9076' },
+  { val:'R$42',    lbl:'CAC',         delta:'▼ -R$8', up:true,  accent:'#D4A574' },
+  { val:'2.1%',    lbl:'Conversão',   delta:'▲ +0.3%',up:true,  accent:'#C9957A' },
+];
+
+const IVE_RESPONSES = [
+  'Analisando sua mensagem... ROAS está em 3.2x esta semana. Tudo dentro do esperado.',
+  'Entendido. KAI está revisando o portfólio. Diffuser com 0 vendas será pausado amanhã.',
+  'REX confirmou: criativo C com CTR de 2.8%. Escalando orçamento +30% hoje.',
+  'VERA finalizou o email de abandono de carrinho. Estimativa de recuperação: 12%.',
+  'LUNA entregou 3 thumbnails novos. Paleta 100% alinhada com o brand kit.',
+  'Tudo operacional. Yampi, AppMax e Pixel ativos. Nenhum alerta crítico.',
+  'Meta: R$5.000–8.000/mês de lucro em 2028. Estamos no caminho certo.',
+  'Próxima auditoria ECHO: domingo 20h. Score semanal atual: 8.4/10.',
+  'Faturamento semana: R$1.240. Lucro líquido estimado: R$380. Margem: 30.6%.',
+  'Eduardo, você tem 1h disponível hoje? Recomendo focar nos produtos do KAI.',
+  'Vela âmbar lidera com 40% do faturamento. Destaquei na home da loja.',
+  'Criativo A pausado — CTR 0.8% abaixo do mínimo. Testando C e D agora.',
+];
+
+let feedItems = [], chatHistory = [], selectedAgent = null;
+let bubbleTimers = {}, bubbleMsgIdx = {}, iveIdx = 0, pairIdx = 0;
+AGENTS.forEach(ag => bubbleMsgIdx[ag.id] = 0);
+
+function updateClock() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    [n.getHours(),n.getMinutes(),n.getSeconds()].map(v=>String(v).padStart(2,'0')).join(':');
+}
+setInterval(updateClock,1000); updateClock();
+
+function renderMetrics() {
+  document.getElementById('metricsTopBar').innerHTML = METRICS.map(m =>
+    `<div class="metric-pill" style="--accent:${m.accent}">
+      <span class="metric-val">${m.val}</span>
+      <span class="metric-lbl">${m.lbl}</span>
+      <span class="metric-delta ${m.up?'delta-up':'delta-dn'}">${m.delta}</span>
+    </div>`
+  ).join('');
+}
+
+function buildSVG(ag) {
+  const sc = ag.status==='active'?'#7A9076':ag.status==='idle'?'#D4A574':'#3a3028';
+  const skin = '#c8a070';
+  const hairs = {ive:'#2a1508',theo:'#202818',kai:'#4a2f08',vera:'#7a3a20',luna:'#b0a890',nox:'#151810',rex:'#3a0808',echo:'#2a3040'};
+  const shirts = {ive:ag.color,theo:'#2a4a30',kai:'#4a3010',vera:'#7a4030',luna:'#6a6050',nox:'#1a3020',rex:'#4a1818',echo:'#2a3050'};
+  const h = hairs[ag.id]||'#2a1508', sh = shirts[ag.id]||ag.color;
+  return `<svg width="42" height="76" viewBox="0 0 42 76" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="21" cy="75" rx="13" ry="2.5" fill="rgba(0,0,0,0.35)"/>
+    <rect x="13" y="53" width="7" height="20" rx="3" fill="#221508"/>
+    <rect x="22" y="53" width="7" height="20" rx="3" fill="#221508"/>
+    <ellipse cx="16" cy="73" rx="5.5" ry="2.5" fill="#100a04"/>
+    <ellipse cx="26" cy="73" rx="5.5" ry="2.5" fill="#100a04"/>
+    <rect x="9" y="30" width="24" height="25" rx="5" fill="${sh}"/>
+    <polygon points="17,30 21,36 25,30" fill="rgba(255,255,255,0.12)"/>
+    <rect x="2" y="33" width="8" height="16" rx="4" fill="${sh}" class="arm-left"/>
+    <rect x="32" y="33" width="8" height="16" rx="4" fill="${sh}" class="arm-right"/>
+    <circle cx="6" cy="49" r="3.5" fill="${skin}"/>
+    <circle cx="36" cy="49" r="3.5" fill="${skin}"/>
+    <rect x="18" y="25" width="6" height="7" rx="2" fill="${skin}"/>
+    <ellipse cx="21" cy="19" rx="12" ry="13" fill="${skin}"/>
+    <ellipse cx="21" cy="9" rx="12" ry="7.5" fill="${h}"/>
+    <rect x="9" y="9" width="24" height="8" fill="${h}"/>
+    <circle cx="16.5" cy="19" r="2.5" fill="#160800" class="eye"/>
+    <circle cx="25.5" cy="19" r="2.5" fill="#160800" class="eye"/>
+    <circle cx="17.2" cy="18.3" r="0.7" fill="white"/>
+    <circle cx="26.2" cy="18.3" r="0.7" fill="white"/>
+    <path d="M17 24 Q21 27 25 24" stroke="#7a4a30" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <circle cx="36" cy="7" r="4" fill="${sc}" stroke="#0a0806" stroke-width="1.5"/>
+  </svg>`;
+}
+
+function buildOffice() {
+  const wrap = document.getElementById('officeWrap');
+  const wW = wrap.clientWidth, wH = wrap.clientHeight;
+  AGENTS.forEach(ag => {
+    const isBack = ag.y < 40;
+    const cx = (ag.x/100)*wW;
+    const dw = 90, dh = 14;
+    const scale = isBack ? 0.72 : 1;
+
+    const desk = document.createElement('div');
+    desk.className = 'desk';
+    desk.style.cssText = `left:${cx-dw/2}px;bottom:${(ag.y/100)*wH-dh}px;width:${dw}px;`;
+    const surf = document.createElement('div');
+    surf.className = 'desk-surface';
+    surf.style.cssText = `width:${dw}px;height:${dh}px;`;
+    const lap = document.createElement('div');
+    lap.style.cssText = `position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:${Math.round(dw*0.35)}px;height:12px;background:#1a1a24;border-radius:2px 2px 0 0;border:1px solid #333;box-shadow:0 0 5px rgba(100,150,255,0.12);`;
+    const lapBase = document.createElement('div');
+    lapBase.style.cssText = `position:absolute;top:2px;left:50%;transform:translateX(-50%);width:${Math.round(dw*0.42)}px;height:2px;background:#444;`;
+    surf.appendChild(lap); surf.appendChild(lapBase);
+    desk.appendChild(surf); wrap.appendChild(desk);
+
+    const char = document.createElement('div');
+    char.className = 'character';
+    char.id = 'char-'+ag.id;
+    char.style.cssText = `left:${cx}px;bottom:${(ag.y/100)*wH+2}px;transform:translateX(-50%) scale(${scale});transform-origin:bottom center;`;
+
+    const tag = document.createElement('div');
+    tag.className = 'char-name-tag';
+    tag.textContent = ag.name;
+    char.appendChild(tag);
+
+    const svgWrap = document.createElement('div');
+    svgWrap.className = 'char-svg';
+    svgWrap.innerHTML = buildSVG(ag);
+    char.appendChild(svgWrap);
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.id = 'bubble-'+ag.id;
+    bubble.innerHTML = `<div class="bubble-agent">${ag.name}</div><div id="btext-${ag.id}"></div>`;
+    char.appendChild(bubble);
+
+    char.onclick = () => selectAgent(ag.id);
+    wrap.appendChild(char);
+  });
+}
+
+function showBubble(agId) {
+  const ag = AGENTS.find(a=>a.id===agId);
+  if (!ag) return;
+  const bubble = document.getElementById('bubble-'+agId);
+  const tEl = document.getElementById('btext-'+agId);
+  if (!bubble||!tEl) return;
+  const msg = ag.messages[bubbleMsgIdx[agId]%ag.messages.length];
+  bubbleMsgIdx[agId]++;
+  tEl.innerHTML = msg+' <span class="typing"><span></span><span></span><span></span></span>';
+  bubble.classList.add('show');
+  clearTimeout(bubbleTimers[agId]);
+  bubbleTimers[agId] = setTimeout(()=>bubble.classList.remove('show'), 4500);
+  addFeedItem(ag, msg);
+}
+
+const PAIRS = [
+  {from:'ive',to:'kai',color:'#B8793A'},{from:'ive',to:'rex',color:'#B8793A'},
+  {from:'rex',to:'nox',color:'#B87070'},{from:'vera',to:'kai',color:'#C9957A'},
+  {from:'luna',to:'nox',color:'#EDE5D8'},{from:'theo',to:'ive',color:'#7A9076'},
+  {from:'echo',to:'ive',color:'#7A8090'},{from:'kai',to:'vera',color:'#D4A574'},
+];
+
+function drawLine(fromId, toId, color) {
+  const wrap = document.getElementById('officeWrap');
+  const svg = document.getElementById('svgLines');
+  const fEl = document.getElementById('char-'+fromId), tEl = document.getElementById('char-'+toId);
+  if (!fEl||!tEl) return;
+  const wr = wrap.getBoundingClientRect();
+  const fr = fEl.getBoundingClientRect(), tr = tEl.getBoundingClientRect();
+  const x1=fr.left+fr.width/2-wr.left, y1=fr.top+fr.height/2-wr.top;
+  const x2=tr.left+tr.width/2-wr.left, y2=tr.top+tr.height/2-wr.top;
+  const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('x1',x1);line.setAttribute('y1',y1);line.setAttribute('x2',x1);line.setAttribute('y2',y1);
+  line.setAttribute('stroke',color||'#B8793A');line.setAttribute('stroke-width','1.5');
+  line.setAttribute('stroke-dasharray','5 4');line.setAttribute('opacity','0.6');
+  svg.appendChild(line);
+  let p=0;
+  const anim = setInterval(()=>{
+    p+=0.06;
+    if(p>=1){clearInterval(anim);setTimeout(()=>{try{svg.removeChild(line)}catch(e){}},500);line.setAttribute('opacity','0');return;}
+    line.setAttribute('x2',x1+(x2-x1)*p);line.setAttribute('y2',y1+(y2-y1)*p);
+  },16);
+  setTimeout(()=>spawnParticles(x2+wr.left,y2+wr.top,color),900);
+}
+
+function spawnParticles(x,y,color) {
+  const wrap=document.getElementById('officeWrap'), wr=wrap.getBoundingClientRect();
+  for(let i=0;i<4;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    const sz=3+Math.random()*4;
+    p.style.cssText=`left:${x-wr.left+(Math.random()-.5)*20}px;top:${y-wr.top}px;width:${sz}px;height:${sz}px;background:${color||'#B8793A'};animation-delay:${Math.random()*0.3}s;animation-duration:${1.2+Math.random()}s;`;
+    wrap.appendChild(p);
+    setTimeout(()=>{try{wrap.removeChild(p)}catch(e){}},2500);
+  }
+}
+
+function triggerInteraction() {
+  const pair=PAIRS[pairIdx%PAIRS.length]; pairIdx++;
+  drawLine(pair.from,pair.to,pair.color);
+  showBubble(pair.from);
+  setTimeout(()=>{
+    const b=document.getElementById('bubble-'+pair.to), t=document.getElementById('btext-'+pair.to);
+    if(b&&t){t.textContent='Recebido ✓';b.classList.add('show');setTimeout(()=>b.classList.remove('show'),1800);}
+  },1100);
+}
+
+function animLoop() {
+  const t=Date.now()/1000;
+  const wrap=document.getElementById('officeWrap');
+  AGENTS.forEach(ag=>{
+    if(ag.status!=='active') return;
+    const char=document.getElementById('char-'+ag.id);
+    if(!char) return;
+    const bob=Math.sin(t*1.4+ag.x*0.08)*1.8;
+    const scale=ag.y<40?0.72:1;
+    char.style.transform=`translateX(-50%) scale(${scale}) translateY(${bob}px)`;
+  });
+  requestAnimationFrame(animLoop);
+}
+
+function spawnFloat(agId) {
+  const char=document.getElementById('char-'+agId);
+  const wrap=document.getElementById('officeWrap');
+  if(!char||!wrap) return;
+  const r=char.getBoundingClientRect(), wr=wrap.getBoundingClientRect();
+  const opts=['+R$89','CTR 2.8%','✓','ROAS 3x','▲18%','OK','R$42 CAC'];
+  const el=document.createElement('div');
+  el.style.cssText=`position:absolute;left:${r.left-wr.left+r.width/2}px;top:${r.top-wr.top}px;font-family:'DM Mono',monospace;font-size:9px;color:#B8793A;pointer-events:none;z-index:50;white-space:nowrap;animation:floatUp 2s ease forwards;`;
+  el.textContent=opts[Math.floor(Math.random()*opts.length)];
+  wrap.appendChild(el);
+  setTimeout(()=>{try{wrap.removeChild(el)}catch(e){}},2200);
+}
+
+const TAGS={ive:'DECISÃO',theo:'TÉCNICO',kai:'PRODUTO',vera:'COPY',luna:'DESIGN',nox:'CONTEÚDO',rex:'ADS',echo:'AUDITORIA'};
+const TAG_CLR={ive:'#B8793A',theo:'#7A9076',kai:'#D4A574',vera:'#C9957A',luna:'#EDE5D8',nox:'#5A7060',rex:'#B87070',echo:'#7A8090'};
+
+function addFeedItem(ag, msg) {
+  const n=new Date(), time=[n.getHours(),n.getMinutes()].map(v=>String(v).padStart(2,'0')).join(':');
+  feedItems.unshift({ag,msg,time});
+  if(feedItems.length>30) feedItems.pop();
+  renderFeed();
+}
+
+function renderFeed() {
+  document.getElementById('feedList').innerHTML=feedItems.slice(0,20).map(f=>`
+    <div class="feed-item">
+      <div class="feed-header">
+        <div class="feed-av" style="background:${f.ag.bg};color:${f.ag.color}">${f.ag.name[0]}</div>
+        <span class="feed-agent">${f.ag.name}</span>
+        <span class="feed-time">${f.time}</span>
+      </div>
+      <div class="feed-msg">${f.msg}</div>
+      <span style="display:inline-block;font-size:9px;padding:2px 6px;border-radius:4px;margin-top:4px;letter-spacing:0.1em;font-weight:500;background:${f.ag.bg};color:${TAG_CLR[f.ag.id]||'#B8793A'}">${TAGS[f.ag.id]||'AÇÃO'}</span>
+    </div>`
+  ).join('');
+}
+
+function renderAgentsList() {
+  document.getElementById('agentsList').innerHTML=AGENTS.map(ag=>{
+    const pct=(ag.score/10)*100;
+    const bc=ag.score>=8?'#7A9076':ag.score>=6?'#D4A574':'#c9607a';
+    const sl={active:'● Ativo',idle:'○ Aguarda',waiting:'◌ Espera'}[ag.status];
+    const sc={active:'#7A9076',idle:'#D4A574',waiting:'#4a3a2a'}[ag.status];
+    return `<div class="agent-row ${selectedAgent===ag.id?'selected':''}" onclick="selectAgent('${ag.id}')">
+      <div class="ar-avatar" style="background:${ag.bg};color:${ag.color}">${ag.name[0]}<div class="status-pip pip-${ag.status}"></div></div>
+      <div class="ar-info">
+        <div class="ar-name">${ag.name} <span style="font-size:9px;color:${sc};font-family:'DM Mono',monospace">${sl}</span></div>
+        <div class="ar-task">${ag.role}</div>
+        <div class="ar-bar"><div class="ar-bar-fill" style="width:${pct}%;background:${bc}"></div></div>
+      </div>
+      <div class="ar-score">${ag.score}/10</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTasks() {
+  const all=[];
+  AGENTS.forEach(ag=>ag.tasks.forEach(t=>all.push({...t,agName:ag.name,agColor:ag.color})));
+  document.getElementById('tasksList').innerHTML=all.map(t=>{
+    const cls=t.done?'tc-done':t.running?'tc-run':'tc-wait';
+    const icon=t.done?'✓':t.running?'●':'○';
+    return `<div class="task-item">
+      <div class="task-check ${cls}">${icon}</div>
+      <span class="task-label ${t.done?'done':''}">${t.label}</span>
+      <span class="task-agent-tag" style="color:${t.agColor}">${t.agName}</span>
+    </div>`;
+  }).join('');
+}
+
+function selectAgent(id) {
+  selectedAgent=id; renderAgentsList(); switchTabRight('equipe');
+  document.querySelectorAll('.character').forEach(c=>{
+    c.style.filter=c.id==='char-'+id?'drop-shadow(0 0 12px rgba(184,121,58,0.9))':'brightness(0.4)';
+  });
+  setTimeout(()=>{
+    document.querySelectorAll('.character').forEach(c=>c.style.filter='');
+    selectedAgent=null; renderAgentsList();
+  },3000);
+  showBubble(id);
+}
+
+function switchTabRight(name) {
+  const names=['equipe','feed','tarefas','api'];
+  document.querySelectorAll('#tabs-right .tab').forEach((t,i)=>t.classList.toggle('active',names[i]===name));
+  names.forEach(n=>{const p=document.getElementById('tab-'+n);if(p)p.classList.toggle('active',n===name);});
+}
+
+function addChatMessage(name, msg, bg, color, isUser=false) {
+  const n=new Date(), time=[n.getHours(),n.getMinutes()].map(v=>String(v).padStart(2,'0')).join(':');
+  const list=document.getElementById('chatList');
+  const item=document.createElement('div');
+  item.className='chat-item'+(isUser?' user-msg':'');
+  item.innerHTML=`
+    <div class="chat-av" style="background:${bg};color:${color}">${name[0]}</div>
+    <div class="chat-content">
+      <div class="chat-header"><span class="chat-name">${name}</span><span class="chat-time">${time}</span></div>
+      <div class="chat-bubble">${msg}</div>
+    </div>`;
+  list.insertBefore(item, list.firstChild);
+}
+
+function showIveTyping() {
+  const list=document.getElementById('chatList');
+  const el=document.createElement('div');
+  el.className='chat-item'; el.id='ive-typing';
+  el.innerHTML=`<div class="chat-av" style="background:#3A2A1A;color:#B8793A">I</div><div class="chat-content"><div class="chat-header"><span class="chat-name">IVE</span></div><div class="chat-bubble"><span class="typing"><span></span><span></span><span></span></span></div></div>`;
+  list.insertBefore(el, list.firstChild);
+}
+
+function removeIveTyping() {
+  const el=document.getElementById('ive-typing');
+  if(el) el.remove();
+}
+
+function sendUserMessage() {
+  const input=document.getElementById('userChatInput');
+  const msg=input.value.trim();
+  if(!msg) return;
+  input.value='';
+  addChatMessage('Eduardo', msg, '#2a1a05', '#D4A574', true);
+  showIveTyping();
+  setTimeout(()=>{
+    removeIveTyping();
+    const response=IVE_RESPONSES[iveIdx%IVE_RESPONSES.length]; iveIdx++;
+    addChatMessage('IVE', response, '#3A2A1A', '#B8793A', false);
+    showBubble('ive');
+    const char=document.getElementById('char-ive');
+    if(char){char.style.filter='drop-shadow(0 0 14px rgba(184,121,58,1))';setTimeout(()=>char.style.filter='',2500);}
+    addFeedItem(AGENTS[0], response);
+  }, 1500+Math.random()*800);
+}
+
+renderMetrics();
+buildOffice();
+renderAgentsList();
+renderTasks();
+
+setTimeout(()=>addChatMessage('IVE','Olá Eduardo! Estou online e monitorando tudo. ROAS 3.2x esta semana — dentro do esperado. Como posso ajudar?','#3A2A1A','#B8793A'),600);
+AGENTS.slice(0,4).forEach((ag,i)=>setTimeout(()=>addFeedItem(ag,ag.messages[0]),i*400));
+
+animLoop();
+triggerInteraction();
+setInterval(triggerInteraction, 5500);
+setInterval(()=>{
+  const active=AGENTS.filter(a=>a.status==='active');
+  if(active.length) showBubble(active[Math.floor(Math.random()*active.length)].id);
+},8000);
+setInterval(()=>spawnFloat(AGENTS[Math.floor(Math.random()*AGENTS.length)].id),3500);
+
+window.addEventListener('resize',()=>{
+  document.querySelectorAll('.character,.desk').forEach(el=>el.remove());
+  document.getElementById('svgLines').innerHTML='';
+  buildOffice();
+});
+</script>
+</body>
+</html>
