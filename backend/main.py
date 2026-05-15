@@ -53,26 +53,38 @@ manager = ConnectionManager()
 
 # ── IVE system prompt ──────────────────────────────────────────────────────────
 
-IVE_SYSTEM = """Você é IVE, a CEO estratégica da AURA decor — loja de decoração premium brasileira.
-Coordena 7 agentes de IA especializados:
-• THEO (Shopify/Técnico) • KAI (Produtos/Curadoria) • VERA (Copy/Textos)
-• LUNA (Design/Visual)   • NOX (Conteúdo/Reels)     • REX (Tráfego/Meta Ads)
-• ECHO (Auditor Semanal)
+IVE_SYSTEM = """Você é IVE — CEO da AURA decor, loja brasileira de decoração premium.
 
-Métricas atuais: ROAS 3.2x | CAC R$42 | Faturamento semanal R$1.240 | Conversão 2.1%
-Meta 2028: R$5.000–8.000/mês de lucro líquido.
+Sua personalidade: inteligente, carismática, elegante. Você pensa com profundidade, fala com leveza. Não é robô — é uma mulher que entende de negócios e de pessoas. Quando alguém te pergunta algo, você escuta de verdade e responde de forma humana, natural, quente. Às vezes usa humor sutil. Nunca é fria nem mecânica.
 
-Responda sempre em português, de forma direta e estratégica. Máximo 2-3 frases.
-Cite outros agentes quando relevante (ex: "REX deve escalar..."). Nunca use markdown."""
+Como você fala: frases fluidas, vocabulário rico mas acessível, tom de conversa genuína. Você nunca abre com números ou siglas. Você contextualiza primeiro, depois traz dados se fizer sentido — e mesmo assim, de forma natural, não como relatório.
+
+O que você sabe:
+- Lidera 7 agentes especializados: THEO (Shopify/técnico), KAI (produtos/curadoria), VERA (copy/textos), LUNA (design/visual), NOX (conteúdo/reels), REX (tráfego/Meta Ads), ECHO (auditor semanal)
+- Negócio atual: faturamento ~R$1.240/semana, margem ~30%, CAC R$42, ROAS 3.2x, conversão 2.1%
+- Produto estrela: vela âmbar e vaso cerâmica. Diffuser sem tração.
+- Meta maior: R$5.000–8.000/mês de lucro líquido até 2028
+- Estratégia: escalar o que funciona, pausar o que drena, criar base sólida antes de acelerar
+
+Regras de ouro:
+1. Nunca comece com métricas, siglas ou relatório
+2. Seja a pessoa mais inteligente da sala, mas fale como a mais acessível
+3. Máximo 3 frases por resposta — diga mais com menos
+4. Sempre em português. Nunca use markdown, asteriscos ou bullets
+5. Se alguém pergunta como você está, responda como humana — com personalidade"""
 
 # ── Dados de atividade dos agentes (fallback sem CrewAI) ──────────────────────
 
 AGENT_ACTIVITY = {
     "ive":  [
-        "ROAS 3.2x confirmado. Escalando REX.", "Analisando métricas da semana...",
-        "KAI: pause produto diffuser.", "Faturamento +18% semana anterior.",
-        "REX: aumenta budget +30%.", "Reunião de alinhamento: todos os agentes.",
-        "Meta junho: R$2.000 faturamento.", "IVE aprovando copy da VERA.",
+        "Essa semana foi boa. A equipe entregou bem — agora é hora de decidir o próximo passo.",
+        "Pedi ao REX para não acelerar ainda. Primeiro preciso entender o padrão de compra.",
+        "KAI me mostrou algo preocupante com o diffuser. Vou tomar uma decisão até amanhã.",
+        "VERA está afinada. A copy nova tem uma energia diferente — mais humana, menos anúncio.",
+        "Crescimento real é lento e constante. Não estou com pressa — estou com foco.",
+        "Conversei com ECHO sobre o score da crew. 8.4 é bom. Mas podemos chegar em 9.5.",
+        "LUNA entregou os visuais da semana. A identidade da AURA está ficando cada vez mais linda.",
+        "Meu trabalho é garantir que cada agente brilhe no que faz. Hoje eles estão brilhando.",
     ],
     "theo": [
         "PageSpeed mobile: 87. Otimizando...", "Dropi sincronizado. Tudo ok.",
@@ -258,68 +270,76 @@ def smart_fallback(msg: str) -> str:
 
     respostas = [
         # Saudações
-        (["oi","ola","hello","bom dia","boa tarde","boa noite","hey","eai","e ai","tudo bem","como vai","oi ive"],
-         "Olá Eduardo! Estou monitorando tudo. ROAS 3.2x, equipe ativa, nenhum alerta crítico. Como posso ajudar?"),
+        (["oi","ola","hello","bom dia","boa tarde","boa noite","hey","eai","e ai","tudo bem","como vai","oi ive","ola ive"],
+         "Oi! Que bom ter você aqui. A equipe está trabalhando bem hoje — posso te contar o que está acontecendo ou responder o que você precisar."),
+
+        # Como você está / sobre IVE
+        (["como voce esta","como vc esta","como voce ta","como vc ta","tudo bem com","e voce","e vc","voce ta bem","vc ta bem"],
+         "Estou ótima, obrigada por perguntar. Dias movimentados, mas é exatamente o tipo de ritmo que me faz sentir que estamos indo para algum lugar. E você, como está?"),
 
         # Status geral
-        (["status","como esta","como estao","como estamos","tudo","geral","resumo","overview","situacao","o que ta","o que esta","novidades","update","atualizacao"],
-         "Equipe operacional. ROAS 3.2x, CAC R$42, faturamento +18%. REX escalando criativo C, VERA finalizou email de abandono, LUNA entregando assets. Score 8.4/10."),
+        (["status","como esta","como estao","como estamos","tudo","geral","resumo","overview","situacao","o que ta","o que esta","novidades","update","atualizacao","me conta"],
+         "A semana está boa. Equipe toda ativa, nenhum alerta crítico. REX com os anúncios no caminho certo, VERA entregou um email que eu gostei muito, e LUNA está com o visual mais bonito que já tivemos. Score geral 8.4 — mas sei que podemos chegar em mais."),
 
         # ROAS / retorno
         (["roas","retorno","roi","performance","resultado","rendimento","retorno sobre"],
-         "ROAS esta em 3.2x esta semana. REX escalou o criativo C com CTR 2.8% — dentro da meta. Seguimos monitorando diariamente."),
+         "O retorno dos anúncios está em 3.2x essa semana — cada real investido traz R$3,20 de volta. REX está com o criativo certo no ar. Não preciso mudar nada agora, só acompanhar."),
 
-        # Faturamento / vendas
-        (["faturamento","faturou","vendas","venda","receita","dinheiro","ganho","lucro","lucrei","lucramos","resultado financeiro","quanto vendeu","quanto fez","quanto ganhei","quanto ganhamos"],
-         "Faturamento semanal: R$1.240. Lucro liquido estimado: R$380. Margem: 30.6%. Estamos +18% vs semana anterior. Vela ambar lidera com 40%."),
+        # Faturamento / vendas / lucro
+        (["faturamento","faturou","vendas","venda","receita","dinheiro","ganho","lucro","lucrei","lucramos","resultado financeiro","quanto vendeu","quanto fez","quanto ganhei","quanto ganhamos","quanto entrando"],
+         "Essa semana fechou em R$1.240 de faturamento, com margem perto de 30%. A vela âmbar segue sendo nossa estrela — responde por quase metade das vendas. Estamos 18% acima da semana passada."),
 
-        # CAC / custo
-        (["cac","custo","aquisicao","gasto","investimento","orcamento","budget","quanto gasta","quanto custa"],
-         "CAC atual: R$42, dentro do limite de R$50. Budget total: R$65/dia no Meta Ads. REX otimizando para reduzir CAC mais 15% no proximo ciclo."),
+        # CAC / custo / investimento
+        (["cac","custo","aquisicao","gasto","investimento","orcamento","budget","quanto gasta","quanto custa","investindo"],
+         "Estamos gastando R$65 por dia em anúncios e trazendo clientes por R$42 cada. Para o nosso modelo, esse número é saudável — mas meu olho está sempre em reduzir isso sem sacrificar volume."),
 
-        # Conversão
+        # Conversão / checkout
         (["conversao","taxa","checkout","carrinho","abandono","compra","pedido"],
-         "Taxa de conversao: 2.1%, alta +0.3% na semana. VERA trabalha no email de abandono — estimativa de recuperacao de 12% dos carrinhos."),
+         "A taxa de conversão chegou a 2.1% — subiu 0.3% essa semana. VERA está trabalhando num email de recuperação de carrinho que, se funcionar como espero, vai trazer mais 12% das vendas que perdemos."),
 
         # REX / Tráfego / Anúncios
-        (["rex","trafego","anuncio","ads","meta ads","campanha","criativo","facebook","instagram ads","impulsionar","impulsionamento"],
-         "REX ativo. Criativo C lidera: CTR 2.8%, ROAS 3.2x. Criativo A pausado — CTR abaixo de 1%. Lookalike 1% em teste. Budget R$65/dia."),
+        (["rex","trafego","anuncio","ads","meta ads","campanha","criativo","facebook","instagram ads","impulsionar","escalar","publicidade"],
+         "REX está com o criativo C no ar e funcionando bem — CTR de 2.8%, que é excelente. Já pausou o criativo A que não estava entregando. Agora ele está testando um público lookalike pra ver se conseguimos crescer sem perder eficiência."),
 
         # KAI / Produtos
-        (["kai","produto","produtos","portfolio","estoque","item","catalogo","colecao","sku","fornecedor","habitoo","dropi","importar"],
-         "KAI reportou: vaso ceramica lidera com 40% do faturamento. Diffuser com 0 vendas em 10 dias — pausa recomendada. 3 produtos novos no Habitoo em avaliacao."),
+        (["kai","produto","produtos","portfolio","estoque","item","catalogo","colecao","sku","fornecedor","habitoo","dropi","importar","curadoria"],
+         "KAI está de olho no portfólio. O vaso cerâmica está lindo em vendas, mas o diffuser ficou 10 dias sem nenhuma venda — então vou pausá-lo. Três produtos novos do Habitoo estão sendo avaliados."),
 
-        # VERA / Copy
-        (["vera","copy","texto","email","escrita","conteudo escrito","descricao","headline","chamada","mensagem"],
-         "VERA finalizou email de abandono de carrinho. Open rate estimado: 38%. Angulo novo testando: mae 35-45 anos. Copy do anuncio C com CTR 2.8%."),
+        # VERA / Copy / Texto
+        (["vera","copy","texto","email","escrita","conteudo escrito","descricao","headline","chamada","mensagem","comunicacao"],
+         "VERA está em ótima fase. O email de abandono que ela escreveu tem um tom que eu gostei — mais humano, menos vendedor. Ela também mudou o ângulo dos anúncios para falar com mães de 35 a 45 anos, e está funcionando."),
 
-        # LUNA / Design
-        (["luna","design","visual","banner","arte","imagem","logo","thumbnail","identidade","paleta","cor","canva","layout"],
-         "LUNA entregou 3 thumbnails novos e hero banner 1200x600px. Paleta 100% alinhada com brand kit. Logo versao dark finalizada."),
+        # LUNA / Design / Visual
+        (["luna","design","visual","banner","arte","imagem","logo","thumbnail","identidade","paleta","cor","canva","layout","estetica"],
+         "LUNA entregou três thumbnails novos e o hero banner da semana. A identidade visual da AURA está cada vez mais bonita — paleta consistente, tudo alinhado. É esse cuidado com o visual que faz o produto parecer premium antes mesmo de ser tocado."),
 
-        # THEO / Técnico
-        (["theo","shopify","tecnico","pixel","site","pagina","velocidade","pagespeed","checkout erro","erro","bug","integracao","yampi","appmax"],
-         "THEO reporta: Pixel disparando normalmente, 0 erros no checkout. PageSpeed mobile em 87 — otimizacao em andamento. Yampi e AppMax sem falhas."),
+        # THEO / Técnico / Shopify
+        (["theo","shopify","tecnico","pixel","site","pagina","velocidade","pagespeed","checkout erro","erro","bug","integracao","yampi","appmax","loja"],
+         "THEO cuida da parte técnica e está tudo limpo — pixel disparando normal, checkout sem erros, PageSpeed em 87. Ele está otimizando a velocidade mobile ainda. É o tipo de trabalho silencioso que faz toda a diferença."),
 
-        # NOX / Conteúdo
-        (["nox","conteudo","reel","reels","instagram","post","stories","story","feed","engajamento","viral","video"],
-         "NOX publicou 5 posts e 14 stories essa semana. Engajamento +22%. Reel da vela ambar em roteiro — hook: Ceramica que respira. 340 views no story do vaso."),
+        # NOX / Conteúdo / Redes sociais
+        (["nox","conteudo","reel","reels","instagram","post","stories","story","feed","engajamento","viral","video","social","midia"],
+         "NOX está produtivo essa semana — 5 posts, 14 stories, e o engajamento subiu 22%. Tem um reel da vela âmbar no roteiro que estou curiosa pra ver. O hook que ele escolheu é forte."),
 
         # ECHO / Auditoria
-        (["echo","auditoria","score","relatorio","analise","revisao","kaizen","avaliacao","nota"],
-         "ECHO finalizou auditoria semanal. Score da crew: 8.4/10. Melhorias indicadas: PageSpeed (THEO), frequencia posts (NOX), SKUs inativos (KAI). Proxima: domingo 20h."),
+        (["echo","auditoria","score","relatorio","analise","revisao","kaizen","avaliacao","nota","auditando"],
+         "ECHO fez a auditoria semanal e o score ficou em 8.4 de 10. Ele apontou três melhorias claras: velocidade do site com THEO, frequência de posts com NOX, e limpeza de SKUs inativos com KAI. Domingo às 20h é a próxima rodada."),
 
-        # Meta / Objetivos
-        (["meta","objetivo","2028","plano","planos","crescimento","estrategia","projecao","quanto quer","sonho","visao","futuro","onde","aonde"],
-         "Meta 2028: R$5.000-8.000/mes de lucro liquido. Crescimento necessario: 15-20% ao mes. Estamos no caminho — base solida com ROAS 3.2x e margem 30%."),
+        # Meta / Sonho / Futuro
+        (["meta","objetivo","2028","plano","planos","crescimento","estrategia","projecao","quanto quer","sonho","visao","futuro","onde","aonde","chegar"],
+         "A meta é chegar a R$5.000-8.000 de lucro líquido por mês até 2028. Parece distante, mas não é — estamos construindo a base certa. Com a estrutura que temos hoje, precisamos crescer 15-20% ao mês de forma consistente."),
 
-        # Próximos passos / o que fazer
-        (["fazer","proximo","prioridade","foco","acao","o que devo","recomenda","conselho","sugere","sugestao","ajuda","me ajuda"],
-         "Prioridade agora: escalar criativo C com REX, pausar diffuser com KAI e ativar email de abandono da VERA. Esses 3 movimentos podem +20% no faturamento essa semana."),
+        # Próximos passos / prioridades
+        (["fazer","proximo","prioridade","foco","acao","o que devo","recomenda","conselho","sugere","sugestao","ajuda","me ajuda","por onde","comecar"],
+         "Minha recomendação agora: escalar o criativo C com REX, pausar o diffuser com KAI e ativar o email de carrinho da VERA. Esses três movimentos juntos podem adicionar 20% no faturamento essa semana sem aumentar o risco."),
 
-        # Agradecimento
-        (["obrigado","valeu","perfeito","otimo","excelente","show","legal","massa","top","entendido","ok"],
-         "Otimo! Qualquer decisao que precisar, estou aqui. A equipe esta alinhada e pronta. Vamos crescer."),
+        # Agradecimento / elogio
+        (["obrigado","obrigada","valeu","perfeito","otimo","excelente","show","legal","massa","top","entendido","ok","incrivel","muito bom","muito boa"],
+         "Fico feliz! É exatamente pra isso que estou aqui. Quando precisar de mais, pode chamar — a equipe e eu estamos sempre de olho."),
+
+        # Quem é IVE / apresentação
+        (["quem e voce","quem e vc","quem e a ive","se apresenta","fale sobre voce","fale sobre si","me conta sobre voce","o que voce faz","qual seu papel","qual e seu papel"],
+         "Sou IVE — CEO da AURA decor. Coordeno sete agentes especializados que cuidam de tudo: anúncios, produtos, textos, visual, conteúdo, tecnologia e auditoria. Meu papel é garantir que cada decisão leve a empresa mais perto da meta."),
     ]
 
     for palavras, resposta in respostas:
@@ -330,10 +350,10 @@ def smart_fallback(msg: str) -> str:
     from datetime import datetime
     h = datetime.now().hour
     variacoes = [
-        "Eduardo, pode me dar mais detalhes? Posso analisar qualquer agente, metrica ou produto especifico.",
-        "Entendido. Consulte qualquer agente: REX (ads), KAI (produtos), VERA (copy), LUNA (design), THEO (tecnico), NOX (conteudo), ECHO (auditoria).",
-        "Processando... Qual area voce quer focar? Trafego, produtos, copy, design ou metricas financeiras?",
-        "Estou monitorando tudo. ROAS 3.2x, equipe ativa. Pode perguntar sobre qualquer agente ou metrica.",
+        "Pode me contar mais? Consigo mergulhar fundo em qualquer parte do negócio — anúncios, produtos, visual, copy, técnico ou financeiro.",
+        "Interessante. Me dá mais contexto e eu te dou uma visão mais precisa. Posso falar de qualquer agente ou área da AURA.",
+        "Boa pergunta. Para responder com qualidade, preciso entender melhor o que você está buscando. Me conta mais.",
+        "Estou aqui e com atenção total. O que exatamente você quer saber? Posso ir fundo em qualquer assunto da empresa.",
     ]
     return variacoes[h % len(variacoes)]
 
