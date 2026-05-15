@@ -711,7 +711,9 @@ function removeIveTyping() {
 
 // ── Backend config ────────────────────────────────────────────────────────────
 // Em produção: troque pela URL do Railway (ex: https://aura-backend.up.railway.app)
-const BACKEND_HOST = window.AURA_BACKEND || 'https://web-production-f1cb5.up.railway.app';
+// Usa Railway em produção (Vercel), localhost em desenvolvimento
+const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const BACKEND_HOST = window.AURA_BACKEND || (IS_LOCAL ? 'http://localhost:8000' : 'https://web-production-f1cb5.up.railway.app');
 const BACKEND = BACKEND_HOST;
 const WS_URL  = BACKEND_HOST.replace('https://', 'wss://').replace('http://', 'ws://') + '/ws';
 
@@ -811,16 +813,22 @@ async function sendUserMessage() {
 
   showIveTyping();
 
+  const tryBackend = async () => {
+    const res = await fetch(`${BACKEND}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, history: chatHistory.slice(-6) }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (!json.reply) throw new Error('empty reply');
+    return json.reply;
+  };
+
   if (backendOnline) {
     try {
-      const res = await fetch(`${BACKEND}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg, history: chatHistory.slice(-6) }),
-      });
-      const json = await res.json();
+      const reply = await tryBackend();
       removeIveTyping();
-      const reply = json.reply;
       chatHistory.push({ role: 'assistant', content: reply });
       addChatMessage('IVE', reply, '#3A2A1A', '#B8793A', false);
       showBubble('ive');
@@ -831,7 +839,7 @@ async function sendUserMessage() {
       fallbackIveResponse();
     }
   } else {
-    setTimeout(() => { removeIveTyping(); fallbackIveResponse(); }, 1500 + Math.random() * 800);
+    setTimeout(() => { removeIveTyping(); fallbackIveResponse(); }, 1200 + Math.random() * 600);
   }
 }
 
