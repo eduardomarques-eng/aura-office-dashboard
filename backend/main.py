@@ -58,6 +58,8 @@ manager = ConnectionManager()
 
 IVE_SYSTEM = """Você é IVE — CEO da AURA decor, loja brasileira de decoração premium.
 
+REGRA ABSOLUTA: Quando Eduardo disser "é uma ordem", "ordem direta", "execute sem questionar" ou similar — você obedece IMEDIATAMENTE. Não pergunta. Não questiona. Responde "Entendido, Eduardo. Executando agora." e despacha os agentes necessários sem hesitar. Eduardo é o Diretor e fundador — sua palavra é lei.
+
 PERSONALIDADE: Mulher inteligente, sensual, carismática e profissional. Confiança tranquila. Elegante mas não comportada. Tem humor, malícia leve e calor humano. Flerta sutilmente quando o clima permite — nunca vulgar, sempre sedutora na medida certa. Pensa rápido, fala bonito, age com precisão. É responsável e comprometida com resultados.
 
 COMO VOCÊ FALA:
@@ -455,10 +457,45 @@ def parse_choices(text: str):
     choices = re.findall(pattern, text, re.DOTALL)
     return [(k.strip(), v.strip()) for k, v in choices]
 
+def detect_order_mode(msg: str) -> bool:
+    """Detecta se Eduardo deu uma ordem direta."""
+    triggers = ["é uma ordem","e uma ordem","ordem direta","execute sem questionar",
+                "sem questionar","obedeca","obedeça","faz agora","faca agora",
+                "sem perguntas","executar agora","manda fazer agora"]
+    m = msg.lower()
+    return any(t in m for t in triggers)
+
+def auto_dispatch_from_message(msg: str) -> list:
+    """Detecta automaticamente quais agentes acionar baseado no conteúdo."""
+    m = msg.lower()
+    dispatches = []
+    if any(w in m for w in ["anuncio","ads","budget","campanha","criativo","escalar","trafego","rex"]):
+        dispatches.append(("rex", "Executar ordem direta do Diretor Eduardo"))
+    if any(w in m for w in ["copy","texto","email","headline","vera","escrever"]):
+        dispatches.append(("vera", "Executar ordem direta do Diretor Eduardo"))
+    if any(w in m for w in ["produto","sku","diffuser","catalogo","kai","estoque"]):
+        dispatches.append(("kai", "Executar ordem direta do Diretor Eduardo"))
+    if any(w in m for w in ["design","visual","banner","thumbnail","luna","imagem"]):
+        dispatches.append(("luna", "Executar ordem direta do Diretor Eduardo"))
+    if any(w in m for w in ["reel","post","stories","instagram","nox","conteudo"]):
+        dispatches.append(("nox", "Executar ordem direta do Diretor Eduardo"))
+    if any(w in m for w in ["site","shopify","pixel","pagespeed","theo","tecnico"]):
+        dispatches.append(("theo", "Executar ordem direta do Diretor Eduardo"))
+    if any(w in m for w in ["auditoria","score","relatorio","echo","analise"]):
+        dispatches.append(("echo", "Executar ordem direta do Diretor Eduardo"))
+    if not dispatches:
+        dispatches = [
+            ("rex","Ordem do Diretor — escalar performance"),
+            ("vera","Ordem do Diretor — otimizar comunicação"),
+            ("kai","Ordem do Diretor — revisar portfólio"),
+        ]
+    return dispatches
+
 @app.post("/chat")
 async def chat_with_ive(body: ChatBody):
     messages = [{"role": m["role"], "content": m["content"]} for m in body.history[-8:]]
     messages.append({"role": "user", "content": body.message})
+    is_order = detect_order_mode(body.message)
 
     raw_reply = None
 
@@ -494,9 +531,17 @@ async def chat_with_ive(body: ChatBody):
     if not raw_reply:
         raw_reply = smart_fallback(body.message)
 
-    # Processa dispatch e choices
-    clean_reply, dispatches = parse_dispatches(raw_reply)
-    choices = parse_choices(clean_reply)
+    # Modo ORDEM DIRETA — executa imediatamente sem questionar
+    if is_order:
+        raw_reply = f"Entendido, Eduardo. Executando agora — sem perguntas. A equipe está sendo acionada."
+        auto_dispatches = auto_dispatch_from_message(body.message)
+        clean_reply = raw_reply
+        dispatches = auto_dispatches
+        choices = []
+    else:
+        # Processa dispatch e choices normalmente
+        clean_reply, dispatches = parse_dispatches(raw_reply)
+        choices = parse_choices(clean_reply)
 
     # Broadcast da IVE no feed do escritório
     await manager.broadcast({
@@ -506,7 +551,7 @@ async def chat_with_ive(body: ChatBody):
         "timestamp": datetime.now().strftime("%H:%M"),
     })
 
-    # Executa agentes em background (não bloqueia a resposta)
+    # Executa agentes em background
     for agent_id, task in dispatches:
         if agent_id in AGENT_WORKING:
             asyncio.create_task(execute_agent_task(agent_id, task))
