@@ -711,7 +711,7 @@ function removeIveTyping() {
 
 // ── Backend config ────────────────────────────────────────────────────────────
 // Em produção: troque pela URL do Railway (ex: https://aura-backend.up.railway.app)
-const BACKEND_HOST = window.AURA_BACKEND || 'http://localhost:8000';
+const BACKEND_HOST = window.AURA_BACKEND || 'https://web-production-f1cb5.up.railway.app';
 const BACKEND = BACKEND_HOST;
 const WS_URL  = BACKEND_HOST.replace('https://', 'wss://').replace('http://', 'ws://') + '/ws';
 
