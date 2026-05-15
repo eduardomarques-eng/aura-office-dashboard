@@ -218,4 +218,6 @@ def health():
 
 # ── Servir frontend estático ──────────────────────────────────────────────────
 
-app.mount("/", StaticFiles(directory="..", html=True), name="static")
+import pathlib
+_ROOT = pathlib.Path(__file__).parent.parent  # aura-office-dashboard/
+app.mount("/", StaticFiles(directory=str(_ROOT), html=True), name="static")
