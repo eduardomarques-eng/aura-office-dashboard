@@ -241,6 +241,20 @@ body {
 .typing span:nth-child(3){animation-delay:0.4s}
 @keyframes typingDot{0%,80%,100%{opacity:0.3;transform:scale(0.8)}40%{opacity:1;transform:scale(1)}}
 
+.choice-btns { display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+.choice-btn { background:rgba(184,121,58,0.08); border:1px solid rgba(184,121,58,0.25); color:var(--offwhite); padding:8px 14px; border-radius:8px; font-size:12px; cursor:pointer; text-align:left; transition:all 0.2s; font-family:'DM Sans',sans-serif; }
+.choice-btn:hover { background:rgba(184,121,58,0.18); border-color:var(--terra); color:var(--terra); }
+.choice-key { font-family:'DM Mono',monospace; font-size:10px; color:var(--terra); margin-right:8px; font-weight:600; }
+
+.dispatch-banner { background:rgba(122,144,118,0.08); border:1px solid rgba(122,144,118,0.2); border-left:3px solid var(--green); padding:10px 14px; border-radius:6px; margin-top:8px; font-size:11px; }
+.dispatch-banner .d-title { color:var(--green); font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.1em; margin-bottom:6px; }
+.dispatch-agent-tag { display:inline-flex; align-items:center; gap:5px; background:rgba(0,0,0,0.2); border:1px solid var(--border2); border-radius:12px; padding:3px 8px; font-size:10px; color:var(--text); margin:2px; }
+
+.agent-working { animation:agentPulse 1s ease-in-out infinite; }
+@keyframes agentPulse { 0%,100%{filter:drop-shadow(0 0 6px rgba(184,121,58,0.4))} 50%{filter:drop-shadow(0 0 16px rgba(184,121,58,0.9))} }
+
+.task-done-banner { background:rgba(122,144,118,0.1); border:1px solid rgba(122,144,118,0.3); border-left:3px solid var(--green); padding:10px 14px; border-radius:6px; font-size:12px; color:var(--text); margin-top:6px; }
+
 .api-row { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .api-info { display:flex; flex-direction:column; gap:3px; }
 .api-title { font-size:12px; font-weight:600; color:var(--offwhite); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
@@ -755,7 +769,6 @@ function handleBackendEvent(data) {
     case 'agent_message': {
       const ag = AGENTS.find(a => a.id === data.agent_id);
       if (!ag) break;
-      // Atualiza bubble no escritório
       const bubble = document.getElementById('bubble-'+ag.id);
       const tEl    = document.getElementById('btext-'+ag.id);
       if (bubble && tEl) {
@@ -765,6 +778,51 @@ function handleBackendEvent(data) {
         bubbleTimers[ag.id] = setTimeout(() => bubble.classList.remove('show'), 4500);
       }
       addFeedItem(ag, data.message);
+      break;
+    }
+
+    case 'agent_tasked': {
+      const ag = AGENTS.find(a => a.id === data.agent_id);
+      if (!ag) break;
+      // Spotlight no agente
+      const char = document.getElementById('char-'+ag.id);
+      if (char) {
+        char.classList.add('agent-working');
+        setTimeout(() => char.classList.remove('agent-working'), 45000);
+      }
+      // Bubble de task
+      const bubble = document.getElementById('bubble-'+ag.id);
+      const tEl    = document.getElementById('btext-'+ag.id);
+      if (bubble && tEl) {
+        tEl.innerHTML = '📋 ' + data.task;
+        bubble.classList.add('show');
+        clearTimeout(bubbleTimers[ag.id]);
+        bubbleTimers[ag.id] = setTimeout(() => bubble.classList.remove('show'), 5000);
+      }
+      addFeedItem(ag, '📋 Tarefa recebida: ' + data.task);
+      // Linha IVE → agente
+      drawLine('ive', ag.id, '#B8793A');
+      break;
+    }
+
+    case 'task_done': {
+      const ag = AGENTS.find(a => a.id === data.agent_id);
+      if (!ag) break;
+      const char = document.getElementById('char-'+ag.id);
+      if (char) char.classList.remove('agent-working');
+      // Mensagem de conclusão no chat
+      const list = document.getElementById('chatList');
+      const banner = document.createElement('div');
+      banner.className = 'chat-item';
+      banner.innerHTML = `
+        <div class="chat-av" style="background:#3A2A1A;color:#B8793A">I</div>
+        <div class="chat-content">
+          <div class="chat-header"><span class="chat-name">IVE</span><span class="chat-time">${data.timestamp}</span></div>
+          <div class="task-done-banner">✅ ${data.message}</div>
+        </div>`;
+      list.insertBefore(banner, list.firstChild);
+      addFeedItem(ag, '✅ Tarefa concluída');
+      drawLine(ag.id, 'ive', ag.color);
       break;
     }
 
@@ -789,13 +847,12 @@ function handleBackendEvent(data) {
 
     case 'interaction': {
       const fromAg = AGENTS.find(a => a.id === data.from);
-      const toAg   = AGENTS.find(a => a.id === data.to);
-      if (fromAg && toAg) drawLine(data.from, data.to, fromAg.color);
+      if (fromAg) drawLine(data.from, data.to, fromAg.color);
       break;
     }
 
     case 'crew_result': {
-      addChatMessage('IVE', '✅ Rodada CrewAI concluída: ' + data.message.slice(0, 120) + '...', '#3A2A1A', '#B8793A', false);
+      addChatMessage('IVE', '✅ CrewAI concluído: ' + data.message.slice(0, 120) + '...', '#3A2A1A', '#B8793A', false);
       break;
     }
   }
@@ -817,20 +874,23 @@ async function sendUserMessage() {
     const res = await fetch(`${BACKEND}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: msg, history: chatHistory.slice(-6) }),
+      body: JSON.stringify({ message: msg, history: chatHistory.slice(-8) }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     if (!json.reply) throw new Error('empty reply');
-    return json.reply;
+    return json;
   };
 
   if (backendOnline) {
     try {
-      const reply = await tryBackend();
+      const json = await tryBackend();
       removeIveTyping();
-      chatHistory.push({ role: 'assistant', content: reply });
-      addChatMessage('IVE', reply, '#3A2A1A', '#B8793A', false);
+      chatHistory.push({ role: 'assistant', content: json.reply });
+
+      // Renderiza resposta da IVE com choices e dispatch
+      renderIveMessage(json);
+
       showBubble('ive');
       const char = document.getElementById('char-ive');
       if (char) { char.style.filter='drop-shadow(0 0 14px rgba(184,121,58,1))'; setTimeout(()=>char.style.filter='',2500); }
@@ -841,6 +901,59 @@ async function sendUserMessage() {
   } else {
     setTimeout(() => { removeIveTyping(); fallbackIveResponse(); }, 1200 + Math.random() * 600);
   }
+}
+
+function renderIveMessage(json) {
+  const n = new Date();
+  const time = [n.getHours(),n.getMinutes()].map(v=>String(v).padStart(2,'0')).join(':');
+  const list = document.getElementById('chatList');
+  const item = document.createElement('div');
+  item.className = 'chat-item';
+
+  // Monta choices HTML
+  let choicesHtml = '';
+  if (json.choices && json.choices.length > 0) {
+    choicesHtml = `<div class="choice-btns">${json.choices.map(c =>
+      `<button class="choice-btn" onclick="sendChoice('${c.key}', '${c.label.replace(/'/g,"\\'")}')">
+        <span class="choice-key">[${c.key}]</span>${c.label}
+      </button>`
+    ).join('')}</div>`;
+  }
+
+  // Monta dispatch banner
+  let dispatchHtml = '';
+  if (json.dispatched && json.dispatched.length > 0) {
+    const tags = json.dispatched.map(d => {
+      const ag = AGENTS.find(a => a.id === d.agent);
+      const color = ag ? ag.color : '#B8793A';
+      const bg = ag ? ag.bg : '#2A1A0A';
+      return `<span class="dispatch-agent-tag" style="border-color:${color}40;color:${color}">
+        <span style="width:6px;height:6px;border-radius:50%;background:${color};display:inline-block"></span>
+        ${(d.agent||'').toUpperCase()} — ${d.task}
+      </span>`;
+    }).join('');
+    dispatchHtml = `<div class="dispatch-banner">
+      <div class="d-title">⚡ ACIONANDO AGENTES</div>
+      ${tags}
+    </div>`;
+  }
+
+  item.innerHTML = `
+    <div class="chat-av" style="background:#3A2A1A;color:#B8793A">I</div>
+    <div class="chat-content">
+      <div class="chat-header"><span class="chat-name">IVE</span><span class="chat-time">${time}</span></div>
+      <div class="chat-bubble">${json.reply}</div>
+      ${choicesHtml}
+      ${dispatchHtml}
+    </div>`;
+  list.insertBefore(item, list.firstChild);
+  addFeedItem(AGENTS[0], json.reply);
+}
+
+function sendChoice(key, label) {
+  const input = document.getElementById('userChatInput');
+  input.value = `[${key}] ${label}`;
+  sendUserMessage();
 }
 
 function fallbackIveResponse() {
@@ -857,7 +970,13 @@ buildOffice();
 renderAgentsList();
 renderTasks();
 
-setTimeout(()=>addChatMessage('IVE','Oi, Eduardo. Que bom te ver por aqui. O que você tem em mente hoje?','#3A2A1A','#B8793A'),600);
+setTimeout(()=>{
+  renderIveMessage({
+    reply: 'Oi, Eduardo. Que bom te ver por aqui — a equipe está toda online e pronta. Me conta o que você tem em mente hoje, ou quer que eu te mostre as prioridades da semana?',
+    choices: [{key:'A',label:'Ver prioridades da semana'},{key:'B',label:'Falar sobre métricas'},{key:'C',label:'Acionar um agente específico'}],
+    dispatched: []
+  });
+}, 800);
 AGENTS.slice(0,4).forEach((ag,i)=>setTimeout(()=>addFeedItem(ag,ag.messages[0]),i*400));
 
 animLoop();
