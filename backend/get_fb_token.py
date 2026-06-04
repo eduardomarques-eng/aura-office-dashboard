@@ -22,19 +22,25 @@ def load_env():
     return env
 
 def save_token_to_env(token: str):
+    """Salva o token em FB_PAGE_TOKEN E META_ACCESS_TOKEN (mesmo valor)."""
     text = ENV_PATH.read_text(encoding="utf-8")
-    if "FB_PAGE_TOKEN=" in text:
-        lines = []
-        for line in text.splitlines():
-            if line.startswith("FB_PAGE_TOKEN="):
-                lines.append(f"FB_PAGE_TOKEN={token}")
-            else:
-                lines.append(line)
-        ENV_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    else:
-        with open(ENV_PATH, "a", encoding="utf-8") as f:
-            f.write(f"\nFB_PAGE_TOKEN={token}\n")
-    print(f"\n✅ FB_PAGE_TOKEN salvo no .env!")
+    lines = []
+    found_fb = found_meta = False
+    for line in text.splitlines():
+        if line.startswith("FB_PAGE_TOKEN="):
+            lines.append(f"FB_PAGE_TOKEN={token}")
+            found_fb = True
+        elif line.startswith("META_ACCESS_TOKEN="):
+            lines.append(f"META_ACCESS_TOKEN={token}")
+            found_meta = True
+        else:
+            lines.append(line)
+    if not found_fb:
+        lines.append(f"FB_PAGE_TOKEN={token}")
+    if not found_meta:
+        lines.append(f"META_ACCESS_TOKEN={token}")
+    ENV_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"\n✅ FB_PAGE_TOKEN + META_ACCESS_TOKEN salvos no .env!")
 
 # ─── Handler HTTP ──────────────────────────────────────────────────────────────
 captured_token = {"value": None, "done": False}
@@ -61,7 +67,7 @@ class TokenHandler(BaseHTTPRequestHandler):
             <p>Clique no botão abaixo para autorizar o acesso à página do Facebook.</p>
             <p>Após autorizar, o token será salvo automaticamente no backend.</p>
             <a class="btn" href="/start">Autorizar com Facebook →</a>
-            <div class="note">⚠️ Certifique-se de estar logado no Facebook como <strong>administrador da página Aura Refúgio</strong> antes de clicar.</div>
+            <div class="note">⚠️ Certifique-se de estar logado no Facebook como <strong>administrador da página Aura Decore</strong> antes de clicar.</div>
             </div></body></html>"""
             self._send(html)
 
@@ -69,7 +75,7 @@ class TokenHandler(BaseHTTPRequestHandler):
         elif parsed.path == "/start":
             env = load_env()
             app_id = env.get("META_APP_ID", "").strip()
-            page_id = env.get("FB_PAGE_ID", "1130358240160979")
+            page_id = env.get("FB_PAGE_ID", "1111100822090245")
 
             if not app_id:
                 # Sem App ID — redireciona para Graph Explorer para copiar token manualmente
@@ -120,11 +126,13 @@ class TokenHandler(BaseHTTPRequestHandler):
                     "business_management",
                     "public_profile",
                 ])
+                # Fluxo IMPLÍCITO (response_type=token) — não requer META_APP_SECRET.
+                # O token vem no hash da URL e é capturado por JS em /callback.
                 redirect = (
-                    f"https://www.facebook.com/dialog/oauth?"
+                    f"https://www.facebook.com/v20.0/dialog/oauth?"
                     f"client_id={app_id}&redirect_uri=http://localhost:8765/callback"
                     f"&scope={SCOPES}"
-                    f"&response_type=code"
+                    f"&response_type=token"
                 )
                 self._redirect(redirect)
 
