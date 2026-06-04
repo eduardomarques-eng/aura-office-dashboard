@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aura Decore — ERP/CRM</title>
+<style>
+  :root{
+    --bg:#F4F1EC; --card:#FFFFFF; --ink:#2E2A26; --muted:#8A847C;
+    --accent:#B8793A; --line:#ECE7DF; --green:#5B8C5A; --red:#C0573B; --amber:#D99A3D;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  header{background:var(--ink);color:var(--bg);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+  header h1{font-size:18px;font-weight:300;letter-spacing:3px}
+  header .accent{color:var(--accent)}
+  .sync-btn{background:var(--accent);color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:13px;cursor:pointer;letter-spacing:1px}
+  .sync-btn:hover{opacity:.9}
+  nav{display:flex;gap:4px;background:var(--card);padding:8px 16px;border-bottom:1px solid var(--line);overflow-x:auto;position:sticky;top:56px;z-index:9}
+  nav button{background:none;border:none;padding:10px 16px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--muted);white-space:nowrap}
+  nav button.active{background:var(--bg);color:var(--ink);font-weight:600}
+  main{padding:24px;max-width:1200px;margin:0 auto}
+  .grid{display:grid;gap:16px}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:24px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .kpi .label{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+  .kpi .value{font-size:28px;font-weight:600;margin-top:6px}
+  .kpi .sub{font-size:12px;color:var(--muted);margin-top:4px}
+  .mei-bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:10px}
+  .mei-fill{height:100%;background:var(--green);transition:width .5s}
+  h2{font-size:16px;font-weight:600;margin-bottom:14px;letter-spacing:.5px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;color:var(--muted);font-weight:500;padding:8px 10px;border-bottom:2px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:1px}
+  td{padding:10px;border-bottom:1px solid var(--line)}
+  tr:hover td{background:#FBF9F5}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+  .b-green{background:#E4EFE3;color:var(--green)} .b-red{background:#F6E2DC;color:var(--red)}
+  .b-amber{background:#FBEFD9;color:#9A6A1E} .b-gray{background:var(--bg);color:var(--muted)}
+  .funil{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  .funil .stage{background:var(--bg);border-radius:10px;padding:14px;text-align:center}
+  .funil .stage .n{font-size:24px;font-weight:700;color:var(--accent)}
+  .funil .stage .s{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+  .empty{text-align:center;color:var(--muted);padding:40px;font-style:italic}
+  .row-actions button{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;margin-right:4px}
+  .toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .toolbar input,.toolbar select{padding:8px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px}
+  .add-btn{background:var(--ink);color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px}
+  .hidden{display:none}
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:14px 20px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .3s;z-index:100}
+  .toast.show{opacity:1}
+  @media(max-width:700px){.funil{grid-template-columns:repeat(2,1fr)}main{padding:14px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>AURA <span class="accent">ERP</span> · CRM</h1>
+  <button class="sync-btn" onclick="syncShopify()">⟳ Sincronizar Shopify</button>
+</header>
+
+<nav id="nav">
+  <button class="active" data-tab="dashboard">📊 Dashboard</button>
+  <button data-tab="crm">👥 CRM</button>
+  <button data-tab="pedidos">🛒 Pedidos</button>
+  <button data-tab="estoque">📦 Estoque</button>
+  <button data-tab="financeiro">💰 Financeiro</button>
+  <button data-tab="fornecedores">🚚 Fornecedores</button>
+</nav>
+
+<main>
+  <section id="tab-dashboard"></section>
+  <section id="tab-crm" class="hidden"></section>
+  <section id="tab-pedidos" class="hidden"></section>
+  <section id="tab-estoque" class="hidden"></section>
+  <section id="tab-financeiro" class="hidden"></section>
+  <section id="tab-fornecedores" class="hidden"></section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = (location.protocol+'//'+location.hostname+':8000/erp');
+const $ = id => document.getElementById(id);
+const brl = v => 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
+async function api(path,opts){const r=await fetch(API+path,opts);return r.json();}
+
+// ---- Navegação ----
+document.querySelectorAll('#nav button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));
+    $('tab-'+b.dataset.tab).classList.remove('hidden');
+    render(b.dataset.tab);
+  };
+});
+
+async function syncShopify(){
+  toast('Sincronizando com Shopify...');
+  const r=await api('/sync/shopify',{method:'POST'});
+  if(r.erro){toast('⚠ '+r.erro);}
+  else{toast(`✓ ${r.produtos} produtos · ${r.clientes} clientes · ${r.pedidos} pedidos`);}
+  render(document.querySelector('#nav button.active').dataset.tab);
+}
+
+// ---- Render por aba ----
+async function render(tab){
+  if(tab==='dashboard') return renderDashboard();
+  if(tab==='crm') return renderCRM();
+  if(tab==='pedidos') return renderPedidos();
+  if(tab==='estoque') return renderEstoque();
+  if(tab==='financeiro') return renderFinanceiro();
+  if(tab==='fornecedores') return renderFornecedores();
+}
+
+async function renderDashboard(){
+  const d=await api('/dashboard');
+  const m=d.financeiro.mei;
+  $('tab-dashboard').innerHTML=`
+   <div class="grid kpis">
+     <div class="card kpi"><div class="label">Receita (ano)</div><div class="value">${brl(d.financeiro.receita_ano)}</div><div class="sub">Mês: ${brl(d.financeiro.receita_mes)}</div></div>
+     <div class="card kpi"><div class="label">Lucro (ano)</div><div class="value">${brl(d.financeiro.lucro_ano)}</div><div class="sub">Despesas: ${brl(d.financeiro.despesa_ano)}</div></div>
+     <div class="card kpi"><div class="label">Pedidos</div><div class="value">${d.pedidos.total}</div><div class="sub">${d.pedidos.pendentes} pendentes · ticket ${brl(d.pedidos.ticket_medio)}</div></div>
+     <div class="card kpi"><div class="label">Clientes</div><div class="value">${d.crm.total_clientes}</div><div class="sub">no CRM</div></div>
+     <div class="card kpi"><div class="label">Produtos</div><div class="value">${d.estoque.total_produtos}</div><div class="sub" style="color:var(--red)">⚠ ${d.estoque.alertas_estoque_baixo} c/ estoque baixo</div></div>
+   </div>
+   <div class="card" style="margin-bottom:16px">
+     <h2>Monitor MEI ${m.farol}</h2>
+     <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)">
+       <span>Faturado: <b style="color:var(--ink)">${brl(m.faturado)}</b></span>
+       <span>Disponível: <b style="color:var(--ink)">${brl(m.disponivel)}</b></span>
+       <span>Limite: ${brl(m.limite_anual)}</span>
+     </div>
+     <div class="mei-bar"><div class="mei-fill" style="width:${Math.min(100,m.percentual)}%;background:${m.percentual>=80?'var(--red)':m.percentual>=60?'var(--amber)':'var(--green)'}"></div></div>
+     <div style="text-align:right;font-size:12px;color:var(--muted);margin-top:6px">${m.percentual}% do teto anual</div>
+   </div>`;
+}
+
+async function renderCRM(){
+  const d=await api('/crm/funil');
+  let funil=d.funil.map(s=>`<div class="stage"><div class="n">${s.qtd}</div><div class="s">${s.estagio}</div></div>`).join('');
+  const c=await api('/crm/clientes?limit=100');
+  let rows=c.clientes.map(x=>`<tr><td>${x.nome}</td><td>${x.email||'—'}</td><td>${x.cidade||'—'}/${x.estado||''}</td>
+     <td><span class="badge b-gray">${x.estagio}</span></td><td>${brl(x.total_gasto)}</td><td>${x.qtd_pedidos}</td></tr>`).join('');
+  if(!c.clientes.length) rows=`<tr><td colspan="6" class="empty">Nenhum cliente ainda. Clique em "Sincronizar Shopify" após a primeira venda.</td></tr>`;
+  $('tab-crm').innerHTML=`
+    <div class="card" style="margin-bottom:16px"><h2>Funil de Vendas</h2><div class="funil">${funil}</div></div>
+    <div class="card"><h2>Clientes & Leads</h2>
+      <div class="toolbar"><input id="crmBusca" placeholder="Buscar nome/email..." oninput="filtrarCRM()">
+        <button class="add-btn" onclick="novoCliente()">+ Novo lead</button></div>
+      <table><thead><tr><th>Nome</th><th>Email</th><th>Local</th><th>Estágio</th><th>Gasto</th><th>Pedidos</th></tr></thead>
+      <tbody id="crmBody">${rows}</tbody></table></div>`;
+}
+async function filtrarCRM(){const q=$('crmBusca').value;const c=await api('/crm/clientes?busca='+encodeURIComponent(q));
+  $('crmBody').innerHTML=c.clientes.map(x=>`<tr><td>${x.nome}</td><td>${x.email||'—'}</td><td>${x.cidade||'—'}</td><td><span class="badge b-gray">${x.estagio}</span></td><td>${brl(x.total_gasto)}</td><td>${x.qtd_pedidos}</td></tr>`).join('')||`<tr><td colspan=6 class=empty>Sem resultados</td></tr>`;}
+async function novoCliente(){const nome=prompt('Nome do lead:');if(!nome)return;const email=prompt('Email (opcional):')||'';
+  await api('/crm/clientes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,email,origem:'manual',estagio:'lead'})});
+  toast('✓ Lead adicionado');renderCRM();}
+
+async function renderPedidos(){
+  const d=await api('/pedidos?limit=100');
+  let rows=d.pedidos.map(p=>{const cls=p.status==='pago'?'b-green':p.status==='cancelado'?'b-red':'b-amber';
+    return `<tr><td>${p.numero||'#'+p.id}</td><td>${p.cliente_nome||'—'}</td><td>${brl(p.total)}</td>
+      <td><span class="badge ${cls}">${p.status}</span></td><td>${(p.criado_em||'').slice(0,10)}</td></tr>`;}).join('');
+  if(!d.pedidos.length) rows=`<tr><td colspan="5" class="empty">Nenhum pedido ainda — a loja acabou de lançar. Pedidos aparecem aqui automaticamente via sync.</td></tr>`;
+  $('tab-pedidos').innerHTML=`<div class="card"><h2>Pedidos</h2>
+    <table><thead><tr><th>Pedido</th><th>Cliente</th><th>Total</th><th>Status</th><th>Data</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+async function renderEstoque(){
+  const d=await api('/estoque/produtos?limit=200');
+  let rows=d.produtos.map(p=>{const baixo=p.estoque<=p.estoque_minimo;
+    return `<tr><td>${p.titulo}</td><td>${p.sku||'—'}</td><td><span class="badge b-gray">${p.categoria}</span></td>
+      <td>${brl(p.preco)}</td><td style="color:${baixo?'var(--red)':'var(--ink)'};font-weight:${baixo?700:400}">${p.estoque} ${baixo?'⚠':''}</td>
+      <td class="row-actions"><button onclick="movEstoque(${p.id},'${p.titulo.replace(/'/g,'')}')">Repor</button></td></tr>`;}).join('');
+  $('tab-estoque').innerHTML=`<div class="card"><h2>Estoque & Produtos (${d.produtos.length})</h2>
+    <div class="toolbar"><label><input type="checkbox" id="soAlerta" onchange="renderEstoqueFiltro()"> Só alertas de estoque baixo</label></div>
+    <table><thead><tr><th>Produto</th><th>SKU</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+async function renderEstoqueFiltro(){if($('soAlerta').checked){const d=await api('/estoque/alertas');
+  const tb=document.querySelector('#tab-estoque tbody');tb.innerHTML=d.produtos.map(p=>`<tr><td>${p.titulo}</td><td>${p.sku||'—'}</td><td><span class="badge b-gray">${p.categoria}</span></td><td>${brl(p.preco)}</td><td style="color:var(--red);font-weight:700">${p.estoque} ⚠</td><td class="row-actions"><button onclick="movEstoque(${p.id},'')">Repor</button></td></tr>`).join('');}else renderEstoque();}
+async function movEstoque(id){const q=prompt('Quantidade a adicionar ao estoque:');if(!q)return;
+  await api('/estoque/produtos/'+id+'/movimentar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({quantidade:parseInt(q),tipo:'entrada',motivo:'reposição manual'})});
+  toast('✓ Estoque atualizado');renderEstoque();}
+
+async function renderFinanceiro(){
+  const mei=await api('/financeiro/mei');const dre=await api('/financeiro/dre');
+  const lanc=await api('/financeiro?limit=50');
+  let rows=lanc.lancamentos.map(l=>`<tr><td>${(l.data||'').slice(0,10)}</td><td><span class="badge ${l.tipo==='receita'?'b-green':'b-red'}">${l.tipo}</span></td>
+    <td>${l.categoria}</td><td>${l.descricao||'—'}</td><td style="text-align:right">${brl(l.valor)}</td></tr>`).join('');
+  if(!lanc.lancamentos.length) rows=`<tr><td colspan="5" class="empty">Sem lançamentos. Receitas entram automaticamente a cada venda paga sincronizada.</td></tr>`;
+  $('tab-financeiro').innerHTML=`
+   <div class="grid kpis">
+     <div class="card kpi"><div class="label">Receita bruta</div><div class="value">${brl(dre.receita_bruta)}</div></div>
+     <div class="card kpi"><div class="label">Despesa total</div><div class="value">${brl(dre.despesa_total)}</div></div>
+     <div class="card kpi"><div class="label">Lucro líquido</div><div class="value">${brl(dre.lucro_liquido)}</div><div class="sub">Margem ${dre.margem}%</div></div>
+     <div class="card kpi"><div class="label">Teto MEI</div><div class="value">${mei.percentual}%</div><div class="sub">${mei.farol}</div></div>
+   </div>
+   <div class="card"><h2>Lançamentos</h2>
+     <div class="toolbar"><button class="add-btn" onclick="novoLanc('receita')">+ Receita</button><button class="add-btn" onclick="novoLanc('despesa')" style="background:var(--red)">+ Despesa</button></div>
+     <table><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th style="text-align:right">Valor</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+async function novoLanc(tipo){const desc=prompt(`Descrição da ${tipo}:`);if(!desc)return;const v=prompt('Valor (R$):');if(!v)return;
+  const cat=tipo==='receita'?'venda':(prompt('Categoria (fornecedor/marketing/taxa/das_mei/outro):')||'outro');
+  await api('/financeiro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tipo,categoria:cat,descricao:desc,valor:parseFloat(v.replace(',','.'))})});
+  toast('✓ Lançamento registrado');renderFinanceiro();}
+
+async function renderFornecedores(){
+  const d=await api('/fornecedores');const compras=await api('/compras');
+  let f=d.fornecedores.map(x=>`<tr><td>${x.nome}</td><td><span class="badge b-gray">${x.tipo}</span></td><td>${x.prazo_entrega}d</td>
+    <td>${'★'.repeat(x.avaliacao)}${'☆'.repeat(5-x.avaliacao)}</td><td>${x.notas||'—'}</td></tr>`).join('');
+  let c=compras.compras.map(x=>`<tr><td>${x.fornecedor_nome||x.fornecedor_id}</td><td>${x.descricao}</td><td>${brl(x.valor_total)}</td>
+    <td><span class="badge ${x.status==='recebido'?'b-green':'b-amber'}">${x.status}</span></td><td>${(x.data_pedido||'').slice(0,10)}</td></tr>`).join('')
+    ||`<tr><td colspan="5" class="empty">Nenhuma compra registrada.</td></tr>`;
+  $('tab-fornecedores').innerHTML=`
+   <div class="card" style="margin-bottom:16px"><h2>Fornecedores</h2>
+     <div class="toolbar"><button class="add-btn" onclick="novoForn()">+ Fornecedor</button></div>
+     <table><thead><tr><th>Nome</th><th>Tipo</th><th>Prazo</th><th>Avaliação</th><th>Notas</th></tr></thead><tbody>${f}</tbody></table></div>
+   <div class="card"><h2>Pedidos de Compra</h2>
+     <div class="toolbar"><button class="add-btn" onclick="novaCompra()">+ Nova compra</button></div>
+     <table><thead><tr><th>Fornecedor</th><th>Descrição</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead><tbody>${c}</tbody></table></div>`;
+}
+async function novoForn(){const nome=prompt('Nome do fornecedor:');if(!nome)return;const tipo=prompt('Tipo (nacional/internacional/dropshipping):')||'nacional';
+  await api('/fornecedores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,tipo})});toast('✓ Fornecedor criado');renderFornecedores();}
+async function novaCompra(){const fn=prompt('Nome do fornecedor:');if(!fn)return;const desc=prompt('Descrição:');const v=prompt('Valor total (R$):');
+  await api('/compras',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fornecedor_id:0,fornecedor_nome:fn,descricao:desc,valor_total:parseFloat((v||'0').replace(',','.'))})});toast('✓ Compra registrada');renderFornecedores();}
+
+// init
+render('dashboard');
+</script>
+</body>
+</html>

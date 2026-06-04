@@ -1,0 +1,196 @@
+﻿
+/* ââ Aura Decore: Image Aspect Ratio Fix ââ */
+/* Corrige imagens esticadas/deformadas no tema Dawn */
+
+/* Imagens de produto â mantÃ©m proporÃ§Ã£o 1:1 */
+.product-media-container,
+.product__media,
+.media-gallery__item,
+.product-single__photo-wrapper {
+  aspect-ratio: 1 / 1 !important;
+  overflow: hidden !important;
+}
+
+.product-media-container img,
+.product__media img,
+.media-gallery__item img,
+.product-single__photo-wrapper img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+}
+
+/* Cards de produto na collection page */
+.card__media,
+.card-wrapper .media,
+.product-card__image-container {
+  aspect-ratio: 1 / 1 !important;
+  overflow: hidden !important;
+}
+
+.card__media img,
+.card-wrapper .media img,
+.product-card__image-container img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center top !important;
+}
+
+/* Thumbnails no carrossel de produto */
+.thumbnail-slider__item,
+.product__thumbnail {
+  aspect-ratio: 1 / 1 !important;
+  overflow: hidden !important;
+}
+
+.thumbnail-slider__item img,
+.product__thumbnail img {
+  object-fit: cover !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Hero banner â mantÃ©m proporÃ§Ã£o sem esticar */
+.banner__media,
+.hero__image-container {
+  aspect-ratio: 16 / 7 !important;
+  overflow: hidden !important;
+}
+
+.banner__media img,
+.hero__image-container img {
+  object-fit: cover !important;
+  object-position: center !important;
+}
+
+/* Mobile â force square thumbnails */
+@media (max-width: 750px) {
+  .card__media,
+  .card-wrapper .media {
+    aspect-ratio: 4 / 5 !important;
+  }
+}
+
+
+{% comment %} Aura Decore: UrgÃªncia â Poucos em estoque {% endcomment %}
+{% if product.available %}
+  {% assign total_inventory = 0 %}
+  {% for variant in product.variants %}
+    {% assign total_inventory = total_inventory | plus: variant.inventory_quantity %}
+  {% endfor %}
+  {% if total_inventory > 0 and total_inventory <= 10 %}
+    <div class="aura-urgency-badge">
+      ð¥ Apenas {{ total_inventory }} em estoque
+    </div>
+  {% elsif total_inventory == 0 %}
+    <div class="aura-urgency-badge aura-urgency-low">
+      â¡ Ãltimas unidades
+    </div>
+  {% endif %}
+{% endif %}
+
+
+.aura-urgency-badge {
+  display: inline-block;
+  background: rgba(224, 82, 82, 0.1);
+  border: 1px solid rgba(224, 82, 82, 0.4);
+  color: #E05252;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin: 8px 0;
+}
+.aura-urgency-low {
+  background: rgba(180, 148, 90, 0.1);
+  border-color: rgba(180, 148, 90, 0.4);
+  color: #B4945A;
+}
+
+
+
+{% comment %} Aura Decore: Frete GrÃ¡tis Progress Bar {% endcomment %}
+{% assign free_shipping_threshold = 19900 %} {% comment %} R$199 em centavos {% endcomment %}
+{% assign cart_total = cart.total_price %}
+{% assign remaining = free_shipping_threshold | minus: cart_total %}
+
+<div class="aura-shipping-bar">
+  {% if remaining > 0 %}
+    <div class="aura-shipping-bar__text">
+      Falta <strong>R$ {{ remaining | money_without_currency }}</strong> para frete grÃ¡tis ð¿
+    </div>
+    <div class="aura-shipping-bar__track">
+      {% assign progress = cart_total | times: 100 | divided_by: free_shipping_threshold %}
+      <div class="aura-shipping-bar__fill" style="width: {{ progress | at_most: 100 }}%;"></div>
+    </div>
+  {% else %}
+    <div class="aura-shipping-bar__text aura-shipping-bar--earned">
+      â Frete grÃ¡tis conquistado! ð
+    </div>
+  {% endif %}
+</div>
+
+
+.aura-shipping-bar { padding: 8px 16px; background: rgba(180,148,90,.08); border-bottom: 1px solid rgba(180,148,90,.2); text-align: center; font-size: 13px; color: #6A5E52; }
+.aura-shipping-bar__track { height: 4px; background: #E8E0D4; border-radius: 2px; margin: 4px auto; max-width: 200px; overflow: hidden; }
+.aura-shipping-bar__fill { height: 100%; background: linear-gradient(90deg, #B8793A, #D4AF72); border-radius: 2px; transition: width .5s ease; }
+.aura-shipping-bar--earned { color: #4CAF82; font-weight: 600; }
+
+
+
+{% comment %} Aura Decore: Social Proof Counter {% endcomment %}
+<div id="aura-viewers" style="display:none;font-size:12px;color:#6A5E52;margin:6px 0;">
+  ð <span id="aura-viewer-count">0</span> pessoas viram este produto hoje
+</div>
+
+
+
+
+{% comment %} Aura Decore: Sticky Add to Cart (mobile) {% endcomment %}
+<div id="aura-sticky-cart" class="aura-sticky-cart">
+  <div class="aura-sticky-cart__info">
+    <span class="aura-sticky-cart__title">{{ product.title | truncate: 30 }}</span>
+    <span class="aura-sticky-cart__price">{{ product.selected_or_first_available_variant.price | money }}</span>
+  </div>
+  <button type="button" class="aura-sticky-cart__btn" onclick="document.querySelector('[name=add]')?.click()">
+    Adicionar ao Carrinho
+  </button>
+</div>
+
+
+@media (max-width: 768px) {
+  .aura-sticky-cart {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 999;
+    background: #F5F0EB; border-top: 1px solid #D4C4A8;
+    padding: 10px 16px; display: flex; align-items: center;
+    gap: 12px; box-shadow: 0 -4px 20px rgba(0,0,0,.1);
+    transform: translateY(100%); transition: transform .3s ease;
+  }
+  .aura-sticky-cart.visible { transform: translateY(0); }
+  .aura-sticky-cart__info { flex: 1; }
+  .aura-sticky-cart__title { display: block; font-size: 12px; color: #6A5E52; }
+  .aura-sticky-cart__price { font-size: 16px; font-weight: 700; color: #B8793A; }
+  .aura-sticky-cart__btn {
+    background: #B8793A; color: white; border: none; border-radius: 6px;
+    padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
+    white-space: nowrap;
+  }
+}
+@media (min-width: 769px) { .aura-sticky-cart { display: none !important; } }
+
+
+<script>
+(function() {
+  const sticky = document.getElementById('aura-sticky-cart');
+  if (!sticky) return;
+  let lastScroll = 0;
+  window.addEventListener('scroll', function() {
+    const currentScroll = window.scrollY;
+    if (currentScroll > 400) sticky.classList.add('visible');
+    else sticky.classList.remove('visible');
+    lastScroll = currentScroll;
+  });
+})();
+</script>
