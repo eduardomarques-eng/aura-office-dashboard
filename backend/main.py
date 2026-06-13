@@ -1933,7 +1933,7 @@ async def store_status():
             "whatsapp":   {"status": "configured" if _zapi_instance else "pending", "instance": _zapi_instance or None},
         },
         "llm_cascade": ["groq/70b", "groq/8b", "together-ai", "openrouter", "google-gemini", "anthropic", "ollama"],
-        "crew_agents": ["IVE","GUARD","NEXUS","THEO","KAI","VERA","LUNA","NOX","REX","ECHO","LENA","SOL","ZARA","MIRA","PIPE"],
+        "crew_agents": ["IVE","GUARD","NEXUS","THEO","KAI","VERA","LUNA","NOX","REX","ECHO","LENA","SOL","ZARA","MIRA","PIPE","ARTE","FEED","DEV"],
         "active_connections": len(manager.connections),
     }
 
@@ -1992,11 +1992,11 @@ async def automation_status():
             "webhook_url": f"{os.getenv('RAILWAY_URL', 'http://localhost:8000')}/whatsapp/webhook",
         },
         "n8n_workflows": {
-            "count": 11,
+            "count": 12,
             "backend_url": os.getenv("RAILWAY_URL", "http://localhost:8000"),
             "status": "atualizado — todos apontam para Railway",
         },
-        "crew_agents": 17,
+        "crew_agents": 18,
         "schedulers": ["social_post 3x/dia", "design segunda 8h", "store_enrichment terça 10h"],
     }
 
