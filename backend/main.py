@@ -43,6 +43,27 @@ except Exception as _me:
     _MODULES_OK = False
     print(f"[WARN] Módulos extras não carregados: {_me}")
 
+# ── Payment: AppMax + Yampi ────────────────────────────────────────────────────
+try:
+    try:
+        from backend.payment_integration import (
+            appmax_get_orders, appmax_get_chargebacks, appmax_get_summary,
+            appmax_verify_webhook, appmax_classify_event,
+            yampi_get_orders, yampi_get_abandoned_carts, yampi_get_customers,
+            yampi_update_order_status, yampi_summary, payment_health,
+        )
+    except ImportError:
+        from payment_integration import (
+            appmax_get_orders, appmax_get_chargebacks, appmax_get_summary,
+            appmax_verify_webhook, appmax_classify_event,
+            yampi_get_orders, yampi_get_abandoned_carts, yampi_get_customers,
+            yampi_update_order_status, yampi_summary, payment_health,
+        )
+    _PAYMENT_OK = True
+except Exception as _pe:
+    _PAYMENT_OK = False
+    print(f"[WARN] payment_integration não carregado: {_pe}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -81,7 +102,12 @@ _zapi_client_id = os.getenv("ZAPI_CLIENT_TOKEN", "")
 _shopify_domain = os.getenv("SHOPIFY_DOMAIN", "")
 _shopify_token  = os.getenv("SHOPIFY_ADMIN_TOKEN", "")
 STORE_DOMAIN    = os.getenv("STORE_DOMAIN", "auradecore.com.br")
-OBSIDIAN_VAULT  = os.getenv("OBSIDIAN_VAULT", r"C:\Users\erick\AURA-decor-vault")
+_default_vault = (
+    r"C:\Users\erick\AURA-decor-vault"
+    if __import__("platform").system() == "Windows"
+    else "/app/vault"
+)
+OBSIDIAN_VAULT  = os.getenv("OBSIDIAN_VAULT", _default_vault)
 
 # Ollama (fallback local — sem chave, sem custo)
 OLLAMA_URL   = os.getenv("OLLAMA_URL",   "http://localhost:11434")
@@ -1199,6 +1225,12 @@ async def get_activity_log(limit: int = 200, category: str = ""):
 
 @app.on_event("startup")
 async def startup():
+    # Garante que o vault existe (crítico no Railway/Linux onde o dir não preexiste)
+    vault_root = pathlib.Path(OBSIDIAN_VAULT)
+    for sub in ["Tarefas", "Logs", "Agentes", "Maratona", "FullThrottle", "ShopifyImprovements"]:
+        (vault_root / sub).mkdir(parents=True, exist_ok=True)
+    print(f"[VAULT] Diretório: {vault_root} ({'ok' if vault_root.exists() else 'ERRO'})")
+
     # Inicializa vault Obsidian
     if _MODULES_OK:
         try:
@@ -1437,84 +1469,234 @@ async def chat_with_ive(body: ChatBody):
 
 # ── WhatsApp Z-API ────────────────────────────────────────────────────────────
 
+try:
+    from whatsapp_agent import handle_incoming as _wa_handle, _SESSIONS as _WA_SESSIONS
+    _WA_OK = True
+    print("[WA] Módulo whatsapp_agent carregado")
+except Exception as _wa_e:
+    _WA_OK = False
+    print(f"[WARN] whatsapp_agent não carregado: {_wa_e}")
+
 class WhatsAppBody(BaseModel):
     phone: str
     message: str
 
+_wppconnect_url   = os.getenv("WPPCONNECT_URL", "http://localhost:21465")
+_wppconnect_key   = os.getenv("WPPCONNECT_SECRET", "AuraDecoreWpp2026!")
+_wppconnect_sess  = os.getenv("WPPCONNECT_SESSION", "aura-decore")
+_wppconnect_token = os.getenv("WPPCONNECT_TOKEN", "")
+
 @app.post("/whatsapp/send")
 async def whatsapp_send(body: WhatsAppBody):
-    """Envia mensagem via Z-API. Requer ZAPI_INSTANCE_ID + ZAPI_TOKEN no .env"""
-    if not _zapi_instance or not _zapi_token:
-        return {"status": "not_configured", "message": "Configure ZAPI_INSTANCE_ID e ZAPI_TOKEN no .env"}
-    url = f"https://api.z-api.io/instances/{_zapi_instance}/token/{_zapi_token}/send-text"
-    payload = {"phone": body.phone, "message": body.message}
-    headers = {"Content-Type": "application/json", "Client-Token": _zapi_client_id}
+    """Envia mensagem via WPPConnect."""
+    if not _wppconnect_url:
+        return {"status": "not_configured", "message": "Configure WPPCONNECT_URL no .env"}
+    url = f"{_wppconnect_url}/api/{_wppconnect_sess}/send-message"
+    payload = {"phone": body.phone, "message": body.message, "isGroup": False}
+    headers = {"Authorization": f"Bearer {_wppconnect_token}", "Content-Type": "application/json"}
     try:
-        async with httpx.AsyncClient(timeout=10) as hc:
+        async with httpx.AsyncClient(timeout=15) as hc:
             resp = await hc.post(url, json=payload, headers=headers)
-            return {"status": "sent", "zapiResponse": resp.json()}
+            text = resp.text
+            try:
+                data = resp.json()
+            except Exception:
+                data = {"raw": text}
+            return {"status": "sent", "provider": "wppconnect", "response": data}
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 
 @app.post("/whatsapp/webhook")
 async def whatsapp_webhook(request: Request):
-    """Recebe mensagens do WhatsApp via Z-API webhook e repassa para IVE."""
+    """
+    Recebe eventos Z-API do WhatsApp Business.
+    Roteamento: LENA (padrão) → GUARD (reembolso) / SOL (carrinho) / ZARA (parceria)
+    """
     try:
         data = await request.json()
-        text = data.get("text", {}).get("message", "") or data.get("message", "")
-        phone = data.get("phone", "desconhecido")
-        if not text:
-            return {"status": "ignored"}
 
-        # IVE processa a mensagem e responde
-        messages = [{"role": "user", "content": f"[WhatsApp de {phone}]: {text}"}]
-        raw_reply = None
-        try:
-            if groq_client:
-                msgs_groq = [{"role": "system", "content": IVE_SYSTEM}] + messages
-                resp = groq_client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=msgs_groq,
-                    max_tokens=300,
-                    temperature=0.75,
-                )
-                raw_reply = resp.choices[0].message.content
-        except Exception:
-            pass
-        if not raw_reply:
-            raw_reply = await ollama_chat(IVE_SYSTEM, messages, max_tokens=300, temperature=0.75)
-        if not raw_reply:
-            raw_reply = smart_fallback(text)
+        # Ignora mensagens enviadas pelo próprio bot
+        if data.get("fromMe") or data.get("isGroupMsg"):
+            return {"status": "ignored", "reason": "fromMe or group"}
 
-        clean_reply, dispatches = parse_dispatches(raw_reply)
+        # ── Normaliza payload: suporta Z-API, WPPConnect e Evolution API ──
+        # WPPConnect: { from, sender, body, type, id, ... }
+        # Z-API:      { phone, senderName, messageId, text:{message}, ... }
+        # Evolution:  { data:{key:{remoteJid}, message:{conversation}}, ... }
 
-        # Dispara agentes se necessário
-        for agent_id, task in dispatches:
-            if agent_id in AGENT_WORKING:
-                asyncio.create_task(execute_agent_task(agent_id, task))
+        # Evolution API format
+        if "data" in data and isinstance(data["data"], dict):
+            ev = data["data"]
+            phone      = ev.get("key", {}).get("remoteJid", "").replace("@s.whatsapp.net", "")
+            name       = ev.get("pushName", "")
+            message_id = ev.get("key", {}).get("id", "")
+            msg_obj    = ev.get("message", {})
+            text       = msg_obj.get("conversation", "") or msg_obj.get("extendedTextMessage", {}).get("text", "")
+        else:
+            # WPPConnect / Z-API (campos comuns)
+            phone      = data.get("phone", "") or data.get("from", "").replace("@c.us", "")
+            name       = data.get("senderName", "") or data.get("sender", {}).get("pushname", "") or data.get("pushName", "")
+            message_id = data.get("messageId", "") or data.get("id", "") or data.get("id", {}).get("id", "") if not isinstance(data.get("id"), str) else data.get("id", "")
+            text = (
+                data.get("text", {}).get("message", "")
+                or data.get("message", "")
+                or data.get("body", "")
+                or data.get("content", "")
+            )
 
-        # Broadcast no dashboard
-        ive_ag = {"id": "ive", "name": "IVE"}
+        # Mensagens não-texto (áudio/imagem) → resposta padrão da LENA
+        msg_type = data.get("type", "chat")
+        if msg_type in ("ptt", "audio") and not text:
+            text = "[mensagem de áudio]"
+        elif msg_type == "image" and not text:
+            text = "[imagem enviada]"
+        elif not text:
+            return {"status": "ignored", "reason": "empty_text"}
+
+        if not phone:
+            return {"status": "ignored", "reason": "no_phone"}
+
+        # Processa com whatsapp_agent (LENA/GUARD/SOL/ZARA)
+        if _WA_OK:
+            result = await _wa_handle(phone, text, name, message_id)
+        else:
+            # Fallback simples para LENA se módulo não carregou
+            messages = [{"role": "user", "content": text}]
+            lena_system = AGENT_SYSTEMS.get("lena", "Você é LENA, atendente da Aura Decore. Responda em português caloroso.")
+            raw = await llm_call_cascade(lena_system, messages)
+            result = {"agent": "lena", "reply": raw, "intent": "geral", "escalated": False}
+
+        reply      = result.get("reply", "")
+        agent_used = result.get("agent", "lena")
+        intent     = result.get("intent", "geral")
+
+        # Broadcast no dashboard WebSocket
+        agent_emoji = {"lena": "💬", "guard": "🛡️", "sol": "💰", "zara": "🌸"}.get(agent_used, "💬")
         await manager.broadcast({
-            "type": "agent_message",
-            "agent_id": "ive",
-            "message": f"📱 WhatsApp [{phone}]: {clean_reply[:80]}",
+            "type":      "agent_message",
+            "agent_id":  agent_used,
+            "message":   f"📱 WA [{name or phone}] {agent_emoji} ({intent}): {reply[:80]}",
             "timestamp": datetime.now().strftime("%H:%M"),
         })
 
-        # Tenta responder no WhatsApp
-        if _zapi_instance and _zapi_token:
-            url = f"https://api.z-api.io/instances/{_zapi_instance}/token/{_zapi_token}/send-text"
-            headers = {"Content-Type": "application/json", "Client-Token": _zapi_client_id}
+        # Log no vault se módulo de memória disponível
+        if _MODULES_OK:
             try:
-                async with httpx.AsyncClient(timeout=10) as hc:
-                    await hc.post(url, json={"phone": phone, "message": clean_reply}, headers=headers)
+                log_agent_activity(
+                    agent_used,
+                    f"WhatsApp [{phone}] intent={intent} escalado={result.get('escalated', False)}: {text[:60]}",
+                    reply[:120],
+                )
             except Exception:
                 pass
 
-        return {"status": "processed", "reply": clean_reply}
+        return {
+            "status":    "processed",
+            "agent":     agent_used,
+            "intent":    intent,
+            "escalated": result.get("escalated", False),
+            "reply":     reply,
+        }
     except Exception as e:
         return {"status": "error", "detail": str(e)}
+
+@app.get("/whatsapp/sessions")
+async def whatsapp_sessions():
+    """Lista sessões ativas do WhatsApp (para o dashboard)."""
+    if not _WA_OK:
+        return {"sessions": []}
+    import time as _time
+    now = _time.time()
+    sessions = []
+    for phone, sess in _WA_SESSIONS.items():
+        age_min = int((now - sess["last_ts"]) / 60)
+        sessions.append({
+            "phone":    phone,
+            "name":     sess.get("name", ""),
+            "messages": len(sess.get("history", [])),
+            "idle_min": age_min,
+        })
+    sessions.sort(key=lambda x: x["idle_min"])
+    return {"sessions": sessions, "total": len(sessions)}
+
+# ── Redes Sociais — Plano Avançado ────────────────────────────────────────────
+
+try:
+    from social_strategy import (
+        executar_post, proximo_slot, slots_da_semana,
+        gerar_copy, gerar_imagem_prompt, gerar_imagem_url,
+        CONTENT_PILLARS, WEEKLY_CALENDAR,
+    )
+    _SOCIAL_OK = True
+    print("[SOCIAL] Módulo social_strategy carregado")
+except Exception as _se:
+    _SOCIAL_OK = False
+    print(f"[WARN] social_strategy não carregado: {_se}")
+
+class SocialPostBody(BaseModel):
+    tipo:       str = "foto"
+    pilar:      str = "lifestyle"
+    tema:       str = ""
+    produto:    str = ""
+    plataformas: list = ["instagram", "facebook"]
+
+@app.post("/social/post-now")
+async def social_post_now(body: SocialPostBody):
+    """Gera copy + imagem + publica agora nas plataformas selecionadas."""
+    if not _SOCIAL_OK:
+        return {"status": "error", "detail": "social_strategy não disponível"}
+    slot = {
+        "tipo":       body.tipo,
+        "pilar":      body.pilar,
+        "tema":       body.tema or f"post {body.tipo} sobre decoração Japandi",
+        "plataformas": body.plataformas,
+    }
+    resultado = await executar_post(slot, produto=body.produto)
+    await manager.broadcast({
+        "type":      "social_post",
+        "agent_id":  "feed",
+        "message":   f"📸 Post {body.tipo} ({body.pilar}) publicado em {', '.join(body.plataformas)}",
+        "timestamp": datetime.now().strftime("%H:%M"),
+    })
+    return resultado
+
+@app.post("/social/gerar-copy")
+async def social_gerar_copy(body: SocialPostBody):
+    """Gera copy completo (legenda + hashtags + roteiro) sem publicar."""
+    if not _SOCIAL_OK:
+        return {"status": "error"}
+    copy = await gerar_copy(body.tipo, body.pilar, body.tema, body.produto)
+    img_prompt = await gerar_imagem_prompt(body.tipo, body.pilar, body.tema)
+    imagem_url = await gerar_imagem_url(img_prompt)
+    return {**copy, "img_prompt": img_prompt, "imagem_url": imagem_url}
+
+@app.get("/social/calendario")
+async def social_calendario():
+    """Retorna o calendário semanal completo com próximos slots."""
+    if not _SOCIAL_OK:
+        return {"status": "error"}
+    return {
+        "proximos_7_dias": slots_da_semana(),
+        "proximo_slot":    proximo_slot(),
+        "pilares":         CONTENT_PILLARS,
+    }
+
+@app.get("/social/proximo")
+async def social_proximo():
+    """Retorna e executa o próximo post do calendário."""
+    if not _SOCIAL_OK:
+        return {"status": "error"}
+    slot = proximo_slot()
+    if not slot:
+        return {"status": "nenhum_slot"}
+    resultado = await executar_post(slot)
+    await manager.broadcast({
+        "type":      "social_post",
+        "agent_id":  "feed",
+        "message":   f"📅 Post agendado executado: {slot['tipo']} ({slot['pilar']}) — {slot['dia']} {slot['hora']}",
+        "timestamp": datetime.now().strftime("%H:%M"),
+    })
+    return resultado
 
 # ── Shopify métricas ──────────────────────────────────────────────────────────
 
@@ -1648,6 +1830,88 @@ async def obsidian_log_metrics(body: dict):
     obsidian_write(f"Metricas/Live-{datetime.now().strftime('%Y-%m-%d')}.md", content)
     return {"status": "logged"}
 
+# ── AppMax + Yampi endpoints ──────────────────────────────────────────────────
+
+@app.get("/payment/health")
+async def payment_health_check():
+    """Status das integrações AppMax e Yampi."""
+    if not _PAYMENT_OK:
+        return {"error": "payment_integration module not loaded"}
+    return await payment_health()
+
+@app.get("/payment/appmax/orders")
+async def get_appmax_orders(page: int = 1):
+    """Lista pedidos AppMax."""
+    if not _PAYMENT_OK: return {"error": "module not loaded"}
+    return await appmax_get_orders(page=page)
+
+@app.get("/payment/appmax/chargebacks")
+async def get_appmax_chargebacks(page: int = 1):
+    """Lista chargebacks AppMax — monitorado por GUARD."""
+    if not _PAYMENT_OK: return {"error": "module not loaded"}
+    return await appmax_get_chargebacks(page=page)
+
+@app.post("/payment/appmax/webhook")
+async def appmax_webhook(request: Request):
+    """Recebe eventos AppMax e roteia para agente correto."""
+    if not _PAYMENT_OK: return {"error": "module not loaded"}
+    body = await request.body()
+    sig  = request.headers.get("X-AppMax-Signature", "")
+    if not appmax_verify_webhook(body, sig):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=401, detail="Invalid signature")
+    data       = json.loads(body)
+    event_type = data.get("event", "unknown")
+    agent      = appmax_classify_event(event_type)
+    order_id   = data.get("order", {}).get("id", "")
+    msg = f"[AppMax] Evento {event_type} | Pedido #{order_id} -> agente {agent}"
+    print(msg)
+    obsidian_write(
+        f"Financeiro/appmax-{datetime.now().strftime('%Y-%m-%d')}.md",
+        f"# AppMax Eventos {datetime.now().strftime('%Y-%m-%d')}\n\n- {datetime.now().strftime('%H:%M')} | {event_type} | pedido {order_id} | agente {agent}\n"
+    )
+    return {"ok": True, "event": event_type, "routed_to": agent}
+
+@app.get("/payment/yampi/orders")
+async def get_yampi_orders(page: int = 1):
+    """Lista pedidos Yampi."""
+    if not _PAYMENT_OK: return {"error": "module not loaded"}
+    return await yampi_get_orders(page=page)
+
+@app.get("/payment/yampi/abandoned-carts")
+async def get_yampi_abandoned_carts(page: int = 1):
+    """Carrinhos abandonados Yampi — SOL usa para recovery."""
+    if not _PAYMENT_OK: return {"error": "module not loaded"}
+    return await yampi_get_abandoned_carts(page=page)
+
+@app.get("/payment/yampi/customers")
+async def get_yampi_customers(page: int = 1):
+    """Clientes Yampi — LENA usa para CX."""
+    if not _PAYMENT_OK: return {"error": "module not loaded"}
+    return await yampi_get_customers(page=page)
+
+@app.get("/payment/yampi/summary")
+async def get_yampi_summary():
+    """Resumo operacional Yampi — pedidos hoje/semana."""
+    if not _PAYMENT_OK: return {"error": "module not loaded"}
+    return await yampi_summary()
+
+@app.post("/payment/yampi/webhook")
+async def yampi_webhook(request: Request):
+    """Recebe eventos Yampi e roteia para agente correto."""
+    if not _PAYMENT_OK: return {"error": "module not loaded"}
+    data       = await request.json()
+    event_type = data.get("event", "unknown")
+    order_id   = data.get("data", {}).get("id", "")
+    routing    = {
+        "order.paid": "GUARD", "order.canceled": "SOL",
+        "order.refunded": "GUARD", "cart.abandoned": "SOL",
+        "order.shipped": "LENA",
+    }
+    agent = routing.get(event_type, "IVE")
+    print(f"[Yampi] {event_type} | pedido #{order_id} -> {agent}")
+    return {"ok": True, "event": event_type, "routed_to": agent}
+
 # ── Config/status da loja ─────────────────────────────────────────────────────
 
 @app.get("/store/status")
@@ -1664,6 +1928,7 @@ async def store_status():
             "meta_pixel": {"status": "configured" if os.getenv("META_PIXEL_ID") else "not_configured", "pixel_id": os.getenv("META_PIXEL_ID") or None},
             "meta_capi":  {"status": "configured" if os.getenv("META_CAPI_TOKEN") else "not_configured"},
             "appmax":     {"status": "configured" if os.getenv("APPMAX_TOKEN") else "not_configured"},
+            "yampi":      {"status": "configured" if os.getenv("YAMPI_TOKEN") else "not_configured"},
             "dropi":      {"status": "configured" if os.getenv("DROPI_TOKEN") else "not_configured"},
             "whatsapp":   {"status": "configured" if _zapi_instance else "pending", "instance": _zapi_instance or None},
         },
@@ -1681,6 +1946,60 @@ _groq_tokens_limit = 100_000  # Free tier TPD
 def _groq_increment(n: int = 800):
     global _groq_tokens_used
     _groq_tokens_used += n
+
+@app.get("/automation/status")
+async def automation_status():
+    """
+    Diagnóstico completo da automação Aura Decore.
+    Testa cascata LLM ao vivo e retorna status de cada camada.
+    """
+    from llm_engine import llm as _llm_test, GROQ_KEY, OPENROUTER_KEY, GOOGLE_KEY, ANTHROPIC_KEY, TOGETHER_KEY
+
+    # Testa cascata ao vivo com prompt mínimo
+    test_reply, test_provider = await _llm_test(
+        "Responda apenas 'OK'.",
+        [{"role": "user", "content": "teste"}],
+        max_tokens=5,
+    )
+
+    # Status do WhatsApp
+    wa_sessions = 0
+    try:
+        from whatsapp_agent import _SESSIONS
+        wa_sessions = len(_SESSIONS)
+    except Exception:
+        pass
+
+    return {
+        "status": "operational",
+        "llm_cascade": {
+            "test_provider": test_provider,
+            "test_reply": test_reply,
+            "layers": {
+                "groq":       "configured" if GROQ_KEY else "missing",
+                "together":   "configured" if TOGETHER_KEY else "missing — gratuito: api.together.ai",
+                "openrouter": "configured" if OPENROUTER_KEY else "missing — gratuito: openrouter.ai",
+                "google_ai":  "configured" if GOOGLE_KEY else "missing — gratuito: aistudio.google.com",
+                "anthropic":  "configured" if ANTHROPIC_KEY else "missing",
+                "ollama":     "fallback local",
+            },
+        },
+        "whatsapp": {
+            "status": "configured" if _zapi_instance else "pending — configure ZAPI_INSTANCE_ID no .env",
+            "instance": _zapi_instance or None,
+            "active_sessions": wa_sessions,
+            "agents": ["LENA (padrão)", "GUARD (reembolso)", "SOL (carrinho)", "ZARA (parceria)"],
+            "webhook_url": f"{os.getenv('RAILWAY_URL', 'http://localhost:8000')}/whatsapp/webhook",
+        },
+        "n8n_workflows": {
+            "count": 11,
+            "backend_url": os.getenv("RAILWAY_URL", "http://localhost:8000"),
+            "status": "atualizado — todos apontam para Railway",
+        },
+        "crew_agents": 17,
+        "schedulers": ["social_post 3x/dia", "design segunda 8h", "store_enrichment terça 10h"],
+    }
+
 
 @app.get("/health")
 async def health():
@@ -1708,6 +2027,9 @@ async def health():
     return {
         "status": "online" if not issues else "degraded",
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "agents": len(AGENT_SYSTEMS),
+        "phase": "lançamento",
+        "ts": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "apis": {
             "groq": {
                 "status": "online" if _groq_key else "offline",
@@ -2076,16 +2398,11 @@ async def windsor_metrics(days: int = 7):
             "dashboard": "https://app.windsor.ai/settings/api",
         }
     summary = await get_marketing_summary(days)
-    # Injeta cache Shopify se Admin API falhou e cache disponível
-    if not summary.get("shopify") and _SHOPIFY_CACHE.get("total_orders") is not None:
-        summary["shopify"] = {
-            "gross_revenue": _SHOPIFY_CACHE.get("gross_revenue", 0),
-            "net_revenue": _SHOPIFY_CACHE.get("net_revenue", 0),
-            "orders": _SHOPIFY_CACHE.get("total_orders", 0),
-            "average_order_value": _SHOPIFY_CACHE.get("average_order_value", 0),
-            "total_customers": _SHOPIFY_CACHE.get("total_customers", 0),
-            "source": f"cache ({_SHOPIFY_CACHE.get('updated_at','?')[:10]})",
-        }
+    # Windsor REST API retorna 500 — injeta dados do cache para todas as seções
+    for section in ("shopify", "instagram", "facebook_organic", "meta_ads", "search_console"):
+        if not summary.get(section) and _WINDSOR_CACHE.get(section):
+            cached = _WINDSOR_CACHE[section]
+            summary[section] = {**cached}
     return summary
 
 @app.get("/windsor/campaigns")
@@ -2161,26 +2478,40 @@ AGENT_SYSTEMS = {
         "Use tabela quando útil. Margem mínima: 35%."
     ),
     "vera":  (
-        "Você é VERA, copywriter da Aura Decore. E-commerce premium, persona mãe 28-45 anos, busca calma e estética. "
-        "ESTRATÉGIA LOW-TICKET: para produtos de entrada (R$19-50) use copy de presente e ritual — 'o presente perfeito para si mesma', 'começa com um pequeno gesto'. "
-        "Para upsell: 'Complete o ritual com o Difusor Aura'. "
-        "Entrega: headline + subheadline + 3 bullets + CTA + sugestão de produto complementar. "
-        "Gatilhos: presente, ritual, presente para si mesma, baixo risco, satisfação imediata. Português elegante."
+        "Você é VERA, copywriter da Aura Decore. Tom obrigatório: calmo, poético, minimalista. "
+        "LINGUAGEM JAPANDI: frases curtas, espaço em branco intencional, ausência de superlativos baratos. "
+        "Modelo de copy: 'Um canto que respira.\nMenos coisas. Mais presença.\nAura Decore.' "
+        "PERSONA: mulher 28-45 anos, busca calma, estética e significado no lar. "
+        "Por tipo de post: REEL→hook provocativo + narração sensorial; CARROSSEL→problema→solução→produto→CTA; FOTO→poesia visual 2-3 linhas; STORY→conversa íntima. "
+        "LOW-TICKET: 'o presente perfeito para si mesma', 'começa com um pequeno gesto'. "
+        "UPSELL: 'Complete o ritual com o Difusor Aura'. CTA sempre sutil: 'Descubra em auradecore.com.br'. Português elegante."
     ),
-    "luna":  "Você é LUNA, designer da Aura Decore. Brand kit: terra (#B8793A), off-white (#F5F0EB), Cormorant + DM Sans. Para low-ticket: crie visuals que enfatizem o 'presentável' — embalagem kraft, fita de linho, tag manuscrita. Briefing visual: paleta, tipografia, formato, conceito. Tom elegante minimalista premium.",
+    "luna":  (
+        "Você é LUNA, diretora de arte da Aura Decore. Brand kit: terra (#B8793A), off-white (#F5F0EB), carvão (#2C2825), Cormorant (títulos) + DM Sans (corpo). "
+        "POR TIPO: REEL→vertical 9:16, cena de abertura impactante (2s), paleta terra+neutros, movimento suave; "
+        "CARROSSEL→quadrado 1:1, capa com título grande + produto, slides com fundo off-white + 1 elemento focal; "
+        "FOTO→quadrado 1:1, luz natural lateral, textura natural (madeira/linho/cerâmica), mínimo 60% espaço vazio; "
+        "STORY→vertical 9:16, fonte DM Sans grande, fundo off-white ou terra claro. "
+        "Entrega briefing: paleta usada + tipografia + formato + prompt de imagem IA (flux, estilo japandi minimalista)."
+    ),
     "nox":   (
-        "Você é NOX, criador de conteúdo da Aura Decore (Instagram/Reels). "
-        "FOCO ATUAL — conteúdo low-ticket para atrair novos clientes: "
-        "'presente perfeito abaixo de R$50', 'ritual de início do dia com palo santo', 'unboxing Mini Kit Zen', 'decoração por menos de R$25'. "
-        "Entrega roteiros de 30s: hook (0-3s), desenvolvimento (3-25s), CTA (25-30s). Caption + hashtags. "
-        "Objetivo: converter audiência → primeira compra → recompra em produto premium."
+        "Você é NOX, diretor de conteúdo da Aura Decore. Plano Avançado de Redes Sociais ativo. "
+        "5 PILARES: Lifestyle Japandi (40%), Produtos em Cena (30%), Educação & Inspiração (15%), Bastidores & Marca (10%), Social Proof (5%). "
+        "CALENDÁRIO SEMANAL: Seg→Reel dica/transformação; Ter→Carrossel produto; Qua→Reel ASMR/unboxing; "
+        "Qui→Foto única inspiradora; Sex→Carrossel lookbook; Sáb→Reel lifestyle; Dom→Post reflexivo + Carrossel inspiração. "
+        "REELS (4-5/semana): roteiro 30s — hook (0-3s pergunta/cena), desenvolvimento (3-25s 3 cenas), CTA (25-30s). "
+        "CARROSSEL (3-4/semana): 8-10 slides — capa → problema → solução → produto → depoimento. "
+        "TOM OBRIGATÓRIO: calmo, poético, minimalista. Ex: 'Um canto que respira.\nMenos coisas. Mais presença.\nAura Decore.' "
+        "NUNCA use exclamações excessivas ou copy agressiva. Entrega: roteiro + legenda + hashtags segmentados por pilar."
     ),
     "rex":   (
         "Você é REX, estrategista de crescimento orgânico da Aura Decore. "
-        "FASE ATUAL: somente tráfego ORGÂNICO — tráfego pago não foi iniciado, jamais mencione CPC, CPM, ROAS pago ou CPA. "
-        "FONTE DE DADOS REAL: Windsor.ai via GET /windsor/social (IG + FB) e /windsor/seo (Search Console). "
-        "Foco: crescimento @auras.decore no Instagram, SEO Google, Pinterest orgânico, UGC, micro-influencers. "
-        "Métricas-chave: seguidores, alcance orgânico, impressões, engajamento, sessões orgânicas, top keywords."
+        "PLANO ATIVO — Fase 1 (0-30 dias): conteúdo orgânico consistente, interagir com todos os comentários, meta 500 seguidores IG. "
+        "Fase 2 (30-90 dias): parcerias micro-influencers Japandi, UGC campaign (#auradecore), meta 2.000 seguidores + R$3k/mês. "
+        "Fase 3 (90+ dias): escala com lookalikes, lives mensais, coleções colaborativas, meta 10k seguidores + R$5-8k/mês. "
+        "CANAIS ORGÂNICOS: Instagram @auras.decore, Facebook, Pinterest SEO, Google Search Console. "
+        "FONTE DE DADOS: Windsor.ai (/windsor/social e /windsor/seo). JAMAIS mencione tráfego pago, CPC, CPM, ROAS pago. "
+        "Métricas-chave: seguidores, alcance orgânico, engajamento/post, sessões loja, pedidos, top keywords GSC."
     ),
     "echo":  (
         "Você é ECHO, auditor da Aura Decore. Audita os 17 agentes com Kaizen. Score 0-10. Use ✓/✗/⚠. "
@@ -2201,12 +2532,38 @@ AGENT_SYSTEMS = {
         "Recupera carrinho (cupom AURA10), frete grátis R$199, D+1/D+3/D+7. "
         "MÉTRICA CHAVE: ticket médio alvo R$89. Reporta sempre com dados reais do Windsor quando disponíveis."
     ),
-    "zara":  "Você é ZARA, community manager da Aura Decore no Instagram. Responde DMs <1h, comenta em posts de seguidores, monitora #auradecore e #japandi. Recompensa UGC com FOTO15/VIDEO20. Identifica embaixadoras (3+ compras). Engaja micro-influencers. Português acolhedor.",
+    "zara":  (
+        "Você é ZARA, community manager da Aura Decore. "
+        "MISSÃO: construir comunidade fiel em torno da marca, gerar UGC e parcerias orgânicas. "
+        "AÇÕES DIÁRIAS: responde DMs <1h; comenta com autenticidade em posts com #japandi #decoracaojapandi; monitora #auradecore. "
+        "UGC CAMPAIGN: incentiva clientes a postarem fotos com #auradecore — recompensa FOTO15 (15% OFF) ou VIDEO20 (20% OFF). "
+        "MICRO-INFLUENCERS: identifica perfis Japandi/decoração com 1k-50k seguidores, taxa engajamento >3%. Abordagem: permuta ou comissão. "
+        "EMBAIXADORAS: clientes com 3+ compras recebem convite VIP + cupom AURAEMBAIXADORA20. "
+        "FASE 1 (0-30d): engajamento orgânico puro. FASE 2 (30-90d): 3-5 parcerias micro-influencers. FASE 3 (90d+): programa embaixadoras estruturado. "
+        "Tom: acolhedor, inspirador, nunca robótico. Responde em português fluente e humano."
+    ),
     "mira":  "Você é MIRA, especialista em SEO da Aura Decore. Domina Google Search Console, Pinterest SEO, Shopify SEO (meta tags, alt text, schema). Pesquisa cauda longa: 'decoração japandi quarto', 'vaso cerâmica wabi-sabi'. Entrega: keywords + volume + dificuldade + concorrentes + recomendação.",
     "pipe":  "Você é PIPE, engenheiro de automação da Aura Decore. Cria workflows n8n integrando Shopify/Z-API/AppMax/Pinterest/agentes via API. Entrega: trigger + nodes + integrações + tratamento de erro + JSON resumido. Foco em zero-friction.",
     # Equipe de design e publicação
-    "arte":  "Você é ARTE, criativo visual da Aura Decore. Gera imagens com IA (Pollinations.ai) e criativos para redes sociais. Brand kit: terra #B8793A, off-white #F5F0EB, japandi minimalista. Entrega: prompt de imagem + URL gerada + especificações de uso. 3 criativos/dia.",
-    "feed":  "Você é FEED, publicador automático da Aura Decore. Publica posts no Facebook e Instagram 3x/dia (9h, 14h, 19h). Recebe criativo e copy da equipe e executa publicação via API. Reporta ID do post e status. Cuida da consistência do feed e do calendário editorial.",
+    "arte":  (
+        "Você é ARTE, diretor criativo visual da Aura Decore. "
+        "ESTILO OBRIGATÓRIO: japandi, wabi-sabi, luz natural, tons terra (#B8793A, #F5F0EB, #2C2825), texturas naturais (madeira, linho, cerâmica). "
+        "POR TIPO DE POST: "
+        "REEL→prompt vertical 9:16, cena de ambiente sereno com produto em destaque, luz lateral suave, movimento mínimo; "
+        "CARROSSEL→quadrado 1080x1080, produto centralizado, fundo minimalista off-white, sombra suave natural; "
+        "FOTO→composição regra dos terços, 60% espaço vazio, 1 produto + 1 elemento natural (planta/pedra/madeira); "
+        "Gera prompt em inglês para Pollinations.ai (flux model). Inclui: estilo + elementos + luz + paleta + composição. "
+        "Entrega: prompt IA + URL gerada + especificações técnicas (formato, dimensões, uso)."
+    ),
+    "feed":  (
+        "Você é FEED, publicador e curador do calendário editorial da Aura Decore. "
+        "CALENDÁRIO ATIVO: Seg→Reel(9h)+Story(20h); Ter→Carrossel(18h); Qua→Reel(9h)+Story(20h); "
+        "Qui→Foto(18h); Sex→Carrossel(18h); Sáb→Reel(10h)+Story(20h); Dom→Foto(10h)+Carrossel(19h)+Story(21h). "
+        "PLATAFORMAS: Instagram (@auras.decore) + Facebook (página Aura Decore). "
+        "Stories: publicação manual por Eduardo (salvo no vault com briefing completo). "
+        "Executa via API: POST /social/post-now com {tipo, pilar, tema, plataformas}. "
+        "Reporta: post_id, status, alcance estimado. Mantém consistência visual e de tom."
+    ),
     # Equipe de desenvolvimento Shopify
     "dev":   "Você é DEV, desenvolvedor Shopify da Aura Decore. Mantém o tema com design sazonal japonês-minimalista. Escreve CSS, Liquid, atualiza settings_data.json. Coordena com ARTE e VERA. Aplica CSS sazonal no dia 1 de cada mês e sprint semanal de melhorias CRO. Trabalha staging→live.",
 }
@@ -2786,6 +3143,24 @@ async def read_vault_document(path: str):
     except Exception as e:
         return {"error": str(e), "path": path}
 
+class VaultDocumentPayload(BaseModel):
+    path: str
+    content: str
+
+@app.post("/vault/document")
+async def write_vault_document(payload: VaultDocumentPayload):
+    """Escreve o conteúdo de um documento no vault (seguro para sincronização)."""
+    try:
+        clean_path = payload.path.replace("\\", "/").strip("/")
+        if ".." in clean_path or clean_path.startswith("/"):
+            return {"error": "Invalid path", "path": payload.path}
+        full = pathlib.Path(OBSIDIAN_VAULT) / clean_path.replace("/", os.sep)
+        full.parent.mkdir(parents=True, exist_ok=True)
+        full.write_text(payload.content, encoding="utf-8")
+        return {"status": "written", "path": clean_path, "size_kb": round(len(payload.content)/1024, 1)}
+    except Exception as e:
+        return {"error": str(e), "path": payload.path}
+
 @app.get("/vault/analyze")
 async def analyze_vault_document(path: str, question: str = "Faça um resumo executivo deste documento.", request: Request = None):
     """Analisa um documento com o LLM via streaming SSE (Ollama)."""
@@ -2945,6 +3320,102 @@ async def social_status_stub():
 async def social_setup_token_stub(body: dict):
     """Stub: indica para o usuário configurar via .env ou bridge."""
     token = (body or {}).get("token", "").strip()
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FLEET STATUS — status real da frota de agentes + tasks agendadas + posts
+# ══════════════════════════════════════════════════════════════════════════════
+@app.get("/api/fleet")
+async def fleet_status():
+    """Status completo da frota: agentes, credenciais, tasks agendadas, último post."""
+    import json as _json
+    import subprocess as _sp
+    from pathlib import Path as _P
+
+    here = _P(__file__).parent
+    env_path = here / ".env"
+
+    # Credenciais
+    creds = {
+        "GOOGLE_AI_KEY":         bool(os.getenv("GOOGLE_AI_KEY")),
+        "FB_PAGE_TOKEN":         bool(os.getenv("FB_PAGE_TOKEN")),
+        "META_ACCESS_TOKEN":     bool(os.getenv("META_ACCESS_TOKEN")),
+        "IG_USER_ID":            os.getenv("IG_USER_ID", ""),
+        "SHOPIFY_ADMIN_API_TOKEN": bool(os.getenv("SHOPIFY_ADMIN_API_TOKEN")),
+        "HIGGSFIELD_API_KEY":    bool(os.getenv("HIGGSFIELD_API_KEY")),
+        "WINDSOR_API_KEY":       bool(os.getenv("WINDSOR_API_KEY")),
+    }
+
+    # Agentes da frota operacional (social_agent / run_agents)
+    agents = {
+        "social":        {"desc": "Posts diários IG/FB", "schedule": "09:08", "ok": creds["GOOGLE_AI_KEY"] and creds["FB_PAGE_TOKEN"]},
+        "creative":      {"desc": "Criativo: imagem + caption", "schedule": "09:32", "ok": creds["GOOGLE_AI_KEY"]},
+        "fb-token":      {"desc": "Health check token FB", "schedule": "08:09", "ok": True},
+        "google-status": {"desc": "Gemini Pro + Imagen + Veo", "schedule": "sob demanda", "ok": creds["GOOGLE_AI_KEY"]},
+        "shopify-app":   {"desc": "Admin API Shopify", "schedule": "sob demanda", "ok": creds["SHOPIFY_ADMIN_API_TOKEN"]},
+    }
+
+    # Último post social
+    last_post = None
+    posts_dir = here / "social_posts"
+    if posts_dir.exists():
+        posts = sorted(posts_dir.glob("*.json"), reverse=True)
+        if posts:
+            try:
+                last_post = _json.loads(posts[0].read_text(encoding="utf-8"))
+                last_post["file"] = posts[0].name
+            except Exception:
+                last_post = {"file": posts[0].name}
+
+    # Tasks agendadas Windows — query por nome (rápido, sem /v)
+    aura_task_names = [
+        "aura-creative-post-diario", "aura-fb-token-health",
+        "AuraDecore-SocialPost", "AuraDecoreBackend",
+        "AuraDecoreOrganicContent", "AuraDecore_NEXUS_Mineracao",
+    ]
+    import asyncio as _aio
+    async def _query_single_task(tn):
+        try:
+            proc = await _aio.create_subprocess_exec(
+                "schtasks", "/query", "/tn", tn, "/fo", "LIST",
+                stdout=_aio.subprocess.PIPE,
+                stderr=_aio.subprocess.PIPE
+            )
+            try:
+                stdout, stderr = await _aio.wait_for(proc.communicate(), timeout=1.5)
+                stdout_str = stdout.decode("utf-8", errors="replace")
+                lines = stdout_str.splitlines()
+                status = next((l.split(":",1)[1].strip() for l in lines if "Status" in l), "?")
+                next_r = next((l.split(":",1)[1].strip() for l in lines if "xima" in l), "")
+                return {"name": tn, "status": status, "next_run": next_r, "last_run": ""}
+            except _aio.TimeoutError:
+                try:
+                    proc.kill()
+                except Exception:
+                    pass
+                return {"name": tn, "status": "timeout", "next_run": "", "last_run": ""}
+        except Exception:
+            return {"name": tn, "status": "unknown", "next_run": "", "last_run": ""}
+
+    tasks_deferred = [
+        _query_single_task(tn)
+        for tn in aura_task_names
+    ]
+    scheduled_tasks = await _aio.gather(*tasks_deferred)
+
+    # IG/FB status — verificação rápida sem chamada externa (usa presença do token)
+    fb_ok = bool(os.getenv("FB_PAGE_TOKEN",""))
+    ig_ok = bool(os.getenv("IG_USER_ID",""))
+
+    return {
+        "status": "online",
+        "timestamp": datetime.now().isoformat(),
+        "credentials": creds,
+        "agents": agents,
+        "last_post": last_post,
+        "scheduled_tasks": scheduled_tasks,
+        "social": {"facebook": fb_ok, "instagram": bool(creds["IG_USER_ID"]), "ig_user": creds["IG_USER_ID"]},
+        "shopify": {"domain": os.getenv("SHOPIFY_DOMAIN",""), "admin_token": creds["SHOPIFY_ADMIN_API_TOKEN"]},
+    }
     if not token:
         return {"status": "error", "detail": "Token vazio"}
     # Validação leve
@@ -2965,7 +3436,27 @@ async def social_setup_token_stub(body: dict):
 
 @app.post("/social/post")
 async def social_post_stub(body: dict):
-    """Posta no Facebook (requer FB_PAGE_TOKEN configurado no .env)."""
+    """Posta no Facebook/IG. Se force=True, executa social_agent.py completo."""
+    import subprocess as _sp, sys as _sys, pathlib as _pp
+    force = (body or {}).get("force", False)
+    if force:
+        # Executa social_agent.py em background e retorna imediatamente
+        backend_dir = _pp.Path(__file__).parent
+        try:
+            proc = _sp.Popen(
+                [_sys.executable, str(backend_dir / "social_agent.py")],
+                cwd=str(backend_dir),
+                stdout=_sp.PIPE, stderr=_sp.STDOUT,
+            )
+            # Aguarda até 30s para ver resultado
+            import asyncio
+            loop = asyncio.get_event_loop()
+            out, _ = await loop.run_in_executor(None, lambda: proc.communicate(timeout=30))
+            output = out.decode("utf-8", errors="replace") if out else ""
+            ok = "publicado" in output.lower() or "published" in output.lower() or proc.returncode == 0
+            return {"status": "ok" if ok else "error", "output": output[-500:]}
+        except Exception as e:
+            return {"status": "error", "detail": str(e)}
     if not _FB_PAGE_TOKEN or not _FB_PAGE_ID:
         return {"status": "not_configured",
                 "detail": "FB_PAGE_TOKEN/FB_PAGE_ID ausentes no .env. Use o bridge porta 8001 para autorizar."}
@@ -3585,8 +4076,8 @@ async def mobile_dashboard():
         return HTMLResponse(mobile_file.read_text(encoding="utf-8"))
     return HTMLResponse("<h2>aura-mobile.html não encontrado</h2>", status_code=404)
 
-@app.get("/erp-ui", response_class=HTMLResponse)
-@app.get("/erp/ui", response_class=HTMLResponse)
+@app.get("/erp-ui", response_class=HTMLResponse, operation_id="erp_ui_dash")
+@app.get("/erp/ui", response_class=HTMLResponse, operation_id="erp_ui_path")
 async def erp_ui():
     """Interface visual do ERP/CRM Aura Decore."""
     erp_file = _ROOT / "erp.html"
@@ -3661,22 +4152,6 @@ async def meta_pixel_snippet():
         "checkout": MetaPixel.checkout_snippet(),
         "purchase": MetaPixel.purchase_snippet(),
     })
-
-
-@app.post("/meta/event")
-async def meta_send_event(request: Request):
-    """Envia um evento customizado via CAPI."""
-    if not _META_OK:
-        return JSONResponse({"error": "Meta Integration não disponível"}, status_code=500)
-    body = await request.json()
-    event_name = body.get("event_name", "PageView")
-    url        = body.get("url", "")
-    custom_data = body.get("custom_data", {})
-    user_data   = body.get("user_data", {})
-    capi = MetaCAPI()
-    result = capi.send_event(event_name, event_source_url=url,
-                             custom_data=custom_data, user_data=user_data)
-    return JSONResponse(result)
 
 
 @app.post("/meta/event/purchase")

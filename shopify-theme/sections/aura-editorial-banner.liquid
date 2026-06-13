@@ -1,0 +1,42 @@
+{% comment %}Aura Decore — Editorial Banner — Sprint 3 v2{% endcomment %}
+{%- liquid
+  assign has_image = false
+  if section.settings.image != blank
+    assign has_image = true
+  elsif section.settings.bg_url != blank
+    assign has_image = true
+  endif
+-%}
+<section class="aura-banner" id="AuraBanner-{{ section.id }}">
+  {%- if has_image -%}
+  <div class="aura-banner__media" style="position:absolute;inset:0;overflow:hidden;">
+    {%- if section.settings.image != blank -%}
+    <img src="{{ section.settings.image | image_url: width: 1600 }}" srcset="{{ section.settings.image | image_url: width: 800 }} 800w, {{ section.settings.image | image_url: width: 1200 }} 1200w, {{ section.settings.image | image_url: width: 1600 }} 1600w" sizes="100vw" alt="{{ section.settings.image.alt | default: section.settings.kicker }}" width="1600" height="900" loading="lazy" class="aura-banner__img">
+    {%- else -%}
+    <img src="{{ section.settings.bg_url }}" sizes="100vw" alt="{{ section.settings.kicker }}" width="1600" height="900" loading="lazy" class="aura-banner__img">
+    {%- endif -%}
+    <div style="position:absolute;inset:0;background:rgba(61,61,59,{{ section.settings.overlay_opacity | divided_by: 100.0 }});"></div>
+  </div>
+  {%- else -%}
+  <div style="position:absolute;inset:0;background:var(--aura-linen);"></div>
+  {%- endif -%}
+  <div class="aura-banner__content" data-aura-reveal>
+    {%- if section.settings.kicker != blank -%}<span class="kicker" style="{% if has_image %}color:rgba(250,250,248,0.8);{% endif %}">{{ section.settings.kicker }}</span>{%- endif -%}
+    {%- if section.settings.heading != blank -%}
+    <h2 style="font-family:var(--font-serif);font-size:clamp(2.8rem,5vw,5.6rem);font-weight:400;line-height:1.05;letter-spacing:-.01em;{% if has_image %}color:#fff;{% endif %}margin-bottom:2.4rem;">{{ section.settings.heading }}</h2>
+    {%- endif -%}
+    {%- if section.settings.subheading != blank -%}
+    <p style="font-family:var(--font-sans);font-size:1.5rem;font-weight:300;line-height:1.8;{% if has_image %}color:rgba(250,250,248,0.8);{% else %}color:var(--aura-cinza);{% endif %}max-width:48rem;margin-bottom:3.2rem;">{{ section.settings.subheading }}</p>
+    {%- endif -%}
+    {%- if section.settings.button_label != blank -%}
+    <a href="{{ section.settings.button_link | default: '/collections/all' }}" class="button" style="{% if has_image %}background:transparent;color:#fff;border-color:rgba(250,250,248,0.7);{% endif %}">{{ section.settings.button_label }}</a>
+    {%- endif -%}
+  </div>
+</section>
+<style>
+  #AuraBanner-{{ section.id }} { height:{{ section.settings.height_desktop }}vh; min-height:{{ section.settings.min_height }}rem; }
+  @media(max-width:749px){ #AuraBanner-{{ section.id }}{ height:{{ section.settings.height_mobile }}vh; min-height:24rem; } }
+</style>
+{% schema %}
+{"name":"Aura Banner Editorial","tag":"section","class":"spaced-section","settings":[{"type":"image_picker","id":"image","label":"Imagem de fundo"},{"type":"text","id":"bg_url","label":"Ou cole uma URL de imagem"},{"type":"range","id":"overlay_opacity","min":0,"max":80,"step":5,"unit":"%","label":"Opacidade do overlay","default":35},{"type":"range","id":"height_desktop","min":30,"max":80,"step":5,"unit":"vh","label":"Altura desktop","default":55},{"type":"range","id":"height_mobile","min":30,"max":70,"step":5,"unit":"vh","label":"Altura mobile","default":45},{"type":"range","id":"min_height","min":20,"max":60,"step":2,"unit":"rem","label":"Altura minima","default":36},{"type":"text","id":"kicker","label":"Kicker","default":"Nossa filosofia"},{"type":"richtext","id":"heading","label":"Titulo","default":"<p>Habitar com intencao.</p>"},{"type":"text","id":"subheading","label":"Descricao","default":"Cada peca Aura Decore e escolhida para durar."},{"type":"text","id":"button_label","label":"Texto do botao","default":"Conhecer o manifesto"},{"type":"url","id":"button_link","label":"Link do botao"}],"presets":[{"name":"Aura Banner Editorial"}]}
+{% endschema %}

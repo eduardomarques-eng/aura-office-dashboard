@@ -1,0 +1,204 @@
+{
+  "name": "11 — Shopify Dev Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 3"
+            }
+          ]
+        }
+      },
+      "id": "cron-dev",
+      "name": "Quarta 9h — Sprint Dev",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        180,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 1 * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-seasonal",
+      "name": "Dia 1 7h — Atualização Sazonal",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        180,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://web-production-f1cb5.up.railway.app/crew/run",
+        "method": "POST",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\n  \"crew_type\": \"shopify_dev\",\n  \"context\": \"sprint semanal — design, conversão e UX japandi\"\n}"
+      },
+      "id": "http-dev",
+      "name": "POST /crew/run — shopify_dev",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        420,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://web-production-f1cb5.up.railway.app/crew/run",
+        "method": "POST",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\n  \"crew_type\": \"seasonal_update\",\n  \"context\": \"atualizacao sazonal automatica mensal\"\n}"
+      },
+      "id": "http-seasonal",
+      "name": "POST /crew/run — seasonal_update",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        420,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://web-production-f1cb5.up.railway.app/crew/run",
+        "method": "POST",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\n  \"crew_type\": \"conversion\",\n  \"context\": \"auditoria CRO mensal — melhorar taxa de conversao\"\n}"
+      },
+      "id": "http-cro",
+      "name": "POST /crew/run — conversion",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "check-dev-ok",
+      "name": "Dev OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        660,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://web-production-f1cb5.up.railway.app/agent/message",
+        "method": "POST",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\n  \"agent_id\": \"dev\",\n  \"message\": \"Sprint de desenvolvimento concluido: {{ $json.result }}\"\n}"
+      },
+      "id": "notify-dev",
+      "name": "Notificar DEV",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        260
+      ]
+    }
+  ],
+  "connections": {
+    "Quarta 9h — Sprint Dev": {
+      "main": [
+        [
+          {
+            "node": "POST /crew/run — shopify_dev",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dia 1 7h — Atualização Sazonal": {
+      "main": [
+        [
+          {
+            "node": "POST /crew/run — seasonal_update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST /crew/run — shopify_dev": {
+      "main": [
+        [
+          {
+            "node": "Dev OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST /crew/run — seasonal_update": {
+      "main": [
+        [
+          {
+            "node": "POST /crew/run — conversion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dev OK?": {
+      "main": [
+        [
+          {
+            "node": "Notificar DEV",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [],
+  "id": 11
+}

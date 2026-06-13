@@ -2,14 +2,16 @@
   "version": 2,
   "builds": [
     {
-      "src": "index.html",
-      "use": "@vercel/static"
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "50mb" }
     }
   ],
   "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+    { "src": "/api/(.*)", "dest": "api/index.py" },
+    { "src": "/manifest.json", "dest": "api/index.py" },
+    { "src": "/sw.js", "dest": "api/index.py" },
+    { "src": "/mobile", "dest": "api/index.py" },
+    { "src": "/", "dest": "api/index.py" }
   ]
 }

@@ -1,0 +1,132 @@
+{
+  "name": "Aura Decore · Post Diário Redes Sociais",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "name": "Cron — A cada hora",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();\nconst hour = now.getHours();\n\n// Calendário completo: 6 posts/dia\n// 09h = REEL | 12h = STORY produto | 14h = CARROSSEL | 17h = STORY dica | 19h = STORY bastidor | 21h = STORY CTA noturno\nconst schedule = {\n  9:  { type: 'reel',     crew_type: 'social_post', format: 'reel' },\n  12: { type: 'story',    crew_type: 'social_post', format: 'story' },\n  14: { type: 'carousel', crew_type: 'social_post', format: 'carousel' },\n  17: { type: 'story',    crew_type: 'social_post', format: 'story' },\n  19: { type: 'story',    crew_type: 'social_post', format: 'story' },\n  21: { type: 'story',    crew_type: 'social_post', format: 'story_cta' }\n};\n\nif (!schedule[hour]) { return []; }\n\nconst reelThemes = [\n  'before/after transformacao ambiente 3 produtos Aura Decore',\n  'como montar canto zen em 60 segundos japandi',\n  '5 objetos que transformam qualquer sala japandi',\n  'unboxing e styling vaso ceramica flores secas',\n  'tour pelo lar japandi inspiracao decoracao',\n  'rotina matinal japandi canto cafe difusor planta'\n];\nconst feedThemes = [\n  'vaso de ceramica japandi wabi-sabi',\n  'almofada de linho minimalista natural',\n  'plantas secas pampas biofilia japandi',\n  'bandeja de madeira organizacao elegante',\n  'difusor de varetas bem-estar olfativo',\n  'vela aromatica cera de coco ritual',\n  'decoracao wabi-sabi imperfeicao beleza',\n  'ambiente japandi completo harmonia lar'\n];\nconst storyThemes = [\n  'produto destaque semana swipe ver loja',\n  'dica rapida 3 objetos atemporais japandi',\n  'bastidor selecao novos produtos Aura Decore',\n  'enquete decoracao japandi plantas secas vivas',\n  'cliente Aura Decore compartilhe seu lar',\n  'lancamento novo produto countdown'\n];\n\nconst s = schedule[hour];\nconst themes = s.type === 'reel' ? reelThemes : (s.type === 'carousel' ? feedThemes : storyThemes);\nconst idx = Math.floor(Math.random() * themes.length);\n\nreturn [{ json: { \n  theme: themes[idx], \n  hour,\n  format: s.format,\n  crew_type: s.crew_type\n}}];"
+      },
+      "name": "Verifica Horario e Formato",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://web-production-f1cb5.up.railway.app/crew/run",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "crew_type",
+              "value": "={{ $json.crew_type }}"
+            },
+            {
+              "name": "product",
+              "value": "={{ $json.format.toUpperCase() + ': ' + $json.theme }}"
+            },
+            {
+              "name": "context",
+              "value": "Formato: {{ $json.format }} | Horario: {{ $json.hour }}h | Tema: {{ $json.theme }}"
+            }
+          ]
+        }
+      },
+      "name": "Dispara Crew Social Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        640,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://web-production-f1cb5.up.railway.app/vault/log",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "agent",
+              "value": "feed"
+            },
+            {
+              "name": "action",
+              "value": "={{ $json.format + '_publicado' }}"
+            },
+            {
+              "name": "detail",
+              "value": "={{ $json.theme }} [{{ $json.format }}] — {{ $now.toISOString() }}"
+            }
+          ]
+        }
+      },
+      "name": "Log no Vault",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        840,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Cron — A cada hora": {
+      "main": [
+        [
+          {
+            "node": "Verifica Horario e Formato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verifica Horario e Formato": {
+      "main": [
+        [
+          {
+            "node": "Dispara Crew Social Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dispara Crew Social Post": {
+      "main": [
+        [
+          {
+            "node": "Log no Vault",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [],
+  "id": 8
+}

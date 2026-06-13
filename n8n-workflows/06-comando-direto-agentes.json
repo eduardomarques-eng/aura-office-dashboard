@@ -1,0 +1,93 @@
+﻿{
+  "name": "Aura Decore · 06 · Comando Direto — Eduardo → Agentes",
+  "description": "Recebe ordem do Eduardo via webhook e despacha para o agente correto via API do backend.",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "comando-eduardo",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "wh-comando",
+      "name": "Webhook Comando Eduardo",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "webhookId": "comando-eduardo"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "agent_id", "value": "={{ $json.agent_id || 'ive' }}" },
+            { "name": "task",     "value": "={{ $json.task || $json.message || '' }}" },
+            { "name": "context",  "value": "={{ $json.context || '' }}" }
+          ]
+        }
+      },
+      "id": "parse-cmd",
+      "name": "Parse Comando",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/chat",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "message",  "value": "=Ordem direta Eduardo → {{ $json.agent_id.toUpperCase() }}: {{ $json.task }}" },
+            { "name": "history",  "value": "=[]" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "id": "call-backend",
+      "name": "Chamar Backend IVE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/obsidian/update-agent",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "agent_id", "value": "={{ $('Parse Comando').item.json.agent_id }}" },
+            { "name": "task",     "value": "={{ $('Parse Comando').item.json.task }}" },
+            { "name": "status",   "value": "em andamento" }
+          ]
+        }
+      },
+      "id": "update-vault",
+      "name": "Atualizar Vault Obsidian",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"dispatched\", \"agent\": \"{{ $('Parse Comando').item.json.agent_id }}\", \"task\": \"{{ $('Parse Comando').item.json.task }}\" }"
+      },
+      "id": "respond",
+      "name": "Responder OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1000, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Comando Eduardo": { "main": [[{ "node": "Parse Comando", "type": "main", "index": 0 }]] },
+    "Parse Comando":           { "main": [[{ "node": "Chamar Backend IVE", "type": "main", "index": 0 }]] },
+    "Chamar Backend IVE":      { "main": [[{ "node": "Atualizar Vault Obsidian", "type": "main", "index": 0 }]] },
+    "Atualizar Vault Obsidian":{ "main": [[{ "node": "Responder OK", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "auradecore" }, { "name": "comando" }]
+}

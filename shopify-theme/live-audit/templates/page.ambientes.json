@@ -1,0 +1,114 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "ambientes_main": {
+      "type": "aura-ambientes",
+      "blocks": {
+        "sala": {
+          "type": "ambiente",
+          "settings": {
+            "slug": "sala",
+            "ambiente_tag": "Sala de Estar",
+            "kicker": "Japandi Living",
+            "heading": "A sala onde o tempo desacelera",
+            "bg_url": "https://image.pollinations.ai/prompt/japandi%20living%20room%20interior%20ceramic%20vases%20dried%20pampas%20wooden%20furniture%20natural%20linen%20daylight%20editorial%20photography%20warm%20tones%20architectural%20digest%20style%20beige%20neutral?width=1920&height=1280&model=flux-realism&seed=3410&nologo=true",
+            "description": "<p>Vasos de cerâmica, pampas secos e texturas naturais compõem uma sala que convida ao respiro. Cada objeto tem propósito — e beleza que não precisa se justificar. Um espaço que, quando você entra, ensina o corpo a desacelerar.</p>",
+            "feature_1": "Vasos e objetos de cerâmica artesanal",
+            "feature_2": "Botânica seca e arranjos naturais",
+            "feature_3": "Bandejas e porta-objetos minimalistas",
+            "cta_label": "Ver peças para a Sala",
+            "cta_link": "/collections/mais-amados"
+          }
+        },
+        "quarto": {
+          "type": "ambiente",
+          "settings": {
+            "slug": "quarto",
+            "ambiente_tag": "Quarto Zen",
+            "kicker": "Zen Bedroom",
+            "heading": "O quarto que prepara para o sono profundo",
+            "bg_url": "https://image.pollinations.ai/prompt/japandi%20zen%20bedroom%20interior%20linen%20bedding%20reed%20diffuser%20minimal%20nightstand%20soft%20morning%20light%20calm%20serene%20editorial%20photography%20beige%20neutral%20wabi%20sabi?width=1920&height=1280&model=flux-realism&seed=3411&nologo=true",
+            "description": "<p>Linho natural, aromas suaves e superfícies limpas. Um ambiente que disciplina o olhar e liberta a mente — para um sono que restaura de verdade. O quarto que você sempre quis ter.</p>",
+            "feature_1": "Difusores e velas para o ritual noturno",
+            "feature_2": "Almofadas em fibras naturais",
+            "feature_3": "Objetos que acalmam pelo silêncio visual",
+            "cta_label": "Ver peças para o Quarto",
+            "cta_link": "/collections/aromaticos-e-velas"
+          }
+        },
+        "escritorio": {
+          "type": "ambiente",
+          "settings": {
+            "slug": "escritorio",
+            "ambiente_tag": "Escritório Minimalista",
+            "kicker": "Minimal Workspace",
+            "heading": "O espaço onde a clareza produz",
+            "bg_url": "https://image.pollinations.ai/prompt/minimalist%20home%20office%20workspace%20clean%20desk%20ceramic%20object%20bamboo%20tray%20natural%20wood%20neutral%20walls%20morning%20light%20editorial%20photography%20japandi%20style?width=1920&height=1280&model=flux-realism&seed=3412&nologo=true",
+            "description": "<p>Menos objetos, mais foco. Uma mesa intencional com peças que inspiram — porque o ambiente onde você trabalha define o trabalho que você entrega. Minimalismo que libera o potencial.</p>",
+            "feature_1": "Porta-canetas e organizadores em madeira",
+            "feature_2": "Objetos decorativos que não distraem",
+            "feature_3": "Aromas que estimulam a concentração",
+            "cta_label": "Ver peças para o Escritório",
+            "cta_link": "/collections/chegadas-novidades"
+          }
+        },
+        "varanda": {
+          "type": "ambiente",
+          "settings": {
+            "slug": "varanda",
+            "ambiente_tag": "Varanda Verde",
+            "kicker": "Green Balcony",
+            "heading": "A varanda que respira com você",
+            "bg_url": "https://image.pollinations.ai/prompt/japandi%20balcony%20terrace%20plants%20pampas%20grass%20rattan%20natural%20linen%20cushion%20botanical%20outdoor%20living%20warm%20afternoon%20light%20editorial%20photography%20cozy?width=1920&height=1280&model=flux-realism&seed=3413&nologo=true",
+            "description": "<p>Plantas, velas e tecidos naturais transformam qualquer varanda num jardim de serenidade. Um refúgio ao ar livre que pertence ao seu lar — e que só precisa das peças certas.</p>",
+            "feature_1": "Vasos de terracota para plantas",
+            "feature_2": "Botânica seca para composições externas",
+            "feature_3": "Velas e incensos para o pôr-do-sol",
+            "cta_label": "Ver peças para a Varanda",
+            "cta_link": "/collections/botanica-seca"
+          }
+        },
+        "banheiro": {
+          "type": "ambiente",
+          "settings": {
+            "slug": "banheiro",
+            "ambiente_tag": "Banheiro Sereno",
+            "kicker": "Spa at Home",
+            "heading": "O ritual que começa pela manhã",
+            "bg_url": "https://image.pollinations.ai/prompt/japandi%20bathroom%20spa%20interior%20reed%20diffuser%20minimal%20wooden%20tray%20white%20ceramic%20soap%20dish%20linen%20towel%20neutral%20tile%20morning%20ritual%20editorial%20photography?width=1920&height=1280&model=flux-realism&seed=3414&nologo=true",
+            "description": "<p>Difusores, porta-objetos minimalistas e materiais naturais elevam o banheiro a um momento de cuidado intencional. O spa que você nunca sai de casa — porque está no próprio lar.</p>",
+            "feature_1": "Difusores e incensos de aroma premium",
+            "feature_2": "Porta-objetos em madeira natural",
+            "feature_3": "Velas para o ritual do banho",
+            "cta_label": "Ver peças para o Banheiro",
+            "cta_link": "/collections/aromaticos-e-velas"
+          }
+        }
+      },
+      "block_order": [
+        "sala",
+        "quarto",
+        "escritorio",
+        "varanda",
+        "banheiro"
+      ],
+      "settings": {
+        "show_hero": true,
+        "kicker": "Inspire-se",
+        "heading": "<p>Ambientes que <em>transformam</em></p>",
+        "subheading": "Selecionamos peças para cada canto da sua casa — com o olhar Japandi e a clareza do Minimalismo."
+      }
+    }
+  },
+  "order": [
+    "ambientes_main"
+  ]
+}

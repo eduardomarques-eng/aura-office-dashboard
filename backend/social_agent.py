@@ -26,12 +26,56 @@ load_dotenv(dotenv_path=_ENV, override=True)
 # ── Credenciais ────────────────────────────────────────────────
 GOOGLE_AI_KEY   = os.getenv("GOOGLE_AI_KEY", "")
 FB_PAGE_ID      = os.getenv("FB_PAGE_ID", "1111100822090245")
-FB_PAGE_TOKEN   = os.getenv("FB_PAGE_TOKEN", "")
 IG_USER_ID      = os.getenv("IG_USER_ID", "17841442799060573")
-META_ACCESS_TOKEN = os.getenv("META_ACCESS_TOKEN") or FB_PAGE_TOKEN
+SHOPIFY_CDN     = "https://cdn.shopify.com/s/files/1/0685/7064/4585/files"
 STORE_URL       = "https://auradecore.com.br"
 GRAPH_BASE      = "https://graph.facebook.com/v20.0"
 GEMINI_URL      = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+
+
+def get_valid_token() -> str:
+    """Retorna token valido. Se expirado, faz exchange automatico pelo user token."""
+    # Recarrega .env para pegar token mais recente
+    load_dotenv(dotenv_path=_ENV, override=True)
+    token = os.getenv("FB_PAGE_TOKEN", "")
+    if not token:
+        return ""
+    # Valida rapidamente
+    try:
+        r = httpx.get(
+            f"{GRAPH_BASE}/{FB_PAGE_ID}",
+            params={"fields": "id", "access_token": token},
+            timeout=6
+        )
+        if "id" in r.json():
+            return token
+        # Token inválido — tenta exchange (se for user token salvo)
+        r2 = httpx.get(
+            f"{GRAPH_BASE}/{FB_PAGE_ID}",
+            params={"fields": "access_token", "access_token": token},
+            timeout=6
+        )
+        pg = r2.json().get("access_token", "")
+        if pg:
+            # Salva o novo page token
+            env_text = pathlib.Path(_ENV).read_text(encoding="utf-8")
+            lines = []
+            for line in env_text.splitlines():
+                if line.startswith("FB_PAGE_TOKEN=") or line.startswith("META_ACCESS_TOKEN="):
+                    key = line.split("=")[0]
+                    lines.append(f"{key}={pg}")
+                else:
+                    lines.append(line)
+            pathlib.Path(_ENV).write_text("\n".join(lines) + "\n", encoding="utf-8")
+            return pg
+    except Exception:
+        pass
+    return token  # retorna o que tiver
+
+
+# Carrega token válido na inicialização
+FB_PAGE_TOKEN     = get_valid_token()
+META_ACCESS_TOKEN = FB_PAGE_TOKEN
 
 # ── Templates de tema por dia da semana ────────────────────────
 THEMES = {
@@ -46,14 +90,18 @@ THEMES = {
 
 # ── Produtos destaque por tema ─────────────────────────────────
 FEATURED_PRODUCTS = {
-    0: {"name": "Incensário de Cerâmica Ripple", "price": "R$ 89,90", "url": f"{STORE_URL}/products/incensario-de-ceramica-ripple"},
-    1: {"name": "Vaso Cerâmica Wabi — Bege Natural", "price": "R$ 129,90", "url": f"{STORE_URL}/products/vaso-ceramica-oval-minimalista"},
-    2: {"name": "Eucalipto Preservado — Buquê Seco", "price": "R$ 79,90", "url": f"{STORE_URL}/products/eucalipto-preservado-buque-seco-natural"},
-    3: {"name": "Vela Artesanal de Soja — Bambu & Cedro", "price": "R$ 69,90", "url": f"{STORE_URL}/products/vela-artesanal-de-soja-bambu-cedro"},
-    4: {"name": "Bandeja Mármore e Madeira — Oval", "price": "R$ 149,90", "url": f"{STORE_URL}/products/bandeja-marmore-e-madeira-oval"},
-    5: {"name": "Conjunto Bowl Cerâmica — Set 3 Peças", "price": "R$ 189,90", "url": f"{STORE_URL}/products/conjunto-bowl-ceramica-set-3-pecas"},
-    6: {"name": "Kit Ritual Matinal — Aura Zen", "price": "R$ 229,90", "url": f"{STORE_URL}/products/kit-ritual-matinal-aura-zen"},
+    0: {"name": "Incensário de Cerâmica Ripple",        "price": "R$ 89,90",  "handle": "incensario-de-ceramica-ripple",            "url": f"{STORE_URL}/products/incensario-de-ceramica-ripple"},
+    1: {"name": "Vaso Cerâmica Wabi — Bege Natural",    "price": "R$ 129,90", "handle": "vaso-ceramica-wabi-bege-natural",           "url": f"{STORE_URL}/products/vaso-ceramica-wabi-bege-natural"},
+    2: {"name": "Eucalipto Preservado — Buquê Seco",    "price": "R$ 79,90",  "handle": "eucalipto-preservado-buque-seco-natural",   "url": f"{STORE_URL}/products/eucalipto-preservado-buque-seco-natural"},
+    3: {"name": "Vela Artesanal de Soja — Bambu & Cedro","price": "R$ 69,90", "handle": "vela-artesanal-de-soja-bambu-cedro",        "url": f"{STORE_URL}/products/vela-artesanal-de-soja-bambu-cedro"},
+    4: {"name": "Bandeja Mármore e Madeira — Oval",     "price": "R$ 149,90", "handle": "bandeja-marmore-e-madeira-oval",            "url": f"{STORE_URL}/products/bandeja-marmore-e-madeira-oval"},
+    5: {"name": "Conjunto Bowl Cerâmica — Set 3 Peças", "price": "R$ 189,90", "handle": "conjunto-bowl-ceramica-set-3-pecas",        "url": f"{STORE_URL}/products/conjunto-bowl-ceramica-set-3-pecas"},
+    6: {"name": "Kit Ritual Matinal — Aura Zen",        "price": "R$ 229,90", "handle": "kit-ritual-matinal-aura-zen",               "url": f"{STORE_URL}/products/kit-ritual-matinal-aura-zen"},
 }
+
+def get_product_image_url(handle: str) -> str:
+    """Retorna URL da imagem do produto no Shopify CDN."""
+    return f"{SHOPIFY_CDN}/{handle}.jpg?v=1780619025"
 
 # ── Hashtags por tema ──────────────────────────────────────────
 HASHTAG_SETS = {
@@ -176,29 +224,31 @@ def postar_facebook(caption: str, dry_run: bool = False) -> dict:
         return {"ok": False, "msg": str(e)}
 
 
-def postar_instagram(caption: str, dry_run: bool = False) -> dict:
-    """Posta no Instagram via Graph API (sem imagem = text post)."""
+def postar_instagram(caption: str, image_url: str = "", dry_run: bool = False) -> dict:
+    """Posta foto no Instagram via Graph API usando imagem do Shopify CDN."""
     token = META_ACCESS_TOKEN or FB_PAGE_TOKEN
     if not token:
         return {"ok": False, "msg": "META_ACCESS_TOKEN não configurado"}
 
     if dry_run:
-        print(f"\n  [DRY RUN] Instagram:\n  {caption[:200]}...")
+        print(f"\n  [DRY RUN] Instagram (img: {image_url[:60]}...):\n  {caption[:200]}...")
         return {"ok": True, "msg": "dry-run", "id": "preview"}
 
+    if not image_url:
+        return {"ok": False, "msg": "image_url obrigatoria para posts no Instagram"}
+
     try:
-        # Cria container de mídia (apenas texto)
+        # Cria container de mídia com imagem
         r1 = httpx.post(
             f"{GRAPH_BASE}/{IG_USER_ID}/media",
-            data={"caption": caption, "media_type": "REELS",
-                  "access_token": token},
-            timeout=20
+            data={"image_url": image_url, "caption": caption, "access_token": token},
+            timeout=30
         )
         container = r1.json()
         if "id" not in container:
             return {"ok": False, "msg": f"Container: {container}"}
 
-        time.sleep(2)  # aguarda processamento
+        time.sleep(5)  # aguarda processamento da imagem
 
         # Publica o container
         r2 = httpx.post(
@@ -280,7 +330,9 @@ def main(dry_run: bool = False):
             print("     → Configure FB_PAGE_TOKEN no .env")
             print("     → Execute: python get_fb_token.py")
 
-    ig_result = postar_instagram(content["instagram"])
+    # Imagem do produto no Shopify CDN
+    img_url = get_product_image_url(produto.get("handle", produto.get("name", "").lower().replace(" ", "-")))
+    ig_result = postar_instagram(content["instagram"], image_url=img_url)
     if ig_result["ok"]:
         print(f"  ✅ Instagram publicado! ID: {ig_result.get('id')}")
     else:

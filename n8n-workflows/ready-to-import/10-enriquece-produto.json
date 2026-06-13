@@ -1,0 +1,108 @@
+{
+  "name": "Aura Decore · Enriquecimento de Produto (VERA + ARTE + THEO)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * 2"
+            }
+          ]
+        }
+      },
+      "name": "Cron — Toda Terca 10h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://web-production-f1cb5.up.railway.app/crew/run",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "crew_type",
+              "value": "store_update"
+            },
+            {
+              "name": "context",
+              "value": "Enriquecer todos os produtos da loja com: descricoes HTML ricas (headline + paragrafo + bullets), foto profissional gerada por IA com estetica japandi, tags SEO otimizadas. Prioridade: produtos sem imagem e sem descricao."
+            }
+          ]
+        },
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "name": "Enriquece Produtos Shopify",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://web-production-f1cb5.up.railway.app/crew/run",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "crew_type",
+              "value": "seo"
+            },
+            {
+              "name": "product",
+              "value": "decoracao japandi vaso ceramica almofada linho"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "name": "Otimiza SEO Produtos",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        640,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Cron — Toda Terca 10h": {
+      "main": [
+        [
+          {
+            "node": "Enriquece Produtos Shopify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enriquece Produtos Shopify": {
+      "main": [
+        [
+          {
+            "node": "Otimiza SEO Produtos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [],
+  "id": 10
+}

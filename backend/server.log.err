@@ -1,0 +1,13 @@
+INFO:     Will watch for changes in these directories: ['C:\\Users\\erick\\aura-office-dashboard\\backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [16204] using WatchFiles
+INFO:     Started server process [9208]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "C:\Users\erick\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 108, in spawn_main
+    source_process = _winapi.OpenProcess(
+                     ^^^^^^^^^^^^^^^^^^^^
+OSError: [WinError 87] Parâmetro incorreto

@@ -1,0 +1,62 @@
+﻿{
+  "name": "Aura Decore · 02 · Recuperação carrinho abandonado D+1/D+3/D+7",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 10 * * *" }]
+        }
+      },
+      "id": "cron-daily",
+      "name": "Cron 10h diário",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://{{$env.SHOPIFY_DOMAIN}}/admin/api/2025-01/checkouts.json?status=abandoned",
+        "method": "GET",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "fetch-checkouts",
+      "name": "Fetch carrinhos abandonados",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.first().json.checkouts || [];\nconst now = new Date();\nreturn items.flatMap(c => {\n  const hours = (now - new Date(c.updated_at)) / 3.6e6;\n  let stage = null, cupom = null;\n  if (hours >= 22 && hours <= 26)  { stage = 'D+1'; cupom = 'AURA10'; }\n  else if (hours >= 70 && hours <= 74) { stage = 'D+3'; cupom = 'AURAVIP15'; }\n  else if (hours >= 166 && hours <= 170) { stage = 'D+7'; cupom = 'AURAEMBAIXADORA20'; }\n  if (!stage) return [];\n  return [{ json: { email: c.email, total: c.total_price, stage, cupom, items: c.line_items?.map(i => i.title).join(', ') || '' } }];\n});"
+      },
+      "id": "filter-stage",
+      "name": "Filtrar por estágio D+N",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/tasks",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"title\": \"Recuperar carrinho {{$json.email}} ({{$json.stage}})\",\n  \"briefing\": \"Cliente abandonou: {{$json.items}}. Total R${{$json.total}}. Cupom sugerido: {{$json.cupom}}. Escreva email recuperação tom afetivo.\",\n  \"agent_id\": \"sol\",\n  \"priority\": \"alta\",\n  \"tags\": [\"recovery\", \"{{$json.stage}}\"],\n  \"execute_now\": true\n}"
+      },
+      "id": "dispatch-sol",
+      "name": "Despacha SOL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [800, 300]
+    }
+  ],
+  "connections": {
+    "Cron 10h diário":              { "main": [[{ "node": "Fetch carrinhos abandonados", "type": "main", "index": 0 }]] },
+    "Fetch carrinhos abandonados":  { "main": [[{ "node": "Filtrar por estágio D+N",    "type": "main", "index": 0 }]] },
+    "Filtrar por estágio D+N":      { "main": [[{ "node": "Despacha SOL",               "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "auradecore" }, { "name": "cro" }, { "name": "sol" }]
+}

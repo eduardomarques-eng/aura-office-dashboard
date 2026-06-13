@@ -1,0 +1,51 @@
+{{ 'aura-collections.css' | asset_url | stylesheet_tag }}
+
+<section class="aura-collections">
+  <div class="page-width">
+    <div class="aura-collections__header">
+      <p class="aura-collections__label">C U R A D O R I A &nbsp; A U R A</p>
+      <h2 class="aura-collections__title">{{ section.settings.heading }}</h2>
+      <p class="aura-collections__sub">{{ section.settings.subheading }}</p>
+    </div>
+    <div class="aura-collections__grid">
+      <a href="{{ section.settings.col1_link }}" class="aura-collections__card">
+        <img src="{{ 'col-vasos.png' | asset_url }}" alt="Vasos & Esculturas" loading="lazy" width="600" height="750">
+        <div class="aura-collections__card-overlay">
+          <h3>Vasos & Esculturas</h3>
+          <p>Formas que contam histórias</p>
+        </div>
+      </a>
+      <a href="{{ section.settings.col2_link }}" class="aura-collections__card">
+        <img src="{{ 'col-velas.png' | asset_url }}" alt="Velas & Aromas" loading="lazy" width="600" height="750">
+        <div class="aura-collections__card-overlay">
+          <h3>Velas & Aromas</h3>
+          <p>Rituais de luz e perfume</p>
+        </div>
+      </a>
+      <a href="{{ section.settings.col3_link }}" class="aura-collections__card">
+        <img src="{{ 'col-texteis.png' | asset_url }}" alt="Têxteis" loading="lazy" width="600" height="750">
+        <div class="aura-collections__card-overlay">
+          <h3>Têxteis</h3>
+          <p>Texturas que abraçam</p>
+        </div>
+      </a>
+    </div>
+    <div class="aura-collections__cta">
+      <a href="/collections" class="button button--secondary">VER TODAS AS COLEÇÕES</a>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Aura Coleções",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Coleções pensadas para transformar espaços" },
+    { "type": "text", "id": "subheading", "label": "Subheading", "default": "Cada coleção é uma curadoria intencional de peças que conversam entre si." },
+    { "type": "url", "id": "col1_link", "label": "Link Coleção 1" },
+    { "type": "url", "id": "col2_link", "label": "Link Coleção 2" },
+    { "type": "url", "id": "col3_link", "label": "Link Coleção 3" }
+  ],
+  "presets": [{ "name": "Aura Coleções" }]
+}
+{% endschema %}

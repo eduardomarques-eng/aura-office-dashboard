@@ -1,0 +1,104 @@
+/*
+  Aura Decore — Performance & Rendering Layer
+  Complementa aura-decor-custom.css
+  Foco: GPU hints, image rendering, font smoothing, layout stability
+*/
+
+/* ── GPU acceleration para elementos animados ──────────────── */
+.aura-cg-img,
+.aura-product-card__img,
+.aura-hero__bg-img,
+.aura-banner__img {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Ao sair do hover, libera will-change para economizar memória GPU */
+.aura-cg-card:not(:hover) .aura-cg-img,
+.aura-product-card:not(:hover) .aura-product-card__img {
+  will-change: auto;
+}
+
+/* ── Image rendering — suavidade em HiDPI ───────────────────── */
+img {
+  image-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Layout shift prevention — containers com tamanho explícito ─ */
+.aura-product-card__media {
+  contain: layout style;
+}
+.aura-cg-inner {
+  contain: strict;
+}
+
+/* ── Core Web Vitals — CLS prevention ──────────────────────── */
+.aura-hero { contain: layout; }
+.aura-cg-layout { contain: layout; }
+
+/* ── Scroll performance ─────────────────────────────────────── */
+.aura-hero__media,
+.aura-banner__img {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* ── Animation performance — Ken Burns on hero ──────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .aura-hero__bg-img { animation: none !important; }
+  .aura-cg-img,
+  .aura-product-card__img,
+  .aura-banner__img { transition: none !important; }
+  [data-aura-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* ── Typography rendering ───────────────────────────────────── */
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Focus visible — acessibilidade ────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--aura-terracota);
+  outline-offset: 3px;
+  border-radius: 0;
+}
+
+/* ── Smooth scroll nativo ───────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
+/* ── Print styles ───────────────────────────────────────────── */
+@media print {
+  .aura-hero__media,
+  .aura-hero__overlay,
+  .aura-hero__scroll,
+  .aura-hero__badge { display: none; }
+  .aura-hero__content { padding: 0; }
+  .aura-hero__title { color: #000; }
+}
+
+/* ── Touch device optimizations ─────────────────────────────── */
+@media (hover: none) {
+  .aura-product-card__quick-add { transform: translateY(0) !important; }
+  .aura-product-card__img--hover { display: none; }
+  .aura-cg-img { will-change: auto; }
+}
+
+/* ── High contrast mode support ─────────────────────────────── */
+@media (forced-colors: active) {
+  .aura-hero__overlay,
+  .aura-cg-overlay,
+  .aura-banner__overlay { display: none; }
+  .aura-hero__title,
+  .aura-cg-title { color: CanvasText; }
+}

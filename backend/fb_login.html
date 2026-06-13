@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Aura Decore — Conectar Facebook</title>
+<style>
+  body { font-family: sans-serif; max-width: 600px; margin: 60px auto; background: #F5F0EB; color: #333; text-align: center; }
+  .box { background: #fff; border-radius: 12px; padding: 40px; box-shadow: 0 2px 20px rgba(0,0,0,.08); }
+  h1 { color: #B8793A; margin-bottom: 8px; }
+  .btn { display: inline-block; background: #1877F2; color: #fff; padding: 16px 36px; border-radius: 8px;
+         text-decoration: none; font-weight: bold; font-size: 1.1em; cursor: pointer; border: none; margin-top: 20px; }
+  .btn:hover { background: #1565c0; }
+  .status { margin-top: 20px; padding: 16px; border-radius: 8px; font-size: .95em; }
+  .ok  { background: #e8f5e9; color: #2e7d32; }
+  .err { background: #fdecea; color: #c62828; }
+  .info { background: #fff8e6; border-left: 4px solid #B8793A; padding: 12px 16px; border-radius: 4px;
+          margin-top: 16px; font-size: .9em; text-align: left; }
+  code { background: #f5f5f5; padding: 2px 6px; border-radius: 4px; font-size: .85em; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>🔑 Conectar Facebook</h1>
+  <p>Clique para autorizar o app <strong>Agentes Eduardo</strong> a publicar na página <strong>Aura Decore</strong>.</p>
+
+  <button class="btn" onclick="fbLogin()">Entrar com Facebook →</button>
+
+  <div id="status"></div>
+
+  <div class="info">
+    ⚠️ Quando o Facebook perguntar quais páginas compartilhar, selecione <strong>Aura Decore</strong>.
+  </div>
+</div>
+
+<div id="fb-root"></div>
+<script>
+  var APP_ID = '2073471413233500';
+  var SAVE_URL = 'http://localhost:8765/save';
+
+  // Inicializar FB SDK
+  window.fbAsyncInit = function() {
+    FB.init({ appId: APP_ID, cookie: true, xfbml: false, version: 'v20.0' });
+  };
+
+  // Carregar SDK
+  (function(d,s,id){
+    var js, fjs=d.getElementsByTagName(s)[0];
+    if(d.getElementById(id)) return;
+    js=d.createElement(s); js.id=id;
+    js.src="https://connect.facebook.net/pt_BR/sdk.js";
+    fjs.parentNode.insertBefore(js,fjs);
+  }(document,'script','facebook-jssdk'));
+
+  function setStatus(msg, type) {
+    var el = document.getElementById('status');
+    el.innerHTML = '<div class="status ' + type + '">' + msg + '</div>';
+  }
+
+  function fbLogin() {
+    setStatus('⏳ Aguardando autorização do Facebook...', 'info');
+    FB.login(function(response) {
+      if (response.authResponse) {
+        var userToken = response.authResponse.accessToken;
+        setStatus('⏳ Token capturado. Buscando páginas...', 'info');
+
+        // Buscar páginas do usuário
+        FB.api('/me/accounts', { fields: 'id,name,access_token' }, function(data) {
+          if (data && data.data && data.data.length > 0) {
+            var page = data.data[0];
+            // Priorizar página Aura Decore
+            data.data.forEach(function(p) {
+              if (p.name.toLowerCase().includes('aura')) page = p;
+            });
+            var pageToken = page.access_token;
+            setStatus('✅ Página encontrada: <strong>' + page.name + '</strong> (ID: ' + page.id + ')<br>Salvando token...', 'ok');
+            saveToken(pageToken);
+          } else {
+            // Sem páginas — salvar user token
+            setStatus('⚠️ Nenhuma página encontrada. Salvando user token...', 'info');
+            saveToken(userToken);
+          }
+        });
+      } else {
+        setStatus('❌ Autorização cancelada. Tente novamente.', 'err');
+      }
+    }, { scope: 'pages_manage_posts,pages_read_engagement,pages_show_list' });
+  }
+
+  function saveToken(token) {
+    // Salvar no servidor local
+    fetch(SAVE_URL + '?token=' + encodeURIComponent(token))
+      .then(function(r) { return r.text(); })
+      .then(function() {
+        setStatus('🎉 <strong>Token salvo com sucesso!</strong><br>' +
+                  'Token: <code>' + token.substring(0,30) + '...</code><br>' +
+                  'Pode fechar esta janela. O backend foi atualizado!', 'ok');
+      })
+      .catch(function(err) {
+        // Fallback: mostrar token para copiar
+        setStatus('✅ Token capturado (cole no chat):<br><code style="word-break:break-all;font-size:.8em">' + token + '</code>', 'ok');
+      });
+  }
+</script>
+</body>
+</html>

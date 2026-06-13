@@ -1,0 +1,99 @@
+/* Aura Collection Page — CSS melhorado — Sprint 11 */
+
+/* Header da coleção */
+.collection .collection__title,
+.collection-hero__title {
+  font-family: var(--font-serif, 'Cormorant Garamond', serif) !important;
+  font-size: clamp(3rem, 5vw, 5.6rem) !important;
+  font-weight: 300 !important;
+  letter-spacing: -.01em !important;
+  color: var(--aura-grafite, #3D3D3B) !important;
+  line-height: 1.05 !important;
+}
+
+/* Filtros Japandi */
+.facets-container,
+.facets-vertical {
+  font-family: var(--font-sans, 'DM Sans', sans-serif);
+}
+
+.facets__summary,
+.facet-filters__field label {
+  font-family: var(--font-sans);
+  font-size: 1.2rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--aura-grafite, #3D3D3B);
+}
+
+/* Sort select minimalista */
+.facet-filters__field .select__select,
+.facet-filters .select__select {
+  border: 1px solid var(--aura-borda, #E2DBD4);
+  border-radius: 0;
+  font-family: var(--font-sans);
+  font-size: 1.3rem;
+  font-weight: 300;
+  color: var(--aura-grafite, #3D3D3B);
+  background: var(--aura-off-white, #FAFAF8);
+  padding: 1rem 3rem 1rem 1.2rem;
+}
+
+/* Pills dos filtros ativos */
+.active-facets .facet-remove {
+  background: var(--aura-linen, #EDE7DC);
+  border: none;
+  border-radius: 0;
+  color: var(--aura-grafite, #3D3D3B);
+  font-family: var(--font-sans);
+  font-size: 1.1rem;
+  font-weight: 300;
+  letter-spacing: .06em;
+}
+
+/* Grid de produtos */
+.collection .product-grid {
+  grid-gap: 2.4rem;
+}
+@media (max-width: 749px) {
+  .collection .product-grid { grid-gap: 1.2rem; }
+}
+
+/* Cart count badge */
+.cart-count-bubble {
+  background: var(--aura-terracota, #B8793A) !important;
+  color: #fff !important;
+  border-radius: 50% !important;
+}
+
+/* Breadcrumbs */
+.breadcrumbs,
+.breadcrumb {
+  font-family: var(--font-sans);
+  font-size: 1.1rem;
+  letter-spacing: .06em;
+  color: var(--aura-cinza, #7A7A78);
+}
+
+/* Pagination */
+.pagination__list {
+  font-family: var(--font-sans);
+  gap: .8rem;
+}
+.pagination__item a,
+.pagination__item button {
+  border-radius: 0 !important;
+  border: 1px solid var(--aura-borda, #E2DBD4);
+  color: var(--aura-grafite, #3D3D3B);
+  font-family: var(--font-sans);
+  font-size: 1.3rem;
+  transition: background .25s ease, border-color .25s ease;
+}
+.pagination__item--current a,
+.pagination__item--current button,
+.pagination__item a:hover,
+.pagination__item button:hover {
+  background: var(--aura-grafite, #3D3D3B) !important;
+  border-color: var(--aura-grafite, #3D3D3B) !important;
+  color: #fff !important;
+}

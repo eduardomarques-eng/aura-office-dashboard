@@ -1,0 +1,38 @@
+# Backend local (nao vai pro Vercel - tem api/)
+backend/
+backend/__pycache__/
+backend/*.log
+backend/generated_images/
+backend/mining_history/
+backend/mining_log.txt
+backend/mining_result.md
+
+# Workflows e tema Shopify
+n8n-workflows/
+shopify-theme/
+
+# SSL e segredos
+ssl_cert.pem
+ssl_key.pem
+*.pem
+.env*
+.env.vercel
+
+# Cache e temp
+__pycache__/
+*.pyc
+*.pyo
+*.log
+*.bat
+node_modules/
+
+# Outros arquivos nao necessarios
+cloudflared.exe
+generate_icons.py
+run_mineracao.bat
+start_aura.bat
+aura-mobile.html
+
+# Git
+.git/
+.gitignore

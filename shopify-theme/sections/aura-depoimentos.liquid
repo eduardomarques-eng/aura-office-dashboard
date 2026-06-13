@@ -1,0 +1,282 @@
+{% comment %}Aura Depoimentos v1 — Testimonials premium com avatar + estrelas — Sprint 10{% endcomment %}
+
+<section class="aura-dep" id="AuraDep-{{ section.id }}">
+  <div class="aura-dep__intro page-width">
+    {%- if section.settings.kicker != blank -%}
+      <span class="aura-dep__kicker">{{ section.settings.kicker }}</span>
+    {%- endif -%}
+    {%- if section.settings.heading != blank -%}
+      <h2 class="aura-dep__heading">{{ section.settings.heading }}</h2>
+    {%- endif -%}
+  </div>
+
+  <div class="aura-dep__track-wrap">
+    <div class="aura-dep__track" id="AuraDepTrack-{{ section.id }}">
+      {%- for block in section.blocks -%}
+        {%- if block.type == 'review' -%}
+        <article class="aura-dep__card" {{ block.shopify_attributes }}>
+          <div class="aura-dep__stars" aria-label="{{ block.settings.stars }} de 5 estrelas">
+            {%- for i in (1..5) -%}
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M7 1l1.854 3.756L13 5.437l-3 2.922.708 4.128L7 10.354l-3.708 2.133L4 8.359 1 5.437l4.146-.681L7 1z"
+                  fill="{% if i <= block.settings.stars %}#B8793A{% else %}#E2DBD2{% endif %}"/>
+              </svg>
+            {%- endfor -%}
+          </div>
+          <blockquote class="aura-dep__quote">“{{ block.settings.quote }}”</blockquote>
+          <footer class="aura-dep__author">
+            {%- if block.settings.avatar_url != blank -%}
+              <img src="{{ block.settings.avatar_url }}" alt="{{ block.settings.author }}" width="48" height="48" loading="lazy" class="aura-dep__avatar">
+            {%- else -%}
+              <div class="aura-dep__avatar-initials" aria-hidden="true">
+                {{ block.settings.author | slice: 0, 1 | upcase }}
+              </div>
+            {%- endif -%}
+            <div>
+              <strong class="aura-dep__author-name">{{ block.settings.author }}</strong>
+              {%- if block.settings.location != blank -%}
+                <span class="aura-dep__author-loc">, {{ block.settings.location }}</span>
+              {%- endif -%}
+              {%- if block.settings.product != blank -%}
+                <span class="aura-dep__author-product">{{ block.settings.product }}</span>
+              {%- endif -%}
+            </div>
+          </footer>
+        </article>
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+  </div>
+
+  {%- if section.settings.show_rating_summary -%}
+  <div class="aura-dep__summary page-width">
+    <div class="aura-dep__rating-big">
+      <span class="aura-dep__rating-num">5.0</span>
+      <div class="aura-dep__stars">
+        {%- for i in (1..5) -%}
+          <svg width="20" height="20" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1l1.854 3.756L13 5.437l-3 2.922.708 4.128L7 10.354l-3.708 2.133L4 8.359 1 5.437l4.146-.681L7 1z" fill="#B8793A"/></svg>
+        {%- endfor -%}
+      </div>
+      <span class="aura-dep__rating-label">Média de clientes verificados</span>
+    </div>
+    <div class="aura-dep__badges">
+      <span class="aura-dep__badge">✓ 100% clientes satisfeitos</span>
+      <span class="aura-dep__badge">✓ Embalagem impecável</span>
+      <span class="aura-dep__badge">✓ Qualidade premium</span>
+    </div>
+  </div>
+  {%- endif -%}
+</section>
+
+<style>
+.aura-dep {
+  padding: {{ section.settings.padding_top }}px 0 {{ section.settings.padding_bottom }}px;
+  background: var(--aura-cream, #F2EDE6);
+  overflow: hidden;
+}
+.aura-dep__intro {
+  text-align: center;
+  margin-bottom: 5.6rem;
+}
+.aura-dep__kicker {
+  display: block;
+  font-family: var(--font-body-family);
+  font-size: 1.1rem;
+  font-weight: 400;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--aura-terracota, #B8793A);
+  margin-bottom: 1.6rem;
+}
+.aura-dep__heading {
+  font-family: var(--font-heading-family, 'Cormorant Garamond', serif);
+  font-size: clamp(2.8rem, 4vw, 4.4rem);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--aura-grafite, #3D3D3B);
+  line-height: 1.15;
+  margin: 0;
+}
+/* Track — scroll horizontal no mobile */
+.aura-dep__track-wrap {
+  overflow: hidden;
+  padding: 0 5%;
+}
+.aura-dep__track {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(32rem, 1fr));
+  gap: 2.4rem;
+}
+@media (max-width: 749px) {
+  .aura-dep__track-wrap { overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 2.4rem; }
+  .aura-dep__track { grid-template-columns: repeat({{ section.blocks.size }}, 31rem); gap: 1.6rem; }
+  .aura-dep__card { scroll-snap-align: start; }
+}
+/* Card */
+.aura-dep__card {
+  background: var(--aura-off-white, #FAFAF8);
+  padding: 3.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.4rem;
+  border-left: 3px solid var(--aura-terracota, #B8793A);
+  transition: box-shadow .35s ease;
+}
+.aura-dep__card:hover {
+  box-shadow: 0 8px 32px rgba(61,61,59,.08);
+}
+.aura-dep__stars {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+}
+.aura-dep__quote {
+  font-family: var(--font-heading-family, 'Cormorant Garamond', serif);
+  font-size: 1.9rem;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--aura-grafite, #3D3D3B);
+  line-height: 1.55;
+  margin: 0;
+  flex: 1;
+}
+.aura-dep__author {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin: 0;
+}
+.aura-dep__avatar {
+  width: 4.8rem;
+  height: 4.8rem;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+}
+.aura-dep__avatar-initials {
+  width: 4.8rem;
+  height: 4.8rem;
+  border-radius: 50%;
+  background: var(--aura-terracota, #B8793A);
+  color: #fff;
+  font-family: var(--font-heading-family);
+  font-size: 2rem;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.aura-dep__author-name {
+  font-family: var(--font-body-family);
+  font-size: 1.3rem;
+  font-weight: 400;
+  letter-spacing: .04em;
+  color: var(--aura-grafite, #3D3D3B);
+  display: block;
+}
+.aura-dep__author-loc {
+  font-family: var(--font-body-family);
+  font-size: 1.2rem;
+  font-weight: 300;
+  color: var(--aura-cinza, #7A7A78);
+}
+.aura-dep__author-product {
+  display: block;
+  font-family: var(--font-body-family);
+  font-size: 1.1rem;
+  font-weight: 300;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--aura-terracota, #B8793A);
+  margin-top: .3rem;
+}
+/* Rating summary */
+.aura-dep__summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4.8rem;
+  flex-wrap: wrap;
+  margin-top: 5.6rem;
+  padding-top: 4rem;
+  border-top: 1px solid var(--aura-borda, #E2DBD4);
+}
+.aura-dep__rating-big {
+  text-align: center;
+}
+.aura-dep__rating-num {
+  display: block;
+  font-family: var(--font-heading-family);
+  font-size: 5.6rem;
+  font-weight: 300;
+  color: var(--aura-grafite, #3D3D3B);
+  line-height: 1;
+  margin-bottom: .8rem;
+}
+.aura-dep__rating-label {
+  display: block;
+  font-family: var(--font-body-family);
+  font-size: 1.1rem;
+  font-weight: 300;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--aura-cinza, #7A7A78);
+  margin-top: .8rem;
+}
+.aura-dep__badges {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.aura-dep__badge {
+  font-family: var(--font-body-family);
+  font-size: 1.4rem;
+  font-weight: 300;
+  color: var(--aura-grafite, #3D3D3B);
+}
+@media(prefers-reduced-motion:reduce){
+  .aura-dep__card { transition: none !important; }
+}
+</style>
+
+{% schema %}
+{
+  "name": "Depoimentos Premium",
+  "tag": "section",
+  "class": "spaced-section",
+  "settings": [
+    {"type":"text","id":"kicker","label":"Kicker","default":"Clientes reais"},
+    {"type":"text","id":"heading","label":"Título","default":"O que nossas clientes dizem"},
+    {"type":"checkbox","id":"show_rating_summary","label":"Exibir resumo de rating","default":true},
+    {"type":"range","id":"padding_top","min":0,"max":120,"step":8,"unit":"px","label":"Espaço acima","default":96},
+    {"type":"range","id":"padding_bottom","min":0,"max":120,"step":8,"unit":"px","label":"Espaço abaixo","default":96}
+  ],
+  "blocks": [
+    {
+      "type": "review",
+      "name": "Depoimento",
+      "settings": [
+        {"type":"range","id":"stars","min":1,"max":5,"step":1,"label":"Estrelas","default":5},
+        {"type":"textarea","id":"quote","label":"Depoimento","default":"As peças são ainda mais bonitas ao vivo. A qualidade supera as fotos."},
+        {"type":"text","id":"author","label":"Nome","default":"Marina C."},
+        {"type":"text","id":"location","label":"Cidade","default":"São Paulo"},
+        {"type":"text","id":"product","label":"Produto comprado","default":"Vaso Wabi-Sabi"},
+        {"type":"text","id":"avatar_url","label":"URL do avatar (CDN)"}
+      ]
+    }
+  ],
+  "max_blocks": 8,
+  "presets": [
+    {
+      "name": "Depoimentos Premium",
+      "blocks": [
+        {"type":"review","settings":{"stars":5,"quote":"Cada peça que recebi superou minhas expectativas. A embalagem é uma obra de arte — papel de seda, lacre, cartão manuscrito. Chorei de alegria.","author":"Marina C.","location":"São Paulo","product":"Kit Botanica + Vaso Cermica"}},
+        {"type":"review","settings":{"stars":5,"quote":"A qualidade é absurda. Sinto que comprei em uma boutique europeia, mas com a comodidade de receber em casa. Não consigo parar de comprar.","author":"Camila R.","location":"Curitiba","product":"Difusor Reed Premium"}},
+        {"type":"review","settings":{"stars":5,"quote":"O Vaso Wabi-Sabi é perfeito. Cada imperfeicão conta uma história. Minha sala ficou completamente diferente — mais calma, mais bonita, mais minha.","author":"Juliana M.","location":"Rio de Janeiro","product":"Vaso Wabi-Sabi M"}}
+      ]
+    }
+  ]
+}
+{% endschema %}

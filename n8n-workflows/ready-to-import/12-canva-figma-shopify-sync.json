@@ -1,0 +1,187 @@
+{
+  "name": "12 · Canva+Figma → Shopify Sync",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "cron-canva-figma",
+      "name": "Toda Segunda 08h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL }}/chat",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "@luna sincroniza tokens Figma com o tema Shopify e verifica se algum design novo do Canva precisa ser exportado esta semana"
+            },
+            {
+              "name": "history",
+              "value": "[]"
+            }
+          ]
+        }
+      },
+      "id": "cmd-luna-sync",
+      "name": "Acionar LUNA — Sync Figma+Canva",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL }}/chat",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "@dev aplica os tokens Figma no tema ao vivo: rode FigmaTokensSync sync e verifique consistência visual"
+            },
+            {
+              "name": "history",
+              "value": "[]"
+            }
+          ]
+        }
+      },
+      "id": "cmd-dev-tokens",
+      "name": "Acionar DEV — Aplicar Tokens no Tema",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL }}/chat",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "@luna rode CanvaBrandKit sync para aplicar as cores e fontes do brand kit Canva como CSS no Shopify"
+            },
+            {
+              "name": "history",
+              "value": "[]"
+            }
+          ]
+        }
+      },
+      "id": "cmd-luna-brandkit",
+      "name": "LUNA — Brand Kit CSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        680,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL }}/chat",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "@echo auditoria visual: verifique se CSS do Figma está aplicado corretamente na loja e reporte gaps de consistência"
+            },
+            {
+              "name": "history",
+              "value": "[]"
+            }
+          ]
+        }
+      },
+      "id": "cmd-echo-audit",
+      "name": "ECHO — Auditoria Visual",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        900,
+        380
+      ]
+    }
+  ],
+  "connections": {
+    "Toda Segunda 08h": {
+      "main": [
+        [
+          {
+            "node": "Acionar LUNA — Sync Figma+Canva",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Acionar LUNA — Sync Figma+Canva": {
+      "main": [
+        [
+          {
+            "node": "Acionar DEV — Aplicar Tokens no Tema",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "LUNA — Brand Kit CSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Acionar DEV — Aplicar Tokens no Tema": {
+      "main": [
+        [
+          {
+            "node": "ECHO — Auditoria Visual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LUNA — Brand Kit CSS": {
+      "main": [
+        [
+          {
+            "node": "ECHO — Auditoria Visual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "meta": {
+    "description": "Sincronização semanal automática: Figma tokens + Canva brand kit → CSS Shopify. Roda toda segunda-feira às 8h. LUNA extrai, DEV aplica, ECHO audita."
+  },
+  "id": 12
+}

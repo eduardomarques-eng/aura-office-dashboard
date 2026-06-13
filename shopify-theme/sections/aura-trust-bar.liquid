@@ -1,0 +1,133 @@
+{% comment %}Aura Trust Bar v1 — Barra de confiança sticky/estática — Sprint 11{% endcomment %}
+
+<div class="aura-trust" id="AuraTrust-{{ section.id }}" role="region" aria-label="Informações de compra">
+  <div class="aura-trust__inner">
+    {%- for block in section.blocks -%}
+      {%- if block.type == 'item' -%}
+      <div class="aura-trust__item" {{ block.shopify_attributes }}>
+        <div class="aura-trust__icon" aria-hidden="true">
+          {% case block.settings.icon %}
+            {% when 'truck' %}
+            <svg viewBox="0 0 20 20" fill="none"><path d="M2 6h12v9H2V6zM14 8.5l3 2.5v4h-3V8.5z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="5" cy="16" r="1.5" stroke="currentColor" stroke-width="1.3"/><circle cx="16" cy="16" r="1.5" stroke="currentColor" stroke-width="1.3"/></svg>
+            {% when 'shield' %}
+            <svg viewBox="0 0 20 20" fill="none"><path d="M10 2L3 5v6c0 5 4 7.5 7 8.5 3-1 7-3.5 7-8.5V5L10 2z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 10l2.5 2.5L13 8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            {% when 'gift' %}
+            <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="8" width="16" height="10" rx=".5" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="5" width="18" height="4" rx=".5" stroke="currentColor" stroke-width="1.3"/><path d="M10 5v13M10 5S8.5 1 6 2s-1 4 4 3zM10 5s1.5-4 4-3 1 4-4 3z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+            {% when 'refresh' %}
+            <svg viewBox="0 0 20 20" fill="none"><path d="M3 10a7 7 0 116 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M3 14v-4h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            {% when 'star' %}
+            <svg viewBox="0 0 20 20" fill="none"><path d="M10 2l2.2 4.5 5 .7-3.6 3.5.85 5L10 13.3l-4.45 2.4.85-5L2.8 7.2l5-.7L10 2z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            {% when 'lock' %}
+            <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="9" width="14" height="9" rx="1" stroke="currentColor" stroke-width="1.3"/><path d="M6 9V6a4 4 0 018 0v3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="10" cy="14" r="1.5" fill="currentColor"/></svg>
+            {% else %}
+            <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.3"/><path d="M10 6v4l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          {% endcase %}
+        </div>
+        <div class="aura-trust__text">
+          {%- if block.settings.label != blank -%}
+            <span class="aura-trust__label">{{ block.settings.label }}</span>
+          {%- endif -%}
+          {%- if block.settings.sublabel != blank -%}
+            <span class="aura-trust__sublabel">{{ block.settings.sublabel }}</span>
+          {%- endif -%}
+        </div>
+      </div>
+      {%- endif -%}
+    {%- endfor -%}
+  </div>
+</div>
+
+<style>
+.aura-trust {
+  background: var(--aura-cream, #F2EDE6);
+  border-top: 1px solid var(--aura-borda, #E2DBD4);
+  border-bottom: 1px solid var(--aura-borda, #E2DBD4);
+  padding: 2rem 0;
+}
+.aura-trust__inner {
+  max-width: var(--page-width, 144rem);
+  margin: 0 auto;
+  padding: 0 4.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4rem;
+  flex-wrap: wrap;
+}
+@media (max-width: 749px) {
+  .aura-trust__inner { gap: 2.4rem; padding: 0 2rem; }
+}
+.aura-trust__item {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  flex-shrink: 0;
+}
+.aura-trust__icon {
+  width: 2.2rem;
+  height: 2.2rem;
+  color: var(--aura-terracota, #B8793A);
+  flex-shrink: 0;
+}
+.aura-trust__icon svg {
+  width: 100%;
+  height: 100%;
+}
+.aura-trust__text {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+}
+.aura-trust__label {
+  font-family: var(--font-body-family);
+  font-size: 1.2rem;
+  font-weight: 400;
+  letter-spacing: .06em;
+  color: var(--aura-grafite, #3D3D3B);
+  white-space: nowrap;
+}
+.aura-trust__sublabel {
+  font-family: var(--font-body-family);
+  font-size: 1.05rem;
+  font-weight: 300;
+  color: var(--aura-cinza, #7A7A78);
+  white-space: nowrap;
+}
+@media (max-width: 499px) {
+  .aura-trust__sublabel { display: none; }
+  .aura-trust__item { gap: .8rem; }
+}
+</style>
+
+{% schema %}
+{
+  "name": "Barra de Confiança",
+  "tag": "div",
+  "class": "aura-trust-bar",
+  "settings": [],
+  "blocks": [
+    {
+      "type": "item",
+      "name": "Item",
+      "settings": [
+        {"type":"select","id":"icon","label":"Ícone","options":[{"value":"truck","label":"Entrega"},{"value":"shield","label":"Garantia"},{"value":"gift","label":"Presente"},{"value":"refresh","label":"Troca"},{"value":"star","label":"Estrela"},{"value":"lock","label":"Cadeado"}],"default":"truck"},
+        {"type":"text","id":"label","label":"Label principal","default":"Frete Grátis"},
+        {"type":"text","id":"sublabel","label":"Label secundário","default":"Acima de R$ 299"}
+      ]
+    }
+  ],
+  "max_blocks": 6,
+  "presets": [
+    {
+      "name": "Barra de Confiança",
+      "blocks": [
+        {"type":"item","settings":{"icon":"truck","label":"Frete Grátis","sublabel":"Acima de R$ 299"}},
+        {"type":"item","settings":{"icon":"refresh","label":"Troca Grátis","sublabel":"30 dias"}},
+        {"type":"item","settings":{"icon":"gift","label":"Embalagem Presente","sublabel":"Em todos os pedidos"}},
+        {"type":"item","settings":{"icon":"lock","label":"Pagamento Seguro","sublabel":"Criptografado"}},
+        {"type":"item","settings":{"icon":"star","label":"Curadoria Premium","sublabel":"Peças com intenção"}}
+      ]
+    }
+  ]
+}
+{% endschema %}

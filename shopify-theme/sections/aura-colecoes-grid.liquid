@@ -1,0 +1,167 @@
+{% comment %}Aura Grade Colecoes v3 — Grid explicit rows + CDN images{% endcomment %}
+<section class="aura-cg-section" id="ACG-{{ section.id }}" style="padding-top:{{ section.settings.padding_top }}px;padding-bottom:{{ section.settings.padding_bottom }}px;">
+  {%- if section.settings.heading != blank -%}
+  <div class="page-width" style="text-align:center;margin-bottom:4.8rem;">
+    {%- if section.settings.kicker != blank -%}<span class="kicker">{{ section.settings.kicker }}</span>{%- endif -%}
+    <h2 style="font-family:var(--font-serif);font-size:clamp(3rem,4vw,4.4rem);font-weight:400;color:var(--aura-grafite);margin:.8rem 0 1.2rem;">{{ section.settings.heading }}</h2>
+    {%- if section.settings.subheading != blank -%}<p style="font-family:var(--font-sans);font-size:1.5rem;color:var(--aura-cinza);max-width:52rem;margin:0 auto;line-height:1.8;">{{ section.settings.subheading }}</p>{%- endif -%}
+  </div>
+  {%- endif -%}
+  <div class="aura-cg-layout">
+    {%- for block in section.blocks -%}
+      {%- liquid
+        assign col = block.settings.collection
+        assign img = block.settings.image
+        assign img_url = block.settings.image_url
+        if col != blank and img == blank and img_url == blank
+          assign img = col.featured_image
+        endif
+        assign link = block.settings.link
+        if col != blank and link == blank
+          assign link = col.url
+        endif
+        assign label = block.settings.label
+        if label == blank and col != blank
+          assign label = col.title
+        endif
+        assign is_first = false
+        if forloop.first
+          assign is_first = true
+        endif
+      -%}
+      <a href="{{ link | default: '/collections/all' }}" class="aura-cg-card aura-cg-card--{{ forloop.index }}" {{ block.shopify_attributes }}>
+        <div class="aura-cg-inner">
+          {%- if img != blank -%}
+            <img src="{{ img | image_url: width: 1200 }}" srcset="{{ img | image_url: width: 600 }} 600w, {{ img | image_url: width: 900 }} 900w, {{ img | image_url: width: 1200 }} 1200w" sizes="(max-width:749px) 100vw, 55vw" alt="{{ img.alt | default: label }}" width="1200" height="800" {% if is_first %}loading="eager" fetchpriority="high"{% else %}loading="lazy"{% endif %} class="aura-cg-img">
+          {%- elsif img_url != blank -%}
+            <img src="{{ img_url }}" sizes="(max-width:749px) 100vw, 55vw" alt="{{ label }}" width="1200" height="800" {% if is_first %}loading="eager" fetchpriority="high"{% else %}loading="lazy"{% endif %} class="aura-cg-img">
+          {%- else -%}
+            <div style="position:absolute;inset:0;background:var(--aura-linen);"></div>
+          {%- endif -%}
+          <div class="aura-cg-overlay"></div>
+          <div class="aura-cg-content" data-aura-reveal>
+            <span class="aura-cg-title">{{ label }}</span>
+            {%- if block.settings.sublabel != blank -%}<span class="aura-cg-sub">{{ block.settings.sublabel }}</span>{%- endif -%}
+          </div>
+        </div>
+      </a>
+    {%- endfor -%}
+  </div>
+  {%- if section.settings.show_cta -%}
+  <div style="text-align:center;margin-top:4.8rem;">
+    <a href="/collections" class="button button--secondary">Ver todas as colecoes</a>
+  </div>
+  {%- endif -%}
+</section>
+
+<style>
+/* === Grade Editorial de Colecoes v3 === */
+.aura-cg-layout {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows:
+    clamp(200px, 21vw, 340px)
+    clamp(200px, 21vw, 340px)
+    clamp(260px, 27vw, 420px);
+  gap: .8rem;
+}
+
+/* Card 1 — grande, esquerda, 2 linhas */
+.aura-cg-card--1 {
+  grid-column: 1 / 9;
+  grid-row: 1 / 3;
+}
+/* Cards 2+3 — coluna direita empilhados */
+.aura-cg-card--2 { grid-column: 9 / 13; grid-row: 1; }
+.aura-cg-card--3 { grid-column: 9 / 13; grid-row: 2; }
+/* Cards 4+5 — linha inferior, metade cada */
+.aura-cg-card--4 { grid-column: 1 / 7;  grid-row: 3; }
+.aura-cg-card--5 { grid-column: 7 / 13; grid-row: 3; }
+
+/* Container e imagem */
+.aura-cg-card  { display: block; text-decoration: none; overflow: hidden; border-radius: 0; }
+.aura-cg-inner { position: relative; overflow: hidden; width: 100%; height: 100%; }
+.aura-cg-img   {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  transition: transform 700ms cubic-bezier(.16,1,.3,1);
+  display: block;
+}
+.aura-cg-card:hover .aura-cg-img { transform: scale(1.06); }
+
+/* Overlay gradiente de baixo */
+.aura-cg-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(35,30,26,.7) 0%,
+    rgba(35,30,26,.12) 50%,
+    transparent 100%
+  );
+  transition: opacity 500ms ease;
+}
+.aura-cg-card:hover .aura-cg-overlay { opacity: .85; }
+
+/* Labels */
+.aura-cg-content {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 2.8rem 3.2rem;
+  z-index: 2;
+  transform: translateY(4px);
+  transition: transform 500ms cubic-bezier(.16,1,.3,1);
+}
+.aura-cg-card:hover .aura-cg-content { transform: translateY(0); }
+.aura-cg-title {
+  display: block;
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 2.6vw, 3.2rem);
+  font-weight: 400;
+  color: #fff;
+  line-height: 1.1;
+  letter-spacing: .01em;
+}
+.aura-cg-sub {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 1.1rem;
+  letter-spacing: .14em;
+  color: rgba(255,255,255,.72);
+  margin-top: .6rem;
+  text-transform: uppercase;
+}
+
+/* Tablet */
+@media (max-width: 1023px) {
+  .aura-cg-layout {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+  }
+  .aura-cg-card--1 { grid-column: 1 / -1; grid-row: 1; aspect-ratio: 16/7; }
+  .aura-cg-card--2 { grid-column: 1; grid-row: 2; aspect-ratio: 4/3; }
+  .aura-cg-card--3 { grid-column: 2; grid-row: 2; aspect-ratio: 4/3; }
+  .aura-cg-card--4 { grid-column: 1; grid-row: 3; aspect-ratio: 4/3; }
+  .aura-cg-card--5 { grid-column: 2; grid-row: 3; aspect-ratio: 4/3; }
+}
+
+/* Mobile */
+@media (max-width: 599px) {
+  .aura-cg-layout { grid-template-columns: 1fr; gap: .6rem; }
+  .aura-cg-card--1,
+  .aura-cg-card--2,
+  .aura-cg-card--3,
+  .aura-cg-card--4,
+  .aura-cg-card--5 {
+    grid-column: 1;
+    grid-row: auto;
+    aspect-ratio: 4/3;
+  }
+  .aura-cg-title { font-size: 2.2rem; }
+  .aura-cg-content { padding: 2rem; }
+}
+</style>
+
+{% schema %}
+{"name":"Aura Grade Colecoes","tag":"section","class":"spaced-section","settings":[{"type":"text","id":"kicker","label":"Kicker","default":"Curadoria"},{"type":"text","id":"heading","label":"Titulo","default":"Colecoes para transformar espacos"},{"type":"text","id":"subheading","label":"Subtexto","default":"Cada colecao e uma curadoria intencional."},{"type":"checkbox","id":"show_cta","label":"Mostrar botao","default":true},{"type":"range","id":"padding_top","min":0,"max":120,"step":8,"unit":"px","label":"Padding superior","default":0},{"type":"range","id":"padding_bottom","min":0,"max":120,"step":8,"unit":"px","label":"Padding inferior","default":80}],"blocks":[{"type":"colecao","name":"Colecao","limit":5,"settings":[{"type":"collection","id":"collection","label":"Colecao Shopify"},{"type":"image_picker","id":"image","label":"Imagem"},{"type":"text","id":"image_url","label":"URL da imagem (CDN)"},{"type":"text","id":"label","label":"Rotulo"},{"type":"text","id":"sublabel","label":"Subtitulo"},{"type":"url","id":"link","label":"Link"}]}],"presets":[{"name":"Aura Grade Colecoes","blocks":[{"type":"colecao","settings":{"label":"Botanica Seca","sublabel":"A natureza preservada","link":"/collections/botanica-seca-1"}},{"type":"colecao","settings":{"label":"Velas e Aromaticos","sublabel":"Rituais de luz","link":"/collections/aromaticos-e-velas-1"}},{"type":"colecao","settings":{"label":"Lancamentos","sublabel":"Recem chegados","link":"/collections/lancamentos"}},{"type":"colecao","settings":{"label":"Mais Amados","sublabel":"Os favoritos","link":"/collections/mais-amados-1"}},{"type":"colecao","settings":{"label":"Destaques","sublabel":"Esta estacao","link":"/collections/destaques-da-estacao"}}]}]}
+{% endschema %}

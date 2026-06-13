@@ -1,0 +1,16 @@
+﻿<!--
+  ════════════════════════════════════════════════════════════
+  Aura Decore — Motion Layer
+  Colar ANTES de </head> em layout/theme.liquid
+  ════════════════════════════════════════════════════════════
+-->
+
+<!-- Aura Decore: CSS de animações -->
+{{ 'aura-animations.css' | asset_url | stylesheet_tag }}
+
+<!-- GSAP 3 + ScrollTrigger (CDN — carrega assíncrono para não bloquear) -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
+
+<!-- Aura Decore: JS de animações (defer = carrega após HTML + GSAP) -->
+<script src="{{ 'aura-animations.js' | asset_url }}" defer></script>

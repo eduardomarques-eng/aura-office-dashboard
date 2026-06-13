@@ -1,0 +1,21 @@
+# Shopify App Configuration — Aura Backend
+# Conecta com a loja 10ei3t-sf.myshopify.com
+
+name = "Aura Backend"
+client_id = "cd292f29129b81783d92ef2899508f6f"
+application_url = "https://localhost"
+embedded = false
+
+[build]
+automatically_update_urls_on_dev = true
+
+[access_scopes]
+scopes = "read_products,write_products,read_themes,write_themes,read_orders,write_orders,read_customers,write_customers,read_content,write_content,read_script_tags,write_script_tags,read_checkouts,read_analytics,read_inventory,write_inventory,read_price_rules,read_shipping,write_shipping,read_fulfillments,write_fulfillments"
+
+[auth]
+redirect_urls = [
+  "http://localhost:8766/callback"
+]
+
+[webhooks]
+api_version = "2025-01"

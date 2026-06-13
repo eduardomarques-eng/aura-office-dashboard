@@ -7,7 +7,17 @@ Aspect ratio: 1:1 (1080x1080) — padrão Shopify
 """
 
 import os, sys, json, time, urllib.parse, httpx, random
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Carrega .env
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"), override=True)
 
 # ── Config ─────────────────────────────────────────────────────────────
 SHOPIFY_DOMAIN = os.getenv("SHOPIFY_DOMAIN", "10ei3t-sf.myshopify.com")

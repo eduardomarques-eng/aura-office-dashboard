@@ -432,12 +432,13 @@ def format_summary_for_agent(summary: dict, agent: str) -> str:
         s = summary["shopify"]
         src = s.get("source", "Windsor")
         aov = s.get("average_order_value") or s.get("average_order_value_latest", "—")
+        orders = s.get("orders") or s.get("total_orders", 0)
         extra = ""
         if s.get("total_customers"):
             extra = f" | {s['total_customers']} clientes | {s.get('active_products',0)} produtos ativos"
         lines.append(
             f"🛍️ Shopify ({src}): R${s.get('gross_revenue',0):.2f} bruto | "
-            f"{int(s.get('orders',0))} pedidos | "
+            f"{int(orders)} pedidos | "
             f"ticket médio: R${aov}{extra}"
         )
     else:

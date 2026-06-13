@@ -219,11 +219,94 @@ class DropisSearchTool(BaseTool):
         return "\n".join(lines)
 
 
+import os as _os
+
+DROPI_TOKEN    = _os.getenv("DROPI_TOKEN", "")
+DROPI_STORE_ID = _os.getenv("DROPI_STORE_ID", "")
+DROPI_BASE     = "https://api.dropi.com.br/v1"
+
+
+class DropisApiTool(BaseTool):
+    """Busca estoque e pedidos no Dropi via API (requer DROPI_TOKEN)."""
+    name: str = "DropisApi"
+    description: str = (
+        "Consulta catálogo, estoque e pedidos do Dropi via API oficial. "
+        "Input: 'stock:<produto>' para estoque, 'orders' para pedidos, "
+        "'catalog:<query>' para catálogo. Requer DROPI_TOKEN no .env."
+    )
+
+    def _run(self, query: str) -> str:
+        if not DROPI_TOKEN:
+            return (
+                "⚠️ DROPI_TOKEN não configurado — usando busca DDG.\n"
+                + DropisSearchTool()._run(query.replace("catalog:", "").replace("stock:", ""))
+            )
+
+        headers = {
+            "Authorization": f"Bearer {DROPI_TOKEN}",
+            "Content-Type": "application/json",
+        }
+        try:
+            if query.startswith("orders"):
+                r = httpx.get(f"{DROPI_BASE}/orders", headers=headers, timeout=15)
+                if r.status_code == 200:
+                    orders = r.json().get("data", r.json())
+                    lines = [f"## Pedidos Dropi ({len(orders)} encontrados)\n"]
+                    for o in orders[:10]:
+                        lines.append(
+                            f"- Pedido #{o.get('id','?')} | Status: {o.get('status','?')} "
+                            f"| R$ {o.get('total','?')}"
+                        )
+                    return "\n".join(lines)
+                return f"Erro Dropi API orders: {r.status_code} — {r.text[:200]}"
+
+            if query.startswith("stock:"):
+                product = query.replace("stock:", "").strip()
+                r = httpx.get(
+                    f"{DROPI_BASE}/products",
+                    headers=headers,
+                    params={"search": product, "per_page": 10},
+                    timeout=15,
+                )
+                if r.status_code == 200:
+                    items = r.json().get("data", r.json())
+                    lines = [f"## Estoque Dropi — '{product}'\n"]
+                    for p in items[:8]:
+                        lines.append(
+                            f"**{p.get('name','?')}** | Estoque: {p.get('stock','?')} "
+                            f"| Preço: R$ {p.get('price','?')} | SKU: {p.get('sku','?')}"
+                        )
+                    return "\n".join(lines) if len(lines) > 1 else f"Nenhum produto Dropi para: {product}"
+                return f"Erro Dropi API stock: {r.status_code} — {r.text[:200]}"
+
+            # catalog search
+            search_q = query.replace("catalog:", "").strip()
+            r = httpx.get(
+                f"{DROPI_BASE}/products",
+                headers=headers,
+                params={"search": search_q, "per_page": 12},
+                timeout=15,
+            )
+            if r.status_code == 200:
+                items = r.json().get("data", r.json())
+                lines = [f"## Catálogo Dropi — '{search_q}'\n"]
+                for p in items[:10]:
+                    lines.append(
+                        f"**{p.get('name','?')}** | R$ {p.get('price','?')} "
+                        f"| Estoque: {p.get('stock','?')}"
+                    )
+                return "\n".join(lines)
+            return f"Erro Dropi API: {r.status_code}"
+        except Exception as e:
+            return f"Erro ao conectar Dropi API: {e}"
+
+
 # Instâncias prontas para importar no crew_agents.py
 aliexpress_search = AliExpressSearchTool()
 trend_search = TrendSearchTool()
 margin_calculator = MarginCalculatorTool()
 dropis_search = DropisSearchTool()
+dropi_api = DropisApiTool()
 
-NEXUS_TOOLS = [aliexpress_search, trend_search, dropis_search]
-KAI_TOOLS = [margin_calculator, dropis_search]
+NEXUS_TOOLS = [aliexpress_search, trend_search, dropi_api]
+KAI_TOOLS = [margin_calculator, dropi_api]

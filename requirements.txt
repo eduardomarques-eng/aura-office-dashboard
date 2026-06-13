@@ -1,7 +1,25 @@
-fastapi==0.115.0
-uvicorn[standard]==0.30.6
-anthropic==0.40.0
-crewai==0.80.0
-python-dotenv==1.0.1
-pydantic==2.9.2
-groq==0.13.0
+﻿# Aura Decore — Backend Dependencies
+# Atualizado: 2026-05-20
+
+# ── Web framework ───────────────────────────────────────────────────────────────
+fastapi==0.115.6
+uvicorn[standard]==0.34.3
+python-multipart==0.0.20
+
+# ── AI / LLM ────────────────────────────────────────────────────────────────────
+anthropic==0.57.0
+crewai==0.95.0
+litellm==1.65.0
+groq==0.22.0
+
+# ── HTTP / Async ────────────────────────────────────────────────────────────────
+httpx==0.28.1
+aiofiles==24.1.0
+
+# ── Config / Utils ──────────────────────────────────────────────────────────────
+python-dotenv==1.1.0
+pydantic==2.11.4
+pydantic-settings==2.9.1
+
+# ── Data ───────────────────────────────────────────────────────────────────────
+pandas==2.2.3

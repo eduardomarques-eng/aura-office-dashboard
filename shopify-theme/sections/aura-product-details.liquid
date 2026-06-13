@@ -1,0 +1,31 @@
+{% comment %}Aura Product Details Accordion — Sprint 4{% endcomment %}
+{%- if section.blocks.size > 0 -%}
+<section class="aura-pd" style="padding:0 0 6.4rem;">
+  <div class="page-width">
+    <div class="aura-pd__wrap">
+      {%- for block in section.blocks -%}
+      <details class="aura-pd__item" {{ block.shopify_attributes }}>
+        <summary class="aura-pd__summary">
+          <span>{{ block.settings.title }}</span>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M5 7l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </summary>
+        <div class="aura-pd__body">{{ block.settings.content }}</div>
+      </details>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+<style>
+.aura-pd__wrap{max-width:76rem;margin:0 auto;}
+.aura-pd__item{border-bottom:1px solid var(--aura-linen);}
+.aura-pd__summary{display:flex;justify-content:space-between;align-items:center;padding:2rem 0;cursor:pointer;font-family:var(--font-serif);font-size:1.8rem;font-weight:400;color:var(--aura-grafite);list-style:none;gap:1.6rem;}
+.aura-pd__summary::-webkit-details-marker{display:none;}
+.aura-pd__body{padding:0 0 2.4rem;font-family:var(--font-sans);font-size:1.45rem;line-height:1.85;color:var(--aura-cinza);}
+ details[open] .aura-pd__summary{color:var(--aura-terracota);}
+details[open] .aura-pd__summary svg{transform:rotate(180deg);}
+.aura-pd__summary svg{transition:transform 280ms ease;flex-shrink:0;color:var(--aura-cinza);}
+</style>
+{%- endif -%}
+{% schema %}
+{"name":"Aura Detalhes do Produto","tag":"section","class":"spaced-section","blocks":[{"type":"tab","name":"Aba","settings":[{"type":"text","id":"title","label":"Titulo","default":"Materiais"},{"type":"richtext","id":"content","label":"Conteudo","default":"<p>Descricao do material e composicao.</p>"}]}],"presets":[{"name":"Aura Detalhes do Produto","blocks":[{"type":"tab","settings":{"title":"Materiais e Composicao","content":"<p>Ceramica artesanal de alta temperatura. Acabamento matte com variaces naturais de cor e textura — cada peca e unica.</p>"}},{"type":"tab","settings":{"title":"Cuidados e Conservacao","content":"<p>Lavar a mao com esponja macia e sabao neutro. Secar em local arejado. Evitar exposicao prolongada ao sol direto para preservar as cores naturais.</p>"}},{"type":"tab","settings":{"title":"Entrega e Devolucao","content":"<p>Entregamos em todo o Brasil. Prazo estimado de 5 a 12 dias uteis. Cada peca e embalada com papel de seda, lacre de cera e cartao manuscrito. Devolucao gratuita em ate 30 dias.</p>"}}]}]}
+{% endschema %}

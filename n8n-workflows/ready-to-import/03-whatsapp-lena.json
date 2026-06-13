@@ -1,0 +1,324 @@
+{
+  "name": "Aura Decore · 03 · WhatsApp Business → LENA/GUARD/SOL/ZARA",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "zapi-whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "wh-zapi",
+      "name": "Webhook Z-API",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        160,
+        400
+      ],
+      "webhookId": "zapi-whatsapp"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.fromMe}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "check-from-me",
+      "name": "É mensagem própria?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        360,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"ignored\" }"
+      },
+      "id": "ignore-own",
+      "name": "Ignorar mensagem própria",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        560,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "phone",
+              "value": "={{$json.phone || $json.from}}"
+            },
+            {
+              "name": "name",
+              "value": "={{$json.senderName || $json.pushName || ''}}"
+            },
+            {
+              "name": "messageId",
+              "value": "={{$json.messageId || $json.id?.id || ''}}"
+            },
+            {
+              "name": "message",
+              "value": "={{$json.text?.message || $json.message || $json.body || ''}}"
+            },
+            {
+              "name": "msgType",
+              "value": "={{$json.type || 'chat'}}"
+            }
+          ]
+        }
+      },
+      "id": "parse",
+      "name": "Extrair campos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        560,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/whatsapp/webhook",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($node['Extrair campos'].json) }}"
+      },
+      "id": "call-backend",
+      "name": "Backend: processa mensagem",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        780,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.agent}}",
+              "operation": "equal",
+              "value2": "guard"
+            }
+          ]
+        }
+      },
+      "id": "is-guard",
+      "name": "Escalou para GUARD?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/tasks",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"agent_id\": \"guard\",\n  \"title\": \"Reembolso: {{ $node['Extrair campos'].json.phone }}\",\n  \"description\": \"Cliente {{ $node['Extrair campos'].json.name || $node['Extrair campos'].json.phone }} solicitou reembolso: {{ $node['Extrair campos'].json.message }}\",\n  \"priority\": \"high\",\n  \"execute_now\": true\n}"
+      },
+      "id": "notify-guard",
+      "name": "Criar tarefa GUARD (alta prioridade)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1220,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.agent}}",
+              "operation": "equal",
+              "value2": "sol"
+            }
+          ]
+        }
+      },
+      "id": "is-sol",
+      "name": "Escalou para SOL?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1220,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/tasks",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"agent_id\": \"sol\",\n  \"title\": \"Recuperação carrinho: {{ $node['Extrair campos'].json.phone }}\",\n  \"description\": \"Cliente {{ $node['Extrair campos'].json.name || $node['Extrair campos'].json.phone }} mostrou interesse mas não finalizou: {{ $node['Extrair campos'].json.message }}\",\n  \"priority\": \"medium\",\n  \"execute_now\": true\n}"
+      },
+      "id": "notify-sol",
+      "name": "Criar tarefa SOL (carrinho)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1440,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'ok', agent: $node['Backend: processa mensagem'].json.agent, intent: $node['Backend: processa mensagem'].json.intent }) }}"
+      },
+      "id": "respond-ok",
+      "name": "Responder Z-API",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1660,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Z-API": {
+      "main": [
+        [
+          {
+            "node": "É mensagem própria?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "É mensagem própria?": {
+      "main": [
+        [
+          {
+            "node": "Ignorar mensagem própria",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extrair campos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair campos": {
+      "main": [
+        [
+          {
+            "node": "Backend: processa mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Backend: processa mensagem": {
+      "main": [
+        [
+          {
+            "node": "Escalou para GUARD?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escalou para GUARD?": {
+      "main": [
+        [
+          {
+            "node": "Criar tarefa GUARD (alta prioridade)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalou para SOL?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar tarefa GUARD (alta prioridade)": {
+      "main": [
+        [
+          {
+            "node": "Responder Z-API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escalou para SOL?": {
+      "main": [
+        [
+          {
+            "node": "Criar tarefa SOL (carrinho)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder Z-API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar tarefa SOL (carrinho)": {
+      "main": [
+        [
+          {
+            "node": "Responder Z-API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [],
+  "id": 3
+}

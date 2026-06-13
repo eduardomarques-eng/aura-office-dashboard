@@ -1,0 +1,14 @@
+{% comment %}Aura 404 — Sprint 5{% endcomment %}
+<section class="aura-404" style="min-height:72vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--aura-cream);text-align:center;padding:8rem 2rem;">
+  <span class="kicker">{{ section.settings.kicker }}</span>
+  <div style="font-family:var(--font-serif);font-size:clamp(8rem,18vw,18rem);font-weight:300;line-height:1;color:var(--aura-linen);letter-spacing:-.04em;margin:.8rem 0;">404</div>
+  <h1 style="font-family:var(--font-serif);font-size:clamp(2.4rem,4vw,4rem);font-weight:400;color:var(--aura-grafite);margin:0 0 2rem;">{{ section.settings.heading }}</h1>
+  <p style="font-family:var(--font-sans);font-size:1.5rem;color:var(--aura-cinza);max-width:44rem;margin:0 auto 4.8rem;line-height:1.75;font-weight:300;">{{ section.settings.subtext }}</p>
+  <div style="display:flex;gap:1.6rem;justify-content:center;flex-wrap:wrap;">
+    <a href="/" class="button">{{ section.settings.btn1_label }}</a>
+    <a href="/collections/all" class="button button--secondary">{{ section.settings.btn2_label }}</a>
+  </div>
+</section>
+{% schema %}
+{"name":"Aura 404","settings":[{"type":"text","id":"kicker","label":"Kicker","default":"Pagina nao encontrada"},{"type":"text","id":"heading","label":"Titulo","default":"Este caminho nao existe."},{"type":"textarea","id":"subtext","label":"Texto","default":"Esta pagina foi para um lugar mais sereno. Mas ha muita beleza esperando por voce."},{"type":"text","id":"btn1_label","label":"Botao 1","default":"Ir para o inicio"},{"type":"text","id":"btn2_label","label":"Botao 2","default":"Ver todas as pecas"}],"presets":[{"name":"Aura 404"}]}
+{% endschema %}

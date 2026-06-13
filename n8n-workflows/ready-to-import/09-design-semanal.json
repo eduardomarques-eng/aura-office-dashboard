@@ -1,0 +1,108 @@
+{
+  "name": "Aura Decore · Design Semanal (LUNA + ARTE)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1"
+            }
+          ]
+        }
+      },
+      "name": "Cron — Toda Segunda 8h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://web-production-f1cb5.up.railway.app/crew/run",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "crew_type",
+              "value": "design"
+            },
+            {
+              "name": "product",
+              "value": "pack semanal: 3 posts feed 1080x1080 + 2 stories 1080x1920 + 1 banner 1200x630 — estetica japandi da semana"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "name": "Gera Pack de Design Semanal",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://web-production-f1cb5.up.railway.app/crew/run",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "crew_type",
+              "value": "store_update"
+            },
+            {
+              "name": "context",
+              "value": "Semana nova: atualizar fotos de produto e descricoes com estilo japandi renovado"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "name": "Atualiza Loja Shopify",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        640,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Cron — Toda Segunda 8h": {
+      "main": [
+        [
+          {
+            "node": "Gera Pack de Design Semanal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gera Pack de Design Semanal": {
+      "main": [
+        [
+          {
+            "node": "Atualiza Loja Shopify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [],
+  "id": 9
+}

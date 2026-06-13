@@ -10,46 +10,21 @@ echo.
 cd /d "C:\Users\erick\aura-office-dashboard\backend"
 
 echo [1/4] Iniciando backend IVE (porta 8000)...
-start "Aura Decore — Backend IVE" cmd /k "chcp 65001 > nul && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+start "Aura Decore — Backend IVE" cmd /k "chcp 65001 > nul && ..\.venv\Scripts\python.exe -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
 
-timeout /t 4 /nobreak > nul
+ping 127.0.0.1 -n 5 > nul
 
 echo [2/4] Verificando token Meta...
-python -c "
-import os, pathlib
-env = {}
-for line in pathlib.Path('.env').read_text(encoding='utf-8').splitlines():
-    line = line.strip()
-    if line and not line.startswith('#') and '=' in line:
-        k, v = line.split('=', 1)
-        env[k.strip()] = v.strip()
-token = env.get('FB_PAGE_TOKEN', '')
-if token:
-    print('  [OK] FB_PAGE_TOKEN configurado')
-else:
-    print('  [!] FB_PAGE_TOKEN vazio - iniciando servidor de autorizacao...')
-" 2>nul
+..\.venv\Scripts\python -c "import pathlib; env = {line.split('=', 1)[0].strip(): line.split('=', 1)[1].strip() for line in pathlib.Path('.env').read_text(encoding='utf-8').splitlines() if line.strip() and not line.strip().startswith('#') and '=' in line}; token = env.get('FB_PAGE_TOKEN', ''); print('  [OK] FB_PAGE_TOKEN configurado' if token else '  [!] FB_PAGE_TOKEN vazio - iniciando servidor de autorizacao...')" 2>nul
 
-python -c "
-import os, pathlib
-env = {}
-for line in pathlib.Path('.env').read_text(encoding='utf-8').splitlines():
-    line = line.strip()
-    if line and not line.startswith('#') and '=' in line:
-        k, v = line.split('=', 1)
-        env[k.strip()] = v.strip()
-if not env.get('FB_PAGE_TOKEN', ''):
-    import subprocess
-    subprocess.Popen(['python', 'get_fb_token.py'], creationflags=0x00000010)
-    print('  Servidor de token iniciado em http://localhost:8765')
-" 2>nul
+..\.venv\Scripts\python -c "import pathlib, subprocess; env = {line.split('=', 1)[0].strip(): line.split('=', 1)[1].strip() for line in pathlib.Path('.env').read_text(encoding='utf-8').splitlines() if line.strip() and not line.strip().startswith('#') and '=' in line}; not env.get('FB_PAGE_TOKEN', '') and (subprocess.Popen(['..\\.venv\\Scripts\\python.exe', 'get_fb_token.py'], creationflags=0x10) or True) and print('  Servidor de token iniciado em http://localhost:8765')" 2>nul
 
-timeout /t 2 /nobreak > nul
+ping 127.0.0.1 -n 3 > nul
 
 echo [3/4] Abrindo dashboard principal...
 start "" "C:\Users\erick\aura-office-dashboard\index.html"
 
-timeout /t 2 /nobreak > nul
+ping 127.0.0.1 -n 3 > nul
 
 echo [4/4] Status do sistema:
 echo.

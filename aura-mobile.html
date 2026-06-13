@@ -1,0 +1,1111 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0E0C0A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Aura HQ">
+<meta name="application-name" content="Aura HQ">
+<meta name="description" content="Dashboard executivo Aura Decore — agentes, maratona e decisões em tempo real">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/pwa-icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/pwa-icon-192.png">
+<!-- Vercel: https://aura-office-dashboard.vercel.app/mobile -->
+<title>Aura Decore — HQ Mobile v2</title>
+<style>
+:root{
+  --bg:#0E0C0A;--bg2:#141210;--bg3:#1A1714;--bg4:#201D19;
+  --panel:#17140F;--border:#2E2820;--border2:#3A3228;
+  --gold:#B4945A;--gold-l:#D4AF72;--gold-d:#8B6F3A;
+  --green:#4CAF82;--red:#E05252;--blue:#5B8FD4;--purple:#9B7FD4;
+  --text:#F0EAE0;--text-m:#A89880;--text-d:#6A5E52;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px}
+
+/* ── HEADER ── */
+#hdr{
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  background:var(--panel);border-bottom:1px solid var(--border);
+  padding:calc(var(--safe-top) + 10px) 16px 10px;
+  display:flex;align-items:center;gap:10px;
+}
+.logo{font-family:Georgia,serif;font-size:14px;color:var(--gold);letter-spacing:3px;font-weight:700}
+.logo span{color:var(--text-d);font-size:9px;letter-spacing:1px}
+#hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 5px var(--green);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+#dec-badge-hdr{
+  display:none;background:#E05252;color:white;border-radius:10px;
+  padding:2px 7px;font-size:10px;font-weight:700;
+}
+
+/* ── OFFLINE BANNER ── */
+#offline-bar{
+  position:fixed;top:calc(var(--safe-top)+44px);left:0;right:0;z-index:49;
+  background:rgba(224,82,82,.92);color:white;text-align:center;
+  font-size:11px;padding:4px;display:none;
+}
+
+/* ── MAIN APP ── */
+#app{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  padding-top:calc(var(--safe-top)+44px);
+  padding-bottom:calc(var(--safe-bot)+56px);
+  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+}
+.view{display:none;padding:12px;animation:fadein .2s ease}
+.view.active{display:block}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ── BOTTOM NAV ── */
+#nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:var(--panel);border-top:1px solid var(--border);
+  padding-bottom:var(--safe-bot);
+  display:flex;
+}
+.nav-btn{
+  flex:1;padding:8px 0;display:flex;flex-direction:column;align-items:center;
+  gap:2px;cursor:pointer;transition:all .15s;position:relative;border:none;background:none;
+  color:var(--text-d);font-size:8px;letter-spacing:.5px;
+}
+.nav-btn .nav-ico{font-size:20px;line-height:1}
+.nav-btn.active{color:var(--gold)}
+.nav-btn.active .nav-ico{filter:drop-shadow(0 0 4px rgba(180,148,90,.6))}
+.nbadge{
+  position:absolute;top:4px;right:calc(50% - 14px);
+  background:#E05252;color:white;border-radius:8px;
+  padding:0 4px;font-size:8px;font-weight:700;display:none;
+}
+
+/* ── CARDS ── */
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
+.card-title{font-size:9px;color:var(--text-d);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;display:flex;align-items:center;gap:5px}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.kpi{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.kpi.full{grid-column:1/-1}
+.kpi-val{font-size:22px;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums;letter-spacing:-1px}
+.kpi-lbl{font-size:9px;color:var(--text-d);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+
+/* ── DECISÕES ── */
+.dec-card{
+  background:rgba(180,148,90,.07);border:1px solid rgba(180,148,90,.3);
+  border-radius:12px;padding:14px;margin-bottom:10px;
+}
+.dec-agent{font-size:10px;font-weight:700;color:var(--gold);margin-bottom:4px}
+.dec-title{font-size:12px;color:var(--text);margin-bottom:6px;line-height:1.4}
+.dec-preview{font-size:10px;color:var(--text-m);line-height:1.5;margin-bottom:10px;
+  max-height:72px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical}
+.dec-btns{display:flex;gap:8px}
+.btn-approve{flex:1;padding:9px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;
+  background:rgba(76,175,130,.2);color:var(--green);border:1px solid rgba(76,175,130,.4)}
+.btn-reject{flex:1;padding:9px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;
+  background:rgba(224,82,82,.12);color:var(--red);border:1px solid rgba(224,82,82,.3)}
+
+/* ── ACTIVITY FEED ── */
+.feed-item{
+  padding:8px 12px;border-left:2px solid var(--border2);margin-bottom:6px;
+  background:var(--bg4);border-radius:0 8px 8px 0;
+}
+.feed-item.social{border-left-color:var(--gold)}
+.feed-item.marathon{border-left-color:var(--blue)}
+.feed-item.system{border-left-color:var(--green)}
+.feed-agent{font-size:10px;font-weight:700;color:var(--text);margin-bottom:2px}
+.feed-action{font-size:10px;color:var(--text-m);line-height:1.4}
+.feed-ts{font-size:8px;color:var(--text-d);margin-top:2px}
+
+/* ── CHAT IVE ── */
+#chat-out{
+  height:calc(100dvh - var(--safe-top) - var(--safe-bot) - 44px - 56px - 80px);
+  overflow-y:auto;padding:8px 0;-webkit-overflow-scrolling:touch;
+}
+.msg{margin-bottom:10px;display:flex;flex-direction:column}
+.msg.user{align-items:flex-end}
+.msg.bot{align-items:flex-start}
+.bubble{
+  max-width:82%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.5;
+  white-space:pre-wrap;word-break:break-word;
+}
+.msg.user .bubble{background:var(--gold-d);color:white;border-radius:16px 16px 4px 16px}
+.msg.bot .bubble{background:var(--bg3);border:1px solid var(--border);border-radius:16px 16px 16px 4px}
+.msg-ts{font-size:9px;color:var(--text-d);margin-top:3px;padding:0 4px}
+.typing{display:flex;gap:4px;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:16px 16px 16px 4px;display:none;width:56px}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--text-d);
+  animation:blink .8s ease-in-out infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+#chat-input-wrap{
+  position:sticky;bottom:0;background:var(--bg);
+  border-top:1px solid var(--border);padding:10px 0;display:flex;gap:8px;
+}
+#chat-input{
+  flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;
+  padding:10px 16px;color:var(--text);font-size:13px;outline:none;
+}
+#chat-send{
+  width:40px;height:40px;border-radius:50%;background:var(--gold-d);border:none;
+  color:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.quick-chips{display:flex;gap:6px;overflow-x:auto;padding:6px 0;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.quick-chips::-webkit-scrollbar{display:none}
+.chip{
+  white-space:nowrap;padding:5px 12px;border-radius:20px;font-size:10px;cursor:pointer;
+  background:var(--bg4);border:1px solid var(--border2);color:var(--text-m);flex-shrink:0;
+}
+.chip:active{background:var(--gold-d);color:white}
+
+/* ── AGENTES ── */
+.agent-row{
+  display:flex;align-items:center;gap:10px;padding:10px 0;
+  border-bottom:1px solid var(--border);cursor:pointer;
+}
+.agent-row:last-child{border-bottom:none}
+.agent-emoji{font-size:22px;width:36px;text-align:center;flex-shrink:0}
+.agent-info{flex:1;min-width:0}
+.agent-name{font-size:12px;font-weight:700;color:var(--text)}
+.agent-role{font-size:10px;color:var(--text-d)}
+.agent-status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
+.agent-status-dot.busy{background:var(--gold);animation:pulse 1s ease-in-out infinite}
+.agent-status-dot.thinking{background:var(--blue)}
+
+/* ── MARATHON ── */
+.mar-progress-bar{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;border:1px solid var(--border);margin:8px 0}
+.mar-progress-fill{height:100%;background:linear-gradient(90deg,#E05252,var(--gold));border-radius:3px;transition:width .5s}
+.mar-task-row{
+  display:flex;align-items:center;gap:8px;padding:8px 0;
+  border-bottom:1px solid var(--border);
+}
+.mar-task-row:last-child{border-bottom:none}
+.mar-status{font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;flex-shrink:0}
+.mar-status.pendente{background:var(--bg4);color:var(--text-d);border:1px solid var(--border)}
+.mar-status.rodando{background:rgba(91,143,212,.15);color:var(--blue);border:1px solid rgba(91,143,212,.3)}
+.mar-status.concluido{background:rgba(76,175,130,.12);color:var(--green);border:1px solid rgba(76,175,130,.3)}
+.mar-status.aguardando_aprovacao{background:rgba(180,148,90,.15);color:var(--gold);border:1px solid rgba(180,148,90,.3)}
+.mar-status.aprovado{background:rgba(76,175,130,.2);color:var(--green)}
+.mar-status.rejeitado{background:rgba(224,82,82,.12);color:var(--red)}
+.mar-day-tab{
+  padding:7px 14px;border-radius:20px;font-size:10px;font-weight:700;cursor:pointer;
+  background:var(--bg4);border:1px solid var(--border);color:var(--text-d);
+}
+.mar-day-tab.active{background:rgba(224,82,82,.12);border-color:rgba(224,82,82,.35);color:#E05252}
+
+/* ── LOJA ── */
+.product-row{
+  display:flex;align-items:center;gap:10px;padding:10px 0;
+  border-bottom:1px solid var(--border);
+}
+.product-row:last-child{border-bottom:none}
+.product-tier{
+  font-size:7px;font-weight:700;padding:2px 6px;border-radius:4px;flex-shrink:0;text-transform:uppercase;
+}
+.product-tier.entrada{background:rgba(76,175,130,.12);color:var(--green);border:1px solid rgba(76,175,130,.3)}
+.product-tier.medio{background:rgba(91,143,212,.12);color:var(--blue);border:1px solid rgba(91,143,212,.3)}
+.product-tier.premium{background:rgba(180,148,90,.15);color:var(--gold);border:1px solid rgba(180,148,90,.3)}
+.product-name{flex:1;font-size:11px;color:var(--text);line-height:1.3}
+.product-price{font-size:12px;font-weight:700;color:var(--gold);flex-shrink:0}
+
+/* ── SECTION TITLE ── */
+.section-title{font-size:9px;color:var(--text-d);text-transform:uppercase;letter-spacing:1.5px;
+  margin:14px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+
+/* ── BUTTONS ── */
+.btn-full{
+  width:100%;padding:12px;border-radius:10px;border:none;cursor:pointer;
+  font-size:13px;font-weight:700;margin-bottom:8px;transition:all .15s;
+}
+.btn-gold{background:var(--gold-d);color:white}
+.btn-gold:active{background:var(--gold)}
+.btn-red{background:rgba(224,82,82,.15);color:#E05252;border:1px solid rgba(224,82,82,.35)}
+.btn-ghost{background:var(--bg4);color:var(--text-m);border:1px solid var(--border2)}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:30px 20px;color:var(--text-d);font-size:12px;line-height:1.8}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:calc(var(--safe-bot)+70px);left:50%;transform:translateX(-50%);
+  background:rgba(26,23,20,.95);border:1px solid var(--border2);border-radius:20px;
+  padding:8px 18px;font-size:11px;color:var(--text);white-space:nowrap;
+  opacity:0;transition:opacity .25s;z-index:999;pointer-events:none;
+}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div id="hdr">
+  <div class="logo">AURA<span> DECORE</span></div>
+  <div id="hdr-right">
+    <span id="dec-badge-hdr">0 decisões</span>
+    <div class="status-dot" id="conn-dot"></div>
+  </div>
+</div>
+
+<!-- ── OFFLINE ── -->
+<div id="offline-bar">⚠ Sem conexão com o backend</div>
+
+<!-- ── MAIN VIEWS ── -->
+<div id="app">
+
+  <!-- ════ VIEW: HOME ════ -->
+  <div class="view active" id="view-home">
+
+    <!-- Decisões urgentes (aparece só quando há) -->
+    <div id="home-decisions-section" style="display:none">
+      <div class="section-title">⚡ Decisões Pendentes — Aguardando você</div>
+      <div id="home-decisions-list"></div>
+    </div>
+
+    <!-- KPIs orgânicos -->
+    <div class="section-title">📊 Status Orgânico</div>
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-val" id="kpi-agents">17</div>
+        <div class="kpi-lbl">Agentes</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" id="kpi-tasks">—</div>
+        <div class="kpi-lbl">Tarefas hoje</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" id="kpi-products">28</div>
+        <div class="kpi-lbl">Produtos ativos</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val" id="kpi-marathon">—</div>
+        <div class="kpi-lbl">Maratona</div>
+      </div>
+      <div class="kpi full" style="background:rgba(180,148,90,.06);border-color:rgba(180,148,90,.2)">
+        <div style="font-size:10px;color:var(--text-d);margin-bottom:4px">🌱 Fase atual</div>
+        <div style="font-size:13px;color:var(--gold);font-weight:600">Lançamento Orgânico — 46 produtos · 50 un</div>
+        <div style="font-size:10px;color:var(--text-m);margin-top:3px">Conteúdo · SEO · Comunidade · Zero ads pagos</div>
+        <div style="font-size:9px;color:var(--blue);margin-top:3px">🌐 vercel: aura-office-dashboard.vercel.app</div>
+      </div>
+    </div>
+
+    <!-- Activity Feed -->
+    <div class="section-title">📡 Atividade em Tempo Real <span id="feed-tab-home" style="margin-left:auto;font-size:9px;color:var(--gold);cursor:pointer" onclick="loadActivity()">↺ atualizar</span></div>
+    <div id="home-feed"></div>
+
+    <!-- QR de acesso (só no desktop) -->
+    <div id="qr-section" style="display:none">
+      <div class="section-title">📲 Acesso pelo Celular</div>
+      <div class="card" style="text-align:center;border-color:rgba(180,148,90,.3)">
+        <div id="qr-code" style="margin:0 auto 8px;width:160px;height:160px"></div>
+        <div style="font-size:10px;color:var(--gold);font-weight:700" id="qr-url-txt"></div>
+        <div style="font-size:9px;color:var(--text-d);margin-top:4px">Escaneie com a câmera do Android</div>
+      </div>
+    </div>
+
+    <!-- Canais sociais -->
+    <div class="section-title">📣 Redes Sociais</div>
+    <div class="card">
+      <div style="display:flex;gap:12px">
+        <a href="https://www.instagram.com/auras.decore/" target="_blank"
+          style="flex:1;text-decoration:none;background:rgba(155,127,212,.1);border:1px solid rgba(155,127,212,.3);
+          border-radius:10px;padding:12px;text-align:center;display:block">
+          <div style="font-size:22px">📸</div>
+          <div style="font-size:11px;color:var(--purple);font-weight:700;margin-top:4px">@auras.decore</div>
+          <div style="font-size:9px;color:var(--text-d)">Instagram</div>
+        </a>
+        <a href="https://www.facebook.com/profile.php?id=61590147064046" target="_blank"
+          style="flex:1;text-decoration:none;background:rgba(91,143,212,.1);border:1px solid rgba(91,143,212,.3);
+          border-radius:10px;padding:12px;text-align:center;display:block">
+          <div style="font-size:22px">👤</div>
+          <div style="font-size:11px;color:var(--blue);font-weight:700;margin-top:4px">Aura Decore</div>
+          <div style="font-size:9px;color:var(--text-d)">Facebook</div>
+        </a>
+        <a href="https://auradecore.com.br" target="_blank"
+          style="flex:1;text-decoration:none;background:rgba(76,175,130,.1);border:1px solid rgba(76,175,130,.3);
+          border-radius:10px;padding:12px;text-align:center;display:block">
+          <div style="font-size:22px">🛒</div>
+          <div style="font-size:11px;color:var(--green);font-weight:700;margin-top:4px">Loja</div>
+          <div style="font-size:9px;color:var(--text-d)">auradecore.com.br</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Ações rápidas -->
+    <div class="section-title">⚡ Ações Rápidas</div>
+    <button class="btn-full btn-gold" onclick="goTab('chat');chatQuick('qual o status da equipe hoje?')">💬 Falar com IVE</button>
+    <button class="btn-full btn-ghost" onclick="goTab('marathon')">🏃 Ver Maratona</button>
+    <button class="btn-full btn-ghost" onclick="goTab('agents')">🤖 Ver Agentes</button>
+  </div>
+
+  <!-- ════ VIEW: CHAT IVE ════ -->
+  <div class="view" id="view-chat">
+    <div class="section-title">💬 Chat com IVE — CEO da Aura Decore</div>
+    <div class="quick-chips" id="quick-chips">
+      <div class="chip" onclick="chatQuick('qual o status da equipe hoje?')">Status equipe</div>
+      <div class="chip" onclick="chatQuick('quais decisões precisam de mim agora?')">Decisões urgentes</div>
+      <div class="chip" onclick="chatQuick('como estão os produtos low-ticket?')">Produtos entrada</div>
+      <div class="chip" onclick="chatQuick('estratégia de conteúdo orgânico desta semana')">Conteúdo orgânico</div>
+      <div class="chip" onclick="chatQuick('o que NOX deve postar hoje?')">Post de hoje</div>
+      <div class="chip" onclick="chatQuick('como está o SEO da loja?')">SEO</div>
+      <div class="chip" onclick="chatQuick('quais produtos devo destacar agora?')">Destaques</div>
+      <div class="chip" onclick="chatQuick('resumo da maratona do fim de semana')">Resumo maratona</div>
+    </div>
+    <div id="chat-out">
+      <div class="msg bot">
+        <div class="bubble">Olá, Eduardo. Estou aqui — o que precisa?</div>
+        <div class="msg-ts">IVE · agora</div>
+      </div>
+    </div>
+    <div id="chat-typing" class="typing"><span></span><span></span><span></span></div>
+    <div class="chat-input-wrap" style="display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--border)">
+      <input id="chat-input" placeholder="Mensagem para IVE..." autocomplete="off"
+        onkeydown="if(event.key==='Enter')sendChat()">
+      <button id="chat-send" onclick="sendChat()">▶</button>
+    </div>
+  </div>
+
+  <!-- ════ VIEW: MARATHON ════ -->
+  <div class="view" id="view-marathon">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:14px;font-weight:700;color:#E05252">🏃 Maratona</div>
+      <div id="mar-progress-txt-m" style="font-size:10px;color:var(--text-m)">—</div>
+    </div>
+    <div class="mar-progress-bar"><div id="mar-fill-m" class="mar-progress-fill" style="width:0%"></div></div>
+
+    <!-- Day tabs -->
+    <div style="display:flex;gap:6px;margin:10px 0">
+      <div class="mar-day-tab active" id="mar-tab-m-sexta" onclick="marMobileSetDay('sexta')">📅 Sexta</div>
+      <div class="mar-day-tab" id="mar-tab-m-sabado" onclick="marMobileSetDay('sabado')">🔨 Sábado</div>
+      <div class="mar-day-tab" id="mar-tab-m-domingo" onclick="marMobileSetDay('domingo')">✅ Domingo</div>
+    </div>
+
+    <!-- Decisões pendentes da maratona -->
+    <div id="mar-decs-section-m" style="display:none">
+      <div class="section-title" style="color:#E05252">⚡ Aguardando sua aprovação</div>
+      <div id="mar-decs-list-m"></div>
+    </div>
+
+    <!-- Task list -->
+    <div id="mar-tasks-m"></div>
+
+    <!-- Start buttons -->
+    <div class="section-title">Disparar</div>
+    <button class="btn-full btn-red" onclick="marMobileStart('all')">🚀 Iniciar Maratona Completa</button>
+    <button class="btn-full btn-ghost" onclick="marMobileStart('sexta')">▶ Sexta</button>
+    <button class="btn-full btn-ghost" onclick="marMobileStart('sabado')">▶ Sábado</button>
+    <button class="btn-full btn-ghost" onclick="marMobileStart('domingo')">▶ Domingo</button>
+  </div>
+
+  <!-- ════ VIEW: AGENTES ════ -->
+  <div class="view" id="view-agents">
+    <div class="section-title">🤖 Equipe — 17 agentes</div>
+
+    <!-- Dispatch rápido -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title">⚡ Despacho Direto</div>
+      <select id="ag-select" style="width:100%;background:var(--bg4);border:1px solid var(--border2);
+        color:var(--text);border-radius:8px;padding:8px;font-size:12px;margin-bottom:8px">
+        <option value="ive">👑 IVE — CEO</option>
+        <option value="guard">🛡️ GUARD — CFO</option>
+        <option value="nexus">🔭 NEXUS — Mineração</option>
+        <option value="theo">⚙️ THEO — Shopify</option>
+        <option value="kai">💎 KAI — Produtos</option>
+        <option value="vera">✍️ VERA — Copy</option>
+        <option value="luna">🎨 LUNA — Design</option>
+        <option value="nox">📸 NOX — Conteúdo</option>
+        <option value="rex">📈 REX — Orgânico</option>
+        <option value="echo">🔍 ECHO — Auditor</option>
+        <option value="lena">💬 LENA — CX</option>
+        <option value="sol">💰 SOL — CRO</option>
+        <option value="zara">🌸 ZARA — Community</option>
+        <option value="mira">🔎 MIRA — SEO</option>
+        <option value="pipe">🔗 PIPE — Automação</option>
+        <option value="arte">🖼️ ARTE — Imagens</option>
+        <option value="feed">📣 FEED — Publicação</option>
+      </select>
+      <div style="display:flex;gap:8px">
+        <input id="ag-task" placeholder="Ordem para o agente..." style="flex:1;background:var(--bg4);
+          border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:8px;font-size:12px"
+          onkeydown="if(event.key==='Enter')dispatchAgent()">
+        <button onclick="dispatchAgent()" style="padding:8px 14px;background:var(--gold-d);border:none;
+          border-radius:8px;color:white;font-size:12px;font-weight:700;cursor:pointer">▶</button>
+      </div>
+    </div>
+
+    <div id="agents-list"></div>
+  </div>
+
+  <!-- ════ VIEW: LOJA ════ -->
+  <div class="view" id="view-store">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:14px;font-weight:700;color:var(--green)">🛒 Loja Aura Decore</div>
+      <a href="https://auradecore.com.br" target="_blank"
+        style="font-size:10px;color:var(--blue);text-decoration:none;border:1px solid rgba(91,143,212,.3);
+        padding:4px 10px;border-radius:8px">Abrir loja ↗</a>
+    </div>
+
+    <!-- Catálogo por tier -->
+    <div class="card">
+      <div class="card-title">🌱 Entrada — R$19 a R$50</div>
+      <div id="products-entrada"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">💙 Médio — R$68 a R$129</div>
+      <div id="products-medio"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">⭐ Premium — R$129+</div>
+      <div id="products-premium"></div>
+    </div>
+
+    <!-- Shopify improvements -->
+    <div class="section-title">⚙️ Melhorias da Loja</div>
+    <div id="store-improvements"></div>
+    <button class="btn-full btn-ghost" onclick="runStoreImprovement()">▶ Disparar melhoria agora</button>
+
+    <!-- CSS fix info -->
+    <div class="card" style="margin-top:10px;border-color:rgba(180,148,90,.25)">
+      <div class="card-title">🖼️ Fix de imagens esticadas</div>
+      <div style="font-size:11px;color:var(--text-m);line-height:1.6">
+        CSS gerado pelo DEV disponível.<br>
+        <strong style="color:var(--gold)">Como aplicar:</strong><br>
+        Shopify Admin → Loja Online → Temas → Editar código → assets/custom.css
+      </div>
+      <button class="btn-full btn-ghost" style="margin-top:8px;font-size:11px"
+        onclick="copyCSSFix()">📋 Copiar CSS de correção</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── BOTTOM NAV ── -->
+<nav id="nav">
+  <button class="nav-btn active" id="btn-home" onclick="goTab('home')">
+    <span class="nav-ico">🏠</span>Home
+  </button>
+  <button class="nav-btn" id="btn-chat" onclick="goTab('chat')">
+    <span class="nav-ico">💬</span>IVE
+  </button>
+  <button class="nav-btn" id="btn-marathon" onclick="goTab('marathon')">
+    <span class="nav-ico">🏃</span>Maratona
+    <span class="nbadge" id="nav-mar-badge">0</span>
+  </button>
+  <button class="nav-btn" id="btn-agents" onclick="goTab('agents')">
+    <span class="nav-ico">🤖</span>Equipe
+  </button>
+  <button class="nav-btn" id="btn-store" onclick="goTab('store')">
+    <span class="nav-ico">🛒</span>Loja
+  </button>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+// Detecta automaticamente se é Vercel (usa /api/) ou backend local (usa rota direta)
+const _isVercel = !window.location.hostname.match(/^(localhost|127\.|10\.|192\.|172\.)/);
+const BRIDGE = window.location.origin;
+const API = _isVercel ? BRIDGE + '/api' : BRIDGE;
+// Helper para montar URLs
+function apiUrl(path) {
+  if (_isVercel) return BRIDGE + '/api' + path;
+  return BRIDGE + path;
+}
+
+// ── QR CODE (desktop only) ──────────────────────────────────────────────────
+if (!window.matchMedia('(pointer:coarse)').matches) {
+  // É desktop — mostra QR para o celular escanear
+  document.addEventListener('DOMContentLoaded', () => {
+    const qrSec = document.getElementById('qr-section');
+    const qrTxt = document.getElementById('qr-url-txt');
+    if (qrSec) qrSec.style.display = 'block';
+    if (qrTxt) qrTxt.textContent = window.location.origin + '/mobile';
+    // Usa API do QR server para gerar imagem
+    const url = encodeURIComponent(window.location.origin + '/mobile');
+    const img = document.createElement('img');
+    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${url}&bgcolor=17140F&color=B4945A&margin=10`;
+    img.style.cssText = 'width:160px;height:160px;border-radius:8px';
+    img.onerror = () => { if(qrSec) qrSec.style.display='none'; };
+    const qrDiv = document.getElementById('qr-code');
+    if (qrDiv) qrDiv.appendChild(img);
+  });
+}
+
+// ── NAVIGATION ──────────────────────────────────────────────────────────────
+const TABS = ['home','chat','marathon','agents','store'];
+let _curTab = 'home';
+
+function goTab(tab) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + (tab==='marathon'?'marathon':tab==='agents'?'agents':tab)).classList.add('active');
+  document.getElementById('btn-' + tab).classList.add('active');
+  _curTab = tab;
+  if (tab === 'marathon') marMobilePoll();
+  if (tab === 'agents')   loadAgents();
+  if (tab === 'store')    loadStore();
+  if (tab === 'home')     { loadActivity(); loadDecisions(); }
+}
+
+// ── TOAST ────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ── CONEXÃO: WebSocket (local) ou Polling (Vercel) ───────────────────────────
+let _ws = null;
+let _pollActive = false;
+
+function connectWS() {
+  if (_isVercel) {
+    // Vercel: usa polling a cada 4s (não suporta WebSocket)
+    startPolling();
+    return;
+  }
+  // Local: usa WebSocket nativo
+  try {
+    const url = BRIDGE.replace('http://','ws://').replace('https://','wss://') + '/ws';
+    _ws = new WebSocket(url);
+    _ws.onopen = () => {
+      document.getElementById('conn-dot').style.background = 'var(--green)';
+      document.getElementById('offline-bar').style.display = 'none';
+    };
+    _ws.onclose = () => {
+      document.getElementById('conn-dot').style.background = 'var(--red)';
+      document.getElementById('offline-bar').style.display = 'block';
+      setTimeout(connectWS, 4000);
+    };
+    _ws.onmessage = e => { try { handleWS(JSON.parse(e.data)); } catch(_) {} };
+  } catch(e) { startPolling(); }
+}
+
+async function startPolling() {
+  if (_pollActive) return;
+  _pollActive = true;
+  const poll = async () => {
+    try {
+      const r = await fetch(apiUrl('/status'));
+      if (r.ok) {
+        document.getElementById('conn-dot').style.background = 'var(--green)';
+        document.getElementById('offline-bar').style.display = 'none';
+        const d = await r.json();
+        // Atualiza badge de decisões
+        if (d.marathon_decisions_pending > 0) {
+          document.getElementById('nav-mar-badge').style.display = 'inline';
+          document.getElementById('nav-mar-badge').textContent = d.marathon_decisions_pending;
+          document.getElementById('dec-badge-hdr').style.display = 'inline';
+          document.getElementById('dec-badge-hdr').textContent = d.marathon_decisions_pending + ' decisões';
+        }
+      }
+    } catch(_) {
+      document.getElementById('conn-dot').style.background = 'var(--red)';
+      document.getElementById('offline-bar').style.display = 'block';
+    }
+    setTimeout(poll, 4000);
+  };
+  poll();
+}
+function handleWS(d) {
+  const t = d.type || '';
+  // Activity
+  if (['agent_message','agent_activity','social_post','task_done','crew_result'].includes(t)) {
+    const entry = {
+      agent: (d.agent_id || d.agent || 'SYS').toUpperCase(),
+      action: d.message || d.action || d.theme || '',
+      ts_short: d.timestamp || new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+      category: t === 'social_post' ? 'social' : t === 'crew_result' ? 'crew' : 'agent',
+    };
+    prependFeedItem(entry);
+  }
+  // Marathon update
+  if (t === 'marathon_update' || t === 'marathon_decision' || t === 'marathon_started') {
+    marMobilePoll();
+    if (_curTab === 'home') loadDecisions();
+  }
+  // Agent working
+  if (t === 'agent_activity' || t === 'agent_message') {
+    const ag = d.agent_id || 'ive';
+    const dot = document.getElementById('agdot-' + ag);
+    if (dot) { dot.className = 'agent-status-dot busy'; setTimeout(() => { dot.className = 'agent-status-dot'; }, 8000); }
+  }
+}
+
+// ── ACTIVITY LOG ─────────────────────────────────────────────────────────────
+function prependFeedItem(entry) {
+  const feed = document.getElementById('home-feed');
+  if (!feed) return;
+  const cat = entry.category || 'agent';
+  const cls = cat === 'social' ? 'social' : cat === 'marathon' ? 'marathon' : cat === 'system' ? 'system' : '';
+  const el = document.createElement('div');
+  el.className = 'feed-item ' + cls;
+  el.innerHTML = `<div class="feed-agent">${entry.agent || 'SYS'}</div>
+    <div class="feed-action">${(entry.action||'').slice(0,120)}</div>
+    <div class="feed-ts">${entry.ts_short || ''}</div>`;
+  feed.insertBefore(el, feed.firstChild);
+  while(feed.children.length > 30) feed.removeChild(feed.lastChild);
+}
+
+async function loadActivity() {
+  try {
+    const r = await fetch(apiUrl("/activity/log?limit=20"));
+    const d = await r.json();
+    const feed = document.getElementById('home-feed');
+    feed.innerHTML = '';
+    (d.entries || []).forEach(e => {
+      const el = document.createElement('div');
+      const cat = e.category || 'agent';
+      const cls = cat === 'social' ? 'social' : cat === 'marathon' ? 'marathon' : cat === 'system' ? 'system' : '';
+      el.className = 'feed-item ' + cls;
+      el.innerHTML = `<div class="feed-agent">${e.agent || 'SYS'}</div>
+        <div class="feed-action">${(e.action||'').slice(0,120)}</div>
+        <div class="feed-ts">${e.ts_short || e.ts || ''}</div>`;
+      feed.appendChild(el);
+    });
+    if (!d.entries || !d.entries.length) {
+      feed.innerHTML = '<div class="empty">Sem atividade recente.<br>Os agentes ainda estão acordando.</div>';
+    }
+  } catch(e) {
+    document.getElementById('home-feed').innerHTML = '<div class="empty">Backend offline</div>';
+  }
+}
+
+// ── DECISÕES ─────────────────────────────────────────────────────────────────
+async function loadDecisions() {
+  try {
+    const r = await fetch(apiUrl("/marathon/decisions"));
+    const d = await r.json();
+    const decisions = d.decisions || [];
+    const section = document.getElementById('home-decisions-section');
+    const list = document.getElementById('home-decisions-list');
+    const badge = document.getElementById('dec-badge-hdr');
+    const navBadge = document.getElementById('nav-mar-badge');
+
+    if (decisions.length) {
+      section.style.display = 'block';
+      badge.style.display = 'inline';
+      badge.textContent = decisions.length + ' decisões';
+      navBadge.style.display = 'inline';
+      navBadge.textContent = decisions.length;
+      list.innerHTML = decisions.slice(0,3).map(dec => `
+        <div class="dec-card" id="mdec-${dec.task_id}">
+          <div class="dec-agent">${dec.agent} · ${dec.created_at}</div>
+          <div class="dec-title">${dec.title}</div>
+          <div class="dec-preview">${(dec.result||'').replace(/</g,'&lt;')}</div>
+          <div class="dec-btns">
+            <button class="btn-approve" onclick="mobileDecide('${dec.task_id}',true)">✓ Aprovar</button>
+            <button class="btn-reject" onclick="mobileDecide('${dec.task_id}',false)">✗ Ajustar</button>
+          </div>
+        </div>`).join('');
+    } else {
+      section.style.display = 'none';
+      badge.style.display = 'none';
+      navBadge.style.display = 'none';
+    }
+  } catch(_) {}
+}
+
+async function mobileDecide(taskId, approved) {
+  try {
+    await fetch(apiUrl(`/marathon/tasks/${taskId}/approve`), {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({approved})
+    });
+    showToast(approved ? '✓ Aprovado!' : '↺ Marcado para ajuste');
+    const el = document.getElementById('mdec-' + taskId);
+    if (el) el.style.opacity = '.3';
+    setTimeout(() => { loadDecisions(); marMobilePoll(); }, 600);
+  } catch(_) { showToast('⚠ Erro ao decidir'); }
+}
+
+// ── CHAT IVE ─────────────────────────────────────────────────────────────────
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  appendMsg('user', msg);
+  const typing = document.getElementById('chat-typing');
+  typing.style.display = 'flex';
+  try {
+    const r = await fetch(apiUrl("/chat"), {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({message: msg, agent_id:'ive'})
+    });
+    const d = await r.json();
+    typing.style.display = 'none';
+    appendMsg('bot', d.response || d.reply || 'IVE recebeu sua mensagem.');
+  } catch(e) {
+    typing.style.display = 'none';
+    appendMsg('bot', '⚠ Backend offline. Reinicie o servidor.');
+  }
+}
+function chatQuick(msg) {
+  goTab('chat');
+  setTimeout(() => {
+    document.getElementById('chat-input').value = msg;
+    sendChat();
+  }, 200);
+}
+function appendMsg(role, text) {
+  const out = document.getElementById('chat-out');
+  const el = document.createElement('div');
+  el.className = 'msg ' + role;
+  const ts = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  el.innerHTML = `<div class="bubble">${text.replace(/</g,'&lt;')}</div><div class="msg-ts">${role==='user'?'Você':'IVE'} · ${ts}</div>`;
+  out.appendChild(el);
+  out.scrollTop = out.scrollHeight;
+}
+
+// ── MARATHON MOBILE ───────────────────────────────────────────────────────────
+let _marDayM = 'sexta';
+let _marDataM = null;
+let _marPollM = null;
+
+function marMobileSetDay(day) {
+  _marDayM = day;
+  document.querySelectorAll('.mar-day-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('mar-tab-m-' + day).classList.add('active');
+  if (_marDataM) marMobileRender(_marDataM);
+}
+
+async function marMobilePoll() {
+  clearTimeout(_marPollM);
+  try {
+    const r = await fetch(apiUrl("/marathon/status"));
+    if (r.ok) {
+      _marDataM = await r.json();
+      marMobileRender(_marDataM);
+    }
+  } catch(_) {}
+  _marPollM = setTimeout(marMobilePoll, 5000);
+}
+
+function marMobileRender(data) {
+  const p = data.progress || {};
+  const pct = p.total ? Math.round((p.done/p.total)*100) : 0;
+  document.getElementById('mar-fill-m').style.width = pct+'%';
+  document.getElementById('mar-progress-txt-m').textContent = `${p.done||0}/${p.total||17} · ${pct}%`;
+
+  // Nav badge
+  const wt = p.waiting_approval || 0;
+  const nb = document.getElementById('nav-mar-badge');
+  nb.style.display = wt > 0 ? 'inline' : 'none';
+  nb.textContent = wt;
+
+  // Decisions
+  const decs = data.decisions || [];
+  const decSection = document.getElementById('mar-decs-section-m');
+  const decList = document.getElementById('mar-decs-list-m');
+  if (decs.length) {
+    decSection.style.display = 'block';
+    decList.innerHTML = decs.map(dec => `
+      <div class="dec-card" id="mardec-m-${dec.task_id}">
+        <div class="dec-agent">${dec.agent} · ${dec.created_at}</div>
+        <div class="dec-title">${dec.title}</div>
+        <div class="dec-preview">${(dec.result||'').replace(/</g,'&lt;')}</div>
+        <div class="dec-btns">
+          <button class="btn-approve" onclick="mobileDecide('${dec.task_id}',true)">✓ Aprovar</button>
+          <button class="btn-reject" onclick="mobileDecide('${dec.task_id}',false)">✗ Ajustar</button>
+        </div>
+      </div>`).join('');
+  } else {
+    decSection.style.display = 'none';
+  }
+
+  // Tasks
+  const tasks = (data.tasks||[]).filter(t => t.day === _marDayM).sort((a,b)=>a.order-b.order);
+  const EMOJIS = {IVE:'👑',GUARD:'🛡️',NEXUS:'🔭',THEO:'⚙️',KAI:'💎',VERA:'✍️',LUNA:'🎨',
+    NOX:'📸',REX:'📈',ECHO:'🔍',LENA:'💬',SOL:'💰',ZARA:'🌸',MIRA:'🔎',PIPE:'🔗',ARTE:'🖼️',FEED:'📣'};
+  const container = document.getElementById('mar-tasks-m');
+  container.innerHTML = tasks.length ? tasks.map(t => `
+    <div class="mar-task-row">
+      <span>${EMOJIS[t.agent]||'🤖'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;color:var(--text);line-height:1.3">${t.agent} · ${t.title.split('·').slice(1).join('·').trim()}</div>
+        ${t.result ? `<div style="font-size:9px;color:var(--text-d);margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${t.result.slice(0,60)}</div>` : ''}
+      </div>
+      <span class="mar-status ${t.status}">${{pendente:'⏳',rodando:'⚡',concluido:'✓',aguardando_aprovacao:'👁',aprovado:'✓',rejeitado:'✗'}[t.status]||t.status}</span>
+    </div>`).join('') : '<div class="empty">Nenhuma tarefa para este dia.</div>';
+}
+
+async function marMobileStart(day) {
+  showToast(`🏃 Iniciando ${day === 'all' ? 'Maratona Completa' : day}...`);
+  try {
+    const body = day === 'all' ? '{}' : JSON.stringify({day});
+    const r = await fetch(apiUrl("/marathon/start"), {
+      method:'POST', headers:{'Content-Type':'application/json'}, body
+    });
+    const d = await r.json();
+    if (d.ok) { showToast(`✓ ${d.tasks_dispatched} tarefas disparadas!`); setTimeout(marMobilePoll, 800); }
+  } catch(_) { showToast('⚠ Backend offline'); }
+}
+
+// ── AGENTS ───────────────────────────────────────────────────────────────────
+const AGENTS_DATA = [
+  {id:'ive',   e:'👑', n:'IVE',   r:'CEO · Estratégia · Coordenação'},
+  {id:'guard', e:'🛡️', n:'GUARD', r:'CFO · MEI · Financeiro'},
+  {id:'nexus', e:'🔭', n:'NEXUS', r:'Mineração · Fornecedores'},
+  {id:'theo',  e:'⚙️', n:'THEO',  r:'Shopify · Técnico · Pixel'},
+  {id:'kai',   e:'💎', n:'KAI',   r:'Curadoria · Produtos · Margem'},
+  {id:'vera',  e:'✍️', n:'VERA',  r:'Copy · Email · Conversão'},
+  {id:'luna',  e:'🎨', n:'LUNA',  r:'Design · Visual · Brand'},
+  {id:'nox',   e:'📸', n:'NOX',   r:'Conteúdo · Reels · Calendário'},
+  {id:'rex',   e:'📈', n:'REX',   r:'Crescimento Orgânico · SEO · Collabs'},
+  {id:'echo',  e:'🔍', n:'ECHO',  r:'Auditor · Score · Kaizen'},
+  {id:'lena',  e:'💬', n:'LENA',  r:'Atendimento · CX · Pós-venda'},
+  {id:'sol',   e:'💰', n:'SOL',   r:'CRO · Conversão · Recovery'},
+  {id:'zara',  e:'🌸', n:'ZARA',  r:'Community · UGC · Influencers'},
+  {id:'mira',  e:'🔎', n:'MIRA',  r:'SEO · Keywords · Pinterest'},
+  {id:'pipe',  e:'🔗', n:'PIPE',  r:'Automação · n8n · Workflows'},
+  {id:'arte',  e:'🖼️', n:'ARTE',  r:'Imagens IA · Pollinations · Assets'},
+  {id:'feed',  e:'📣', n:'FEED',  r:'Publicação · Instagram · Facebook'},
+];
+
+function loadAgents() {
+  const list = document.getElementById('agents-list');
+  list.innerHTML = AGENTS_DATA.map(a => `
+    <div class="agent-row" onclick="quickDispatch('${a.id}','${a.n}')">
+      <div class="agent-emoji">${a.e}</div>
+      <div class="agent-info">
+        <div class="agent-name">${a.n}</div>
+        <div class="agent-role">${a.r}</div>
+      </div>
+      <div class="agent-status-dot" id="agdot-${a.id}"></div>
+    </div>`).join('');
+}
+
+function quickDispatch(id, name) {
+  document.getElementById('ag-select').value = id;
+  document.getElementById('ag-task').focus();
+  showToast(`${name} selecionado`);
+}
+
+async function dispatchAgent() {
+  const id = document.getElementById('ag-select').value;
+  const task = document.getElementById('ag-task').value.trim();
+  if (!task) return;
+  document.getElementById('ag-task').value = '';
+  showToast(`▶ Despachando ${id.toUpperCase()}...`);
+  const dot = document.getElementById('agdot-' + id);
+  if (dot) dot.className = 'agent-status-dot busy';
+  try {
+    const r = await fetch(apiUrl("/agent/exec"), {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({agent_id:id, message:task})
+    });
+    const d = await r.json();
+    showToast(`✓ ${id.toUpperCase()} respondeu`);
+    if (dot) dot.className = 'agent-status-dot';
+  } catch(_) {
+    showToast('⚠ Erro — backend offline');
+    if (dot) dot.className = 'agent-status-dot';
+  }
+}
+
+// ── STORE ─────────────────────────────────────────────────────────────────────
+const PRODUCTS = {
+  entrada: [
+    {n:'Sachê Aromático de Linho',p:'R$19,90',old:'R$29,90'},
+    {n:'Marcadores Bambu — Set 3',p:'R$22,90',old:'R$32,90'},
+    {n:'Pedras Suiseki — Trio',p:'R$24,90',old:'R$34,90'},
+    {n:'Palo Santo Natural — 3 Palitos',p:'R$24,90',old:'R$34,90'},
+    {n:'Kit de Incenso Japonês',p:'R$29,90',old:'R$39,90'},
+    {n:'Porta-Incenso em Madeira',p:'R$29,90',old:'R$39,90'},
+    {n:'Mini Vaso Cerâmica Pocket',p:'R$39,90',old:'R$54,90'},
+    {n:'Mini Kit Zen Starter',p:'R$49,90',old:'R$69,90'},
+  ],
+  medio: [
+    {n:'Arranjo Pampas e Trigo Seco',p:'a partir R$69,90'},
+    {n:'Eucalipto Preservado',p:'R$79,00',old:'R$99,90'},
+    {n:'Bandeja de Bambu Zen',p:'a partir R$79,90',old:'R$99,90'},
+    {n:'Vela Artesanal Soja',p:'R$89,00',old:'R$119,90'},
+    {n:'Difusor Lavanda & Musk',p:'R$109,00',old:'R$139,90'},
+    {n:'Difusor Ambiente Aura',p:'R$119,90',old:'R$149,90'},
+  ],
+  premium: [
+    {n:'Vaso Cerâmica Wabi-Sabi',p:'R$129,90',old:'R$159,90'},
+    {n:'Bandeja Minimalista Acácia',p:'a partir R$89,90'},
+    {n:'Painel Moss Preservado + LED',p:'R$125,00'},
+    {n:'Vaso Cerâmica Oval',p:'R$149,00',old:'R$189,90'},
+    {n:'Suporte de Livros Madeira',p:'R$129,00'},
+  ],
+};
+
+function loadStore() {
+  ['entrada','medio','premium'].forEach(tier => {
+    const el = document.getElementById('products-' + tier);
+    el.innerHTML = PRODUCTS[tier].map(p => `
+      <div class="product-row">
+        <span class="product-tier ${tier}">${tier}</span>
+        <div class="product-name">${p.n}</div>
+        <div>
+          <div class="product-price">${p.p}</div>
+          ${p.old ? `<div style="font-size:9px;color:var(--text-d);text-decoration:line-through">${p.old}</div>` : ''}
+        </div>
+      </div>`).join('');
+  });
+  loadStoreImprovements();
+}
+
+async function loadStoreImprovements() {
+  try {
+    const r = await fetch(`${BRIDGE}/shopify/improvements`);
+    const d = await r.json();
+    const el = document.getElementById('store-improvements');
+    if (!d.results) { el.innerHTML = ''; return; }
+    const results = Object.entries(d.results);
+    el.innerHTML = results.slice(0,3).map(([id, res]) => `
+      <div class="card" style="margin-bottom:8px">
+        <div style="font-size:10px;font-weight:700;color:var(--green);margin-bottom:4px">✓ ${id.replace(/_/g,' ')}</div>
+        <div style="font-size:10px;color:var(--text-m);line-height:1.5;max-height:50px;overflow:hidden">${(res.result||'').slice(0,120)}...</div>
+        <div style="font-size:8px;color:var(--text-d);margin-top:4px">${res.ts||''}</div>
+      </div>`).join('') || '<div class="empty">Nenhuma melhoria ainda</div>';
+  } catch(_) {}
+}
+
+async function runStoreImprovement() {
+  showToast('⚙️ Disparando melhoria...');
+  try {
+    const tasks = ['dev_aspect_ratio_fix','dev_conversion_boost','theo_product_audit','vera_copy_home','mira_seo_products','arte_lifestyle_pack'];
+    const id = tasks[Math.floor(Math.random()*tasks.length)];
+    await fetch(apiUrl(`/shopify/improvements/${id}/run`), {method:'POST'});
+    showToast('✓ Agente trabalhando na loja');
+  } catch(_) { showToast('⚠ Backend offline'); }
+}
+
+async function copyCSSFix() {
+  try {
+    const r = await fetch(apiUrl("/shopify/improvements/css"));
+    const d = await r.json();
+    await navigator.clipboard.writeText(d.css || '');
+    showToast('✓ CSS copiado! Cole em assets/custom.css');
+  } catch(_) { showToast('⚠ Erro ao copiar CSS'); }
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+connectWS();
+loadDecisions();
+loadActivity();
+loadAgents();
+
+// Polling de decisões a cada 10s
+setInterval(() => {
+  loadDecisions();
+  if (_curTab === 'marathon') marMobilePoll();
+}, 10000);
+
+// KPI tasks count
+fetch(apiUrl("/tasks")).then(r=>r.json()).then(d=>{
+  const count = (d.tasks||[]).filter(t=>t.status!=='concluido').length;
+  document.getElementById('kpi-tasks').textContent = count || '0';
+}).catch(()=>{});
+
+// Marathon badge
+fetch(apiUrl("/marathon/status")).then(r=>r.json()).then(d=>{
+  const p = d.progress || {};
+  if(p.total) document.getElementById('kpi-marathon').textContent = `${p.done||0}/${p.total}`;
+  if(p.waiting_approval > 0){
+    document.getElementById('nav-mar-badge').style.display='inline';
+    document.getElementById('nav-mar-badge').textContent=p.waiting_approval;
+  }
+}).catch(()=>{});
+
+// ── SERVICE WORKER + PWA INSTALL ─────────────────────────────────────────────
+let _deferredPrompt = null;
+
+// Registra service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => {
+        console.log('[SW] Registrado:', reg.scope);
+        // Verifica atualizações
+        reg.addEventListener('updatefound', () => {
+          const w = reg.installing;
+          w.addEventListener('statechange', () => {
+            if (w.state === 'installed' && navigator.serviceWorker.controller) {
+              showToast('🔄 Atualização disponível — recarregue o app');
+            }
+          });
+        });
+      })
+      .catch(err => console.warn('[SW] Erro:', err));
+  });
+}
+
+// Captura evento de instalação (Android Chrome)
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredPrompt = e;
+  // Mostra botão de instalar no banner
+  const banner = document.getElementById('install-banner');
+  if (banner) banner.style.display = 'flex';
+});
+
+// Após instalação
+window.addEventListener('appinstalled', () => {
+  _deferredPrompt = null;
+  const banner = document.getElementById('install-banner');
+  if (banner) banner.style.display = 'none';
+  showToast('✓ App instalado! Abra pela tela inicial.');
+});
+
+function installPWA() {
+  if (_deferredPrompt) {
+    _deferredPrompt.prompt();
+    _deferredPrompt.userChoice.then(r => {
+      _deferredPrompt = null;
+      if (r.outcome === 'accepted') showToast('✓ Instalando Aura HQ...');
+      const banner = document.getElementById('install-banner');
+      if (banner) banner.style.display = 'none';
+    });
+  }
+}
+
+// Verifica se já está instalado como app
+if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+  // Rodando como app instalado — esconde banner
+  document.addEventListener('DOMContentLoaded', () => {
+    const b = document.getElementById('install-banner');
+    if (b) b.style.display = 'none';
+  });
+}
+</script>
+
+<!-- ── BANNER DE INSTALAÇÃO ANDROID ── -->
+<div id="install-banner" style="
+  display:none;position:fixed;bottom:calc(env(safe-area-inset-bottom)+64px);
+  left:10px;right:10px;z-index:200;
+  background:#17140F;border:1px solid rgba(180,148,90,.4);border-radius:14px;
+  padding:12px 16px;box-shadow:0 4px 24px rgba(0,0,0,.6);
+  animation:fadein .3s ease;
+  flex-direction:row;align-items:center;gap:12px;
+">
+  <div style="font-size:28px">📲</div>
+  <div style="flex:1">
+    <div style="font-size:12px;font-weight:700;color:#D4AF72">Instalar Aura Decore HQ</div>
+    <div style="font-size:10px;color:#6A5E52;margin-top:2px">Adicione à tela inicial para acesso rápido</div>
+  </div>
+  <button onclick="installPWA()" style="
+    background:#B4945A;border:none;border-radius:8px;color:white;
+    font-size:11px;font-weight:700;padding:8px 14px;cursor:pointer;white-space:nowrap;
+  ">Instalar</button>
+  <button onclick="document.getElementById('install-banner').style.display='none'" style="
+    background:none;border:none;color:#6A5E52;font-size:18px;cursor:pointer;padding:0 2px;
+  ">✕</button>
+</div>
+
+</body>
+</html>

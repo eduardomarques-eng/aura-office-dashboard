@@ -1,0 +1,588 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "hero_banner_aura": {
+      "type": "image-banner",
+      "blocks": {
+        "heading_hero": {
+          "type": "heading",
+          "settings": {
+            "heading": "Design Japandi & Minimalismo",
+            "heading_size": "h1"
+          }
+        },
+        "text_hero": {
+          "type": "text",
+          "settings": {
+            "text": "Peças curadas com intenção para habitar seu lar de forma harmônica.",
+            "text_style": "body-large"
+          }
+        },
+        "buttons_hero": {
+          "type": "buttons",
+          "settings": {
+            "button_label_1": "Explorar Curadoria",
+            "button_link_1": "shopify://collections/all",
+            "button_style_secondary_1": false
+          }
+        }
+      },
+      "block_order": [
+        "heading_hero",
+        "text_hero",
+        "buttons_hero"
+      ],
+      "settings": {
+        "image": "shopify://shop_images/0001-5032150870304921231.jpg",
+        "image_overlay_opacity": 20,
+        "image_height": "large",
+        "show_text_box": false,
+        "color_scheme": "scheme-1"
+      }
+    },
+    "aura_hero": {
+      "type": "aura-hero",
+      "settings": {
+        "bg_url": "banner-bali-biophilica.png",
+        "kicker": "Refúgio de Bem-Estar & Conexão",
+        "heading": "<p>O design que cura: <em>Neuroarquitetura & Biofilia<\/em><\/p>",
+        "subheading": "Crie um santuário de calma no seu lar com a serenidade do design Bali e a simplicidade Japandi. Peças curadas com intenção e materiais 100% naturais.",
+        "button_label": "VER NOVIDADES",
+        "button_link": "shopify://collections/chegadas-novidades",
+        "button2_label": "RITUAIS DE BEM-ESTAR",
+        "button2_link": "shopify://collections/aromaticos-e-velas"
+      }
+    },
+    "low_ticket_products": {
+      "type": "aura-best-sellers",
+      "blocks": {
+        "low1": {
+          "type": "product",
+          "settings": {
+            "image": "prod-bali-incenso.png",
+            "title": "Porta-Incenso Bambu Zen Bali",
+            "price": "R$ 39,90"
+          }
+        },
+        "low2": {
+          "type": "product",
+          "settings": {
+            "image": "prod-vela-coco.png",
+            "title": "Vela Coco Premium Cera Vegetal",
+            "price": "R$ 49,90"
+          }
+        },
+        "low3": {
+          "type": "product",
+          "settings": {
+            "image": "prod-bali-vasinho.png",
+            "title": "Mini Vaso Terracota Wabi-Sabi",
+            "price": "R$ 59,90"
+          }
+        },
+        "low4": {
+          "type": "product",
+          "settings": {
+            "image": "prod-vela-ritual.png",
+            "title": "Vela Perfumada Ritual de Lavanda",
+            "price": "R$ 64,90"
+          }
+        }
+      },
+      "block_order": [
+        "low1",
+        "low2",
+        "low3",
+        "low4"
+      ],
+      "settings": {
+        "title": "Pequenos Rituais: Alto Giro & Bem-Estar",
+        "heading_size": "h2",
+        "padding_top": 40,
+        "padding_bottom": 40
+      }
+    },
+    "trust_badges": {
+      "type": "multicolumn",
+      "blocks": {
+        "trust1": {
+          "type": "column",
+          "settings": {
+            "title": "Frete Cortesia R$150+",
+            "text": "<p>Entrega segura para todo o Brasil. Rastreamento em tempo real.</p>"
+          }
+        },
+        "trust2": {
+          "type": "column",
+          "settings": {
+            "title": "30 dias de garantia",
+            "text": "<p>Não amou? Nós trocamos ou devolvemos o valor integral sem qualquer burocracia.</p>"
+          }
+        },
+        "trust3": {
+          "type": "column",
+          "settings": {
+            "title": "100% Natural",
+            "text": "<p>Cerâmica, linho puro, bambu e madeira real. Totalmente livre de sintéticos.</p>"
+          }
+        },
+        "trust4": {
+          "type": "column",
+          "settings": {
+            "title": "Presente em Cada Detalhe",
+            "text": "<p>Embalagem sensorial com papel de seda, lacre de cera e cartão de agradecimento Aura.</p>"
+          }
+        }
+      },
+      "block_order": [
+        "trust1",
+        "trust2",
+        "trust3",
+        "trust4"
+      ],
+      "settings": {
+        "title": "",
+        "heading_size": "h2",
+        "columns_desktop": 4,
+        "column_alignment": "center",
+        "background_style": "primary",
+        "color_scheme": "scheme-2",
+        "columns_mobile": "2",
+        "swipe_on_mobile": false,
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
+    "featured_collection": {
+      "type": "aura-best-sellers",
+      "blocks": {
+        "prod1": {
+          "type": "product",
+          "settings": {
+            "image": "aura_terracotta_vase_1778739137101.png",
+            "title": "Vaso Ceramica Artesanal Terracota",
+            "price": "R$ 139,90"
+          }
+        },
+        "prod2": {
+          "type": "product",
+          "settings": {
+            "image": "col-texteis.png",
+            "title": "Almofada Linho Natural Japandi",
+            "price": "R$ 79,90"
+          }
+        },
+        "prod3": {
+          "type": "product",
+          "settings": {
+            "image": "col-velas.png",
+            "title": "Vela Ambar Natural Cera de Coco",
+            "price": "R$ 64,90"
+          }
+        },
+        "prod4": {
+          "type": "product",
+          "settings": {
+            "image": "col-vasos.png",
+            "title": "Vaso Ceramica Minimalista Branco",
+            "price": "R$ 129,90"
+          }
+        }
+      },
+      "block_order": [
+        "prod1",
+        "prod2",
+        "prod3",
+        "prod4"
+      ],
+      "settings": {
+        "title": "Os Mais Desejados",
+        "heading_size": "h1",
+        "padding_top": 52,
+        "padding_bottom": 52
+      }
+    },
+    "aura_collections": {
+      "type": "aura-collections",
+      "settings": {
+        "col1_link": "shopify://collections/ceramicas",
+        "col2_link": "shopify://collections/texteis",
+        "col3_link": "shopify://collections/aromaticos-e-velas"
+      }
+    },
+    "promo_novidades_banner": {
+      "type": "image-banner",
+      "blocks": {
+        "heading_promo": {
+          "type": "heading",
+          "settings": {
+            "heading": "Novidades da Estação",
+            "heading_size": "h2"
+          }
+        },
+        "text_promo": {
+          "type": "text",
+          "settings": {
+            "text": "Novos vasos, cerâmicas e aromas para harmonizar seu refúgio.",
+            "text_style": "body-medium"
+          }
+        },
+        "buttons_promo": {
+          "type": "buttons",
+          "settings": {
+            "button_label_1": "Ver Novidades",
+            "button_link_1": "shopify://collections/chegadas-novidades",
+            "button_style_secondary_1": false
+          }
+        }
+      },
+      "block_order": [
+        "heading_promo",
+        "text_promo",
+        "buttons_promo"
+      ],
+      "settings": {
+        "image": "shopify://shop_images/0001-3535829901955334744.jpg",
+        "image_overlay_opacity": 30,
+        "image_height": "medium",
+        "show_text_box": false,
+        "color_scheme": "scheme-1"
+      }
+    },
+    "featured_product_fiQacp": {
+      "type": "featured-product",
+      "blocks": {
+        "text_c7BynP": {
+          "type": "text",
+          "settings": {
+            "text": "Destaque da Casa",
+            "text_style": "uppercase"
+          }
+        },
+        "title_MxitGh": {
+          "type": "title",
+          "settings": {
+            "heading_size": "h1"
+          }
+        },
+        "price_eJXeXw": {
+          "type": "price",
+          "settings": {}
+        },
+        "variant_picker_Q3DxLt": {
+          "type": "variant_picker",
+          "settings": {
+            "picker_type": "button",
+            "swatch_shape": "circle"
+          }
+        },
+        "quantity_selector_biac6m": {
+          "type": "quantity_selector",
+          "settings": {}
+        },
+        "buy_buttons_AF3rQj": {
+          "type": "buy_buttons",
+          "settings": {
+            "show_dynamic_checkout": true,
+            "show_gift_card_recipient": false
+          }
+        },
+        "share_HjGFCP": {
+          "type": "share",
+          "settings": {
+            "share_label": "Compartilhar"
+          }
+        }
+      },
+      "block_order": [
+        "text_c7BynP",
+        "title_MxitGh",
+        "price_eJXeXw",
+        "variant_picker_Q3DxLt",
+        "quantity_selector_biac6m",
+        "buy_buttons_AF3rQj",
+        "share_HjGFCP"
+      ],
+      "settings": {
+        "product": "vaso-ceramica-wabi-bege-natural",
+        "color_scheme": "",
+        "secondary_background": false,
+        "media_size": "medium",
+        "constrain_to_viewport": true,
+        "media_fit": "contain",
+        "media_position": "left",
+        "image_zoom": "lightbox",
+        "hide_variants": false,
+        "enable_video_looping": false,
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    },
+    "aura_lookbook": {
+      "type": "aura-lookbook",
+      "settings": {
+        "button_link": "shopify://collections/destaque-da-estacao"
+      }
+    },
+    "testimonials": {
+      "type": "multicolumn",
+      "blocks": {
+        "test1": {
+          "type": "column",
+          "settings": {
+            "title": "5 estrelas - Silvia R., SP",
+            "text": "<p><em>Quando chegou, fiquei parada olhando por minutos. Nao esperava que fosse tao bonito ao vivo.</em></p>"
+          }
+        },
+        "test2": {
+          "type": "column",
+          "settings": {
+            "title": "5 estrelas - Fernanda L., RJ",
+            "text": "<p><em>Nunca mais comprei vela de supermercado. Essa e outra experiencia completamente.</em></p>"
+          }
+        },
+        "test3": {
+          "type": "column",
+          "settings": {
+            "title": "5 estrelas - Patricia A., SP",
+            "text": "<p><em>O terracota combinou com tudo. Coloquei com pampas e ficou um sonho. Muito melhor do que nas fotos.</em></p>"
+          }
+        }
+      },
+      "block_order": [
+        "test1",
+        "test2",
+        "test3"
+      ],
+      "settings": {
+        "title": "O que dizem sobre a Experiência Aura",
+        "heading_size": "h1",
+        "columns_desktop": 3,
+        "column_alignment": "center",
+        "background_style": "none",
+        "color_scheme": "scheme-2",
+        "columns_mobile": "1",
+        "swipe_on_mobile": true,
+        "padding_top": 52,
+        "padding_bottom": 52
+      }
+    },
+    "multicolumn_values": {
+      "type": "multicolumn",
+      "blocks": {
+        "col1": {
+          "type": "column",
+          "settings": {
+            "title": "Curadoria Exclusiva",
+            "text": "<p>Cada peca e escolhida com intencao. Beleza, qualidade e significado genuino.</p>"
+          }
+        },
+        "col2": {
+          "type": "column",
+          "settings": {
+            "title": "Materiais Naturais",
+            "text": "<p>Ceramica, linho, bambu e madeira. 100% natural. Zero sintetico.</p>"
+          }
+        },
+        "col3": {
+          "type": "column",
+          "settings": {
+            "title": "Embalagem Presente",
+            "text": "<p>Papel de seda, lacre de cera e cartao Aura. Cada entrega e uma experiencia.</p>"
+          }
+        },
+        "col4": {
+          "type": "column",
+          "settings": {
+            "title": "30 Dias de Garantia",
+            "text": "<p>Nao amou? Troca ou reembolso completo. Sem burocracia, sem julgamento.</p>"
+          }
+        }
+      },
+      "block_order": [
+        "col1",
+        "col2",
+        "col3",
+        "col4"
+      ],
+      "settings": {
+        "title": "A Experiencia Aura",
+        "heading_size": "h1",
+        "columns_desktop": 4,
+        "column_alignment": "center",
+        "background_style": "primary",
+        "color_scheme": "scheme-1",
+        "columns_mobile": "2",
+        "swipe_on_mobile": true,
+        "padding_top": 52,
+        "padding_bottom": 52
+      }
+    },
+    "newsletter": {
+      "type": "newsletter",
+      "blocks": {
+        "heading_nws": {
+          "type": "heading",
+          "settings": {
+            "heading_size": "h1"
+          }
+        },
+        "paragraph_nws": {
+          "type": "paragraph",
+          "settings": {
+            "text": "<p>Cadastre-se e ganhe 10% de desconto na sua primeira compra. Codigo BEMVINDA.</p>"
+          }
+        },
+        "email_form_nws": {
+          "type": "email_form",
+          "settings": {}
+        }
+      },
+      "block_order": [
+        "heading_nws",
+        "paragraph_nws",
+        "email_form_nws"
+      ],
+      "settings": {
+        "color_scheme": "scheme-2",
+        "full_width": true,
+        "padding_top": 52,
+        "padding_bottom": 52
+      }
+    },
+    "rich_text_cta": {
+      "type": "rich-text",
+      "blocks": {
+        "heading_cta": {
+          "type": "heading",
+          "settings": {
+            "heading_size": "h0"
+          }
+        },
+        "text_cta": {
+          "type": "text",
+          "settings": {
+            "text": "<p>Use o código <strong>AURA15</strong> e ganhe 15% OFF em toda a curadoria.</p>"
+          }
+        },
+        "button_cta": {
+          "type": "button",
+          "settings": {
+            "button_label": "EXPLORAR CURADORIA",
+            "button_link": "shopify://collections/all",
+            "button_style_secondary": false,
+            "button_label_2": "",
+            "button_link_2": "",
+            "button_style_secondary_2": false
+          }
+        }
+      },
+      "block_order": [
+        "heading_cta",
+        "text_cta",
+        "button_cta"
+      ],
+      "settings": {
+        "desktop_content_position": "center",
+        "content_alignment": "center",
+        "color_scheme": "scheme-4",
+        "full_width": true,
+        "padding_top": 80,
+        "padding_bottom": 80
+      }
+    },
+    "featured_product_TrT8Bf": {
+      "type": "featured-product",
+      "blocks": {
+        "text_zDcfnU": {
+          "type": "text",
+          "settings": {
+            "text": "Ritual Aromatico",
+            "text_style": "uppercase"
+          }
+        },
+        "title_dkfhcg": {
+          "type": "title",
+          "settings": {
+            "heading_size": "h1"
+          }
+        },
+        "price_cCAnRQ": {
+          "type": "price",
+          "settings": {}
+        },
+        "variant_picker_G9tnkE": {
+          "type": "variant_picker",
+          "settings": {
+            "picker_type": "button",
+            "swatch_shape": "circle"
+          }
+        },
+        "quantity_selector_zV6gwf": {
+          "type": "quantity_selector",
+          "settings": {}
+        },
+        "buy_buttons_QFjiAM": {
+          "type": "buy_buttons",
+          "settings": {
+            "show_dynamic_checkout": true,
+            "show_gift_card_recipient": false
+          }
+        },
+        "share_minXzA": {
+          "type": "share",
+          "settings": {
+            "share_label": "Compartilhar"
+          }
+        }
+      },
+      "block_order": [
+        "text_zDcfnU",
+        "title_dkfhcg",
+        "price_cCAnRQ",
+        "variant_picker_G9tnkE",
+        "quantity_selector_zV6gwf",
+        "buy_buttons_QFjiAM",
+        "share_minXzA"
+      ],
+      "settings": {
+        "product": "diffuser-premium-cedro-sandalo",
+        "color_scheme": "",
+        "secondary_background": false,
+        "media_size": "medium",
+        "constrain_to_viewport": true,
+        "media_fit": "contain",
+        "media_position": "left",
+        "image_zoom": "lightbox",
+        "hide_variants": false,
+        "enable_video_looping": false,
+        "padding_top": 36,
+        "padding_bottom": 36
+      }
+    }
+  },
+  "order": [
+    "hero_banner_aura",
+    "aura_hero",
+    "low_ticket_products",
+    "trust_badges",
+    "aura_collections",
+    "featured_collection",
+    "promo_novidades_banner",
+    "featured_product_fiQacp",
+    "aura_lookbook",
+    "testimonials",
+    "newsletter",
+    "multicolumn_values",
+    "rich_text_cta",
+    "featured_product_TrT8Bf"
+  ]
+}

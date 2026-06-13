@@ -1,0 +1,34 @@
+{% comment %} Aura Decore: Frete Grátis Progress Bar — Visual Premium Japandi {% endcomment %}
+{% assign free_shipping_threshold = 19900 %} {% comment %} R$199 em centavos {% endcomment %}
+{% assign cart_total = cart.total_price %}
+{% assign remaining = free_shipping_threshold | minus: cart_total %}
+
+<div class="aura-shipping-bar" data-aura-reveal>
+  {% if remaining > 0 %}
+    {% assign remaining_formatted = remaining | money %}
+    <div class="aura-shipping-bar__text">
+      <span class="aura-shipping-bar__icon">🚚</span> Falta apenas <strong>{{ remaining_formatted }}</strong> para você ganhar <strong>Frete Cortesia</strong> 🌿
+    </div>
+    <div class="aura-shipping-bar__track">
+      {% assign progress = cart_total | times: 100 | divided_by: free_shipping_threshold %}
+      <div class="aura-shipping-bar__fill" style="width: 0%;" data-progress-value="{{ progress | at_most: 100 }}%"></div>
+    </div>
+  {% else %}
+    <div class="aura-shipping-bar__text aura-shipping-bar--earned">
+      ✨ <strong>Parabéns!</strong> Você conquistou <strong>Frete Cortesia</strong> para sua compra 📦
+    </div>
+  {% endif %}
+</div>
+
+<script>
+(function() {
+  // Executa uma micro-animação para preencher a barra de progresso suavemente após a renderização
+  setTimeout(function() {
+    const fill = document.querySelector('.aura-shipping-bar__fill');
+    if (fill) {
+      const target = fill.getAttribute('data-progress-value');
+      fill.style.width = target;
+    }
+  }, 300);
+})();
+</script>

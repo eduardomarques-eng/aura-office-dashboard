@@ -1,0 +1,476 @@
+{% comment %}
+  Aura Decore — Vitrine de Produtos em Carrossel (clone das vitrines da Dcorada)
+  Mostra produtos de uma coleção em carrossel com 4 cards por vez (desktop)
+{% endcomment %}
+
+{% assign collection = section.settings.collection %}
+
+{% unless request.design_mode %}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css">
+{% endunless %}
+
+<style>
+  .aura-vitrine {
+    padding: {{ section.settings.padding_top }}px 0 {{ section.settings.padding_bottom }}px;
+    background: {{ section.settings.bg_color }};
+  }
+  .aura-vitrine__inner {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  /* Cabeçalho da seção */
+  .aura-vitrine__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid {{ section.settings.accent_color }};
+  }
+  .aura-vitrine__title {
+    font-family: 'Cormorant Garamond', Georgia, serif !important;
+    font-size: clamp(1.4rem, 2.5vw, 2rem);
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    color: {{ section.settings.title_color }};
+    margin: 0;
+  }
+  .aura-vitrine__title-accent {
+    display: inline-block;
+    width: 32px;
+    height: 1px;
+    background: {{ section.settings.accent_color }};
+    vertical-align: middle;
+    margin-right: 12px;
+  }
+  .aura-vitrine__ver-todos {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: {{ section.settings.accent_color }};
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .aura-vitrine__ver-todos:hover { border-bottom-color: {{ section.settings.accent_color }}; }
+
+  /* Cards de produto */
+  .aura-produto-card {
+    position: relative;
+    background: #fff;
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow 0.35s ease;
+  }
+  .aura-produto-card:hover {
+    box-shadow: 0 8px 32px rgba(26,26,26,0.1);
+  }
+  .aura-produto-card__img-wrap {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+    background: #F0EAE0;
+  }
+  .aura-produto-card__img-wrap img {
+    width: 100%; height: 100%;
+    object-fit: cover; object-position: center top;
+    display: block;
+    transition: transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
+  }
+  .aura-produto-card:hover .aura-produto-card__img-wrap img { transform: scale(1.05); }
+  /* Hover img secundária */
+  .aura-produto-card__img-wrap .img-hover {
+    position: absolute; inset: 0;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  .aura-produto-card:hover .aura-produto-card__img-wrap .img-hover { opacity: 1; }
+
+  /* Badge desconto */
+  .aura-badge-desconto {
+    position: absolute;
+    top: 10px; left: 10px;
+    background: {{ section.settings.accent_color }};
+    color: #F0EAE0;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    z-index: 2;
+  }
+
+  /* Ação rápida */
+  .aura-produto-card__acoes {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    display: flex;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    z-index: 3;
+  }
+  .aura-produto-card:hover .aura-produto-card__acoes { transform: translateY(0); }
+  .aura-btn-comprar {
+    flex: 1;
+    background: {{ section.settings.accent_color }};
+    color: #F0EAE0;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 13px 10px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: background 0.2s;
+  }
+  .aura-btn-comprar:hover { background: #8B6F3A; }
+  .aura-btn-comprar svg { width: 14px; height: 14px; fill: currentColor; }
+
+  /* Info do produto */
+  .aura-produto-card__info {
+    padding: 14px 14px 18px;
+  }
+  .aura-produto-card__nome {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 0.95rem;
+    font-weight: 400;
+    color: #1A1A1A;
+    line-height: 1.35;
+    margin: 0 0 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-decoration: none;
+  }
+  .aura-produto-card__nome a { color: inherit; text-decoration: none; }
+  .aura-produto-card__nome a:hover { color: {{ section.settings.accent_color }}; }
+  .aura-produto-card__stars {
+    display: flex; gap: 2px; margin-bottom: 6px;
+    color: #B8976A; font-size: 12px;
+  }
+  .aura-produto-card__precos {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .aura-preco-de {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    color: #8A8680;
+    text-decoration: line-through;
+  }
+  .aura-preco-por {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    color: {{ section.settings.accent_color }};
+  }
+  .aura-preco-parcela {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    color: #6A6A6A;
+    margin-top: 2px;
+  }
+  .aura-preco-pix {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    color: #2D8C4E;
+    margin-top: 2px;
+  }
+
+  /* Splide arrows customizados */
+  .aura-vitrine .splide__arrow {
+    background: #F0EAE0;
+    border: 1px solid rgba(166,139,107,0.3);
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    opacity: 1;
+    top: -52px;
+  }
+  .aura-vitrine .splide__arrow--prev { left: auto; right: 56px; }
+  .aura-vitrine .splide__arrow--next { right: 0; left: auto; }
+  .aura-vitrine .splide__arrow svg { fill: #1A1A1A; width: 14px; height: 14px; }
+  .aura-vitrine .splide__arrow:hover { background: {{ section.settings.accent_color }}; }
+  .aura-vitrine .splide__arrow:hover svg { fill: #F0EAE0; }
+  .aura-vitrine .splide__pagination { display: none; }
+
+  /* Sem produto */
+  .aura-vitrine-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #8A8680;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+  }
+
+  @media (max-width: 749px) {
+    .aura-vitrine .splide__arrow {
+      top: auto; bottom: -44px;
+    }
+    .aura-vitrine .splide__arrow--prev { left: calc(50% - 52px); right: auto; }
+    .aura-vitrine .splide__arrow--next { right: calc(50% - 52px); left: auto; }
+    .aura-vitrine__inner { padding-bottom: 48px; }
+  }
+</style>
+
+<div class="aura-vitrine">
+  <div class="aura-vitrine__inner">
+
+    <div class="aura-vitrine__header">
+      <h2 class="aura-vitrine__title">
+        <span class="aura-vitrine__title-accent"></span>
+        {{ section.settings.titulo }}
+      </h2>
+      {% if collection != blank %}
+      <a href="{{ collection.url }}" class="aura-vitrine__ver-todos">Ver todos →</a>
+      {% endif %}
+    </div>
+
+    {% if collection != blank and collection.products.size > 0 %}
+    <div id="aura-vitrine-{{ section.id }}" class="splide" aria-label="{{ section.settings.titulo }}">
+      <div class="splide__track">
+        <ul class="splide__list">
+          {% for product in collection.products limit: section.settings.limit %}
+          <li class="splide__slide">
+            <div class="aura-produto-card">
+
+              {%- comment %} Imagem {%- endcomment %}
+              <div class="aura-produto-card__img-wrap">
+                <a href="{{ product.url }}">
+                  {% if product.featured_image %}
+                    <img
+                      src="{{ product.featured_image | image_url: width: 600 }}"
+                      alt="{{ product.featured_image.alt | default: product.title | escape }}"
+                      loading="lazy"
+                      width="600" height="600"
+                    >
+                    {%- if product.images[1] != blank -%}
+                      <img class="img-hover"
+                        src="{{ product.images[1] | image_url: width: 600 }}"
+                        alt="{{ product.images[1].alt | default: product.title | escape }}"
+                        loading="lazy"
+                        width="600" height="600"
+                      >
+                    {%- endif -%}
+                  {% else %}
+                    {{ 'product-1' | placeholder_svg_tag: 'placeholder-svg' }}
+                  {% endif %}
+                </a>
+
+                {%- comment %} Badge desconto {%- endcomment %}
+                {%- if product.compare_at_price > product.price -%}
+                  {%- assign desconto = product.compare_at_price | minus: product.price | times: 100 | divided_by: product.compare_at_price | round -%}
+                  <span class="aura-badge-desconto">{{ desconto }}% Off</span>
+                {%- endif -%}
+
+                {%- comment %} Ações {%- endcomment %}
+                <div class="aura-produto-card__acoes">
+                  {% if product.available %}
+                    {% if product.variants.size == 1 %}
+                    <a href="/cart/add?id={{ product.variants.first.id }}&quantity=1"
+                       class="aura-btn-comprar"
+                       data-product-id="{{ product.variants.first.id }}">
+                      <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+                      Adicionar
+                    </a>
+                    {% else %}
+                    <a href="{{ product.url }}" class="aura-btn-comprar">
+                      <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      Ver opções
+                    </a>
+                    {% endif %}
+                  {% else %}
+                    <span class="aura-btn-comprar" style="background:#8A8680;cursor:default;">Indisponível</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              {%- comment %} Info {%- endcomment %}
+              <div class="aura-produto-card__info">
+                <p class="aura-produto-card__nome">
+                  <a href="{{ product.url }}">{{ product.title }}</a>
+                </p>
+                <div class="aura-produto-card__precos">
+                  {%- if product.compare_at_price > product.price -%}
+                    <span class="aura-preco-de">{{ product.compare_at_price | money }}</span>
+                  {%- endif -%}
+                  <span class="aura-preco-por">{{ product.price | money }}</span>
+                  {%- if section.settings.show_parcelamento -%}
+                    {%- assign parcelas = section.settings.parcelas_num -%}
+                    {%- assign valor_parcela = product.price | divided_by: parcelas -%}
+                    <span class="aura-preco-parcela">até {{ parcelas }}x de {{ valor_parcela | money }} sem juros</span>
+                  {%- endif -%}
+                  {%- if section.settings.show_pix_desconto -%}
+                    {%- assign pix_valor = product.price | times: 0.9 -%}
+                    <span class="aura-preco-pix">ou {{ pix_valor | money }} via Pix (-10%)</span>
+                  {%- endif -%}
+                </div>
+              </div>
+
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    {% elsif collection == blank %}
+    <div class="aura-vitrine-empty">
+      <p>Selecione uma coleção nas configurações desta seção.</p>
+    </div>
+    {% else %}
+    <div class="aura-vitrine-empty">
+      <p>Nenhum produto encontrado nesta coleção.</p>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+  (function() {
+    function initAuraVitrine{{ section.id | replace: '-', '_' }}() {
+      if (typeof Splide === 'undefined') {
+        if (!window._splideLoading) {
+          window._splideLoading = true;
+          var s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js';
+          s.onload = function() {
+            window._splideLoaded = true;
+            document.dispatchEvent(new Event('splide:loaded'));
+          };
+          document.head.appendChild(s);
+        }
+        document.addEventListener('splide:loaded', mount{{ section.id | replace: '-', '_' }}, { once: true });
+      } else {
+        mount{{ section.id | replace: '-', '_' }}();
+      }
+    }
+    function mount{{ section.id | replace: '-', '_' }}() {
+      var el = document.getElementById('aura-vitrine-{{ section.id }}');
+      if (!el) return;
+      new Splide(el, {
+        type: 'loop',
+        perPage: 4,
+        perMove: 1,
+        gap: '16px',
+        arrows: true,
+        pagination: false,
+        speed: 600,
+        breakpoints: {
+          1024: { perPage: 3 },
+          749:  { perPage: 1.5, gap: '12px' },
+          480:  { perPage: 1.2, gap: '10px' }
+        }
+      }).mount();
+    }
+    document.addEventListener('DOMContentLoaded', initAuraVitrine{{ section.id | replace: '-', '_' }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Aura — Vitrine Carrossel",
+  "settings": [
+    {
+      "type": "text",
+      "id": "titulo",
+      "label": "Título da vitrine",
+      "default": "Lançamentos"
+    },
+    {
+      "type": "collection",
+      "id": "collection",
+      "label": "Coleção"
+    },
+    {
+      "type": "range",
+      "id": "limit",
+      "min": 4,
+      "max": 24,
+      "step": 2,
+      "label": "Máx. de produtos",
+      "default": 12
+    },
+    {
+      "type": "color",
+      "id": "accent_color",
+      "label": "Cor de destaque",
+      "default": "#B8976A"
+    },
+    {
+      "type": "color",
+      "id": "title_color",
+      "label": "Cor do título",
+      "default": "#1A1A1A"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Cor de fundo",
+      "default": "#F0EAE0"
+    },
+    {
+      "type": "header",
+      "content": "Preços"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_parcelamento",
+      "label": "Mostrar parcelamento",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "parcelas_num",
+      "min": 2,
+      "max": 12,
+      "step": 1,
+      "label": "Número de parcelas",
+      "default": 6
+    },
+    {
+      "type": "checkbox",
+      "id": "show_pix_desconto",
+      "label": "Mostrar desconto Pix (-10%)",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Espaçamento"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 20,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Espaço superior",
+      "default": 52
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 20,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Espaço inferior",
+      "default": 52
+    }
+  ],
+  "presets": [
+    {
+      "name": "Aura — Vitrine Carrossel"
+    }
+  ]
+}
+{% endschema %}

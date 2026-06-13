@@ -5,7 +5,7 @@ Roda em http://localhost:8765
 Eduardo abre o link, autoriza no Facebook, token e salvo automaticamente no .env
 """
 import os, sys, json, time, pathlib, threading, urllib.parse, webbrowser
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import HTTPServer, ThreadingHTTPServer, BaseHTTPRequestHandler
 import httpx
 
 ENV_PATH = pathlib.Path(__file__).parent / ".env"
@@ -117,13 +117,13 @@ class TokenHandler(BaseHTTPRequestHandler):
                     "pages_manage_posts",
                     "pages_read_engagement",
                     "pages_show_list",
-                    "pages_read_user_content",
                     "pages_manage_metadata",
                     "instagram_basic",
                     "instagram_content_publish",
                     "instagram_manage_comments",
-                    "instagram_manage_insights",
                     "business_management",
+                    "ads_management",
+                    "ads_read",
                     "public_profile",
                 ])
                 # Fluxo IMPLÍCITO (response_type=token) — não requer META_APP_SECRET.
@@ -140,6 +140,17 @@ class TokenHandler(BaseHTTPRequestHandler):
         elif parsed.path == "/save":
             token = params.get("token", "").strip()
             if token and len(token) > 20:
+                # Tenta exchangar para page token (se for user token)
+                try:
+                    env = load_env()
+                    page_id = env.get("FB_PAGE_ID", "1111100822090245")
+                    r_pg = httpx.get(f"https://graph.facebook.com/v20.0/{page_id}",
+                        params={"fields": "access_token", "access_token": token}, timeout=15)
+                    pg_token = r_pg.json().get("access_token", "")
+                    if pg_token and len(pg_token) > 30:
+                        token = pg_token  # usa page token
+                except Exception:
+                    pass  # fallback: salva token original
                 save_token_to_env(token)
                 captured_token["value"] = token
                 captured_token["done"] = True
@@ -264,23 +275,31 @@ class TokenHandler(BaseHTTPRequestHandler):
 # ─── Main ──────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     PORT = 8765
-    server = HTTPServer(("localhost", PORT), TokenHandler)
-    print(f"[META TOKEN] Servidor rodando em http://localhost:{PORT}")
-    print(f"   Acesse: http://localhost:{PORT}")
+    # ThreadingHTTPServer = nao trava com conexoes pendentes do navegador
+    server = ThreadingHTTPServer(("localhost", PORT), TokenHandler)
+    server.daemon_threads = True
+    print(f"[META TOKEN] Servidor (threaded) em http://localhost:{PORT}")
 
-    # Abre browser automaticamente
+    # serve_forever em thread separada
+    t = threading.Thread(target=server.serve_forever, daemon=True)
+    t.start()
+
     def open_browser():
         time.sleep(1)
         webbrowser.open(f"http://localhost:{PORT}")
     threading.Thread(target=open_browser, daemon=True).start()
 
-    # Aguarda token
+    # Aguarda token ser capturado (ate 15 min), depois mantem vivo +30s p/ pagina de sucesso
     try:
-        while not captured_token["done"]:
-            server.handle_request()
-        print(f"\n[OK] Token capturado: {captured_token['value'][:30]}...")
-        # Mais 3 requests para servir a pagina de sucesso
-        for _ in range(3):
-            server.handle_request()
+        deadline = time.time() + 900
+        while not captured_token["done"] and time.time() < deadline:
+            time.sleep(1)
+        if captured_token["done"]:
+            print(f"\n[OK] Token capturado: {captured_token['value'][:30]}...")
+            time.sleep(30)
+        else:
+            print("\n[TIMEOUT] Nenhum token em 15 min.")
+        server.shutdown()
     except KeyboardInterrupt:
         print("\nServidor encerrado.")
+        server.shutdown()

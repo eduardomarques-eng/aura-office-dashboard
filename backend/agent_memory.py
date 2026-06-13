@@ -10,7 +10,13 @@ import pathlib
 from datetime import datetime
 from typing import Optional
 
-VAULT = pathlib.Path(os.getenv("OBSIDIAN_VAULT", r"C:\Users\erick\AURA-decor-vault"))
+import platform as _platform
+_default_vault = (
+    r"C:\Users\erick\AURA-decor-vault"
+    if _platform.system() == "Windows"
+    else "/app/vault"
+)
+VAULT = pathlib.Path(os.getenv("OBSIDIAN_VAULT", _default_vault))
 
 # ── Estrutura de pastas do vault ───────────────────────────────────────────────
 FOLDERS = [

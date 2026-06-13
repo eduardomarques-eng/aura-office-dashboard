@@ -1,4 +1,26 @@
-﻿backend/.env
+backend/.env
+.env.vercel
 backend/__pycache__/
+api/__pycache__/
 *.pyc
 .env
+ssl_cert.pem
+ssl_key.pem
+*.log
+__pycache__/
+.vercel
+.venv/
+.venv
+node_modules/
+backend/social_posts/
+shopify-app-token/
+
+# Binary/image assets — gerenciados pelo Shopify diretamente
+backend/generated_images/
+shopify-theme/assets/*.png
+shopify-theme/assets/*.jpg
+shopify-theme/assets/*.jpeg
+shopify-theme/assets/*.gif
+shopify-theme/assets/*.webp
+shopify-theme/assets/*.svg
+shopify-theme/assets/*.ico

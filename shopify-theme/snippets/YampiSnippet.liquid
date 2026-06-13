@@ -1,0 +1,526 @@
+{% comment %}
+  Aura Decore — Yampi Checkout Integration
+  Loader e confirmação completamente personalizados com paleta e fontes da loja
+{% endcomment %}
+
+<link rel="preconnect" crossorigin href="https://api.dooki.com.br">
+<link rel="preconnect" crossorigin href="https://api.yampi.io">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+{% if template.name == 'product' %}
+  <script src="https://www.mercadopago.com/v2/security.js" view="item"></script>
+{% endif %}
+{% if template.name == 'index' %}
+  <script src="https://www.mercadopago.com/v2/security.js" view="home"></script>
+{% endif %}
+{% if template.name == 'search' %}
+  <script src="https://www.mercadopago.com/v2/security.js" view="search"></script>
+{% endif %}
+
+<link rel="stylesheet" href="https://cdn.yampi.me/shopify/checkout.css">
+
+<style id="aura-yampi-styles">
+/* ==========================================================================
+   AURA DECORE — Yampi Checkout Branding
+   Paleta: Terracota #B8793A | Grafite #3D3D3B | Creme #FAFAF8
+   Fontes: Cormorant Garamond + DM Sans
+   ========================================================================== */
+
+/* ---- Loader Principal Aura ---- */
+.yampi-loader {
+  display: none;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: rgba(250,250,248,0.97);
+  left: 0;
+  top: 0;
+  z-index: 99999;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 2.4rem;
+}
+
+.yampi-loader.active {
+  display: flex !important;
+}
+
+/* Eucalipto logo no loader */
+.yampi-loader::before {
+  content: '';
+  display: block;
+  width: 56px;
+  height: 80px;
+  background-image: url('https://cdn.shopify.com/s/files/1/0685/7064/4585/files/aura-logo-eucalipto.svg?v=1780169776');
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+  animation: aura-pulse 2s ease-in-out infinite;
+}
+
+/* Spinner terracota */
+.yampi-loader::after {
+  content: '';
+  display: block;
+  width: 32px;
+  height: 32px;
+  border: 2.5px solid rgba(184,121,58,.2);
+  border-top-color: #B8793A;
+  border-radius: 50%;
+  animation: aura-spin 0.8s linear infinite;
+}
+
+/* Texto no loader */
+.yampi-loader-text {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.8rem;
+  font-style: italic;
+  color: #3D3D3B;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+@keyframes aura-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes aura-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+/* ---- Loader simples (classe original) ---- */
+.yampi-loading { display: none !important; }
+
+/* ---- Modal de Confirmação de Compra — Aura Premium ---- */
+#yampiPurchaseConfirmationWrapper {
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  left: 0;
+  top: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  z-index: 99999999;
+  background: rgba(250,250,248,0.98);
+  font-family: 'DM Sans', sans-serif;
+  backdrop-filter: blur(8px);
+}
+
+#yampiPurchaseConfirmationWrapper.active {
+  display: flex;
+}
+
+#yampiPurchaseConfirmationWrapper > div {
+  text-align: center;
+  padding: 5.6rem 4.8rem;
+  max-width: 560px;
+  background: #FAFAF8;
+  border: 1px solid rgba(184,121,58,0.15);
+  box-shadow: 0 24px 80px rgba(61,61,59,0.12);
+}
+
+/* Eucalipto acima da mensagem */
+#yampiPurchaseConfirmationWrapper > div::before {
+  content: '';
+  display: block;
+  width: 48px;
+  height: 68px;
+  background-image: url('https://cdn.shopify.com/s/files/1/0685/7064/4585/files/aura-logo-eucalipto.svg?v=1780169776');
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+  margin: 0 auto 2.4rem;
+  opacity: 0.6;
+}
+
+#yampiPurchaseConfirmationWrapper .yampi_purchase_title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 2.4rem;
+  font-weight: 400;
+  color: #3D3D3B;
+  margin: 0 0 1.2rem;
+  line-height: 1.3;
+}
+
+#yampiPurchaseConfirmationWrapper .yampi_purchase_subtitle {
+  font-size: 1.4rem;
+  font-weight: 300;
+  color: #8A8580;
+  margin: 0 0 3.2rem;
+  line-height: 1.7;
+}
+
+#yampiPurchaseConfirmationWrapper .yampi_purchase_confirmation_btn {
+  display: inline-block;
+  background: #B8793A !important;
+  color: #FAFAF8 !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 1.1rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.2em !important;
+  text-transform: uppercase !important;
+  padding: 1.6rem 4rem !important;
+  border: none !important;
+  border-radius: 0 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 20px rgba(184,121,58,0.3) !important;
+}
+
+#yampiPurchaseConfirmationWrapper .yampi_purchase_confirmation_btn:hover {
+  background: #9E6630 !important;
+  box-shadow: 0 6px 28px rgba(184,121,58,0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Override do botao verde padrao do Yampi */
+.yampi_purchase_confirmation_btn {
+  background: #B8793A !important;
+  border-radius: 0 !important;
+  letter-spacing: 0.1em !important;
+  font-family: 'DM Sans', sans-serif !important;
+}
+</style>
+
+<!-- Loader Aura Premium -->
+<div class="yampi-loader" id="yampi-loader-aura">
+  <span class="yampi-loader-text">Preparando seu checkout&hellip;</span>
+</div>
+
+<script type='text/javascript'>
+
+  var currentPage = '{{ template.name }}'
+    , cartEndpoint = 'https://api.dooki.com.br/v2/public/shopify/cart'
+    , statusEndpoint = 'https://api.dooki.com.br/v2/public/shopify/status'
+    , shop = '{{ shop.secure_url }}'
+    , shopifyInternalUrl = '{{ shop.permanent_domain }}'
+    , ymp_hasUrlSupport = 'undefined' !== typeof URL && 'undefined' !== typeof URLSearchParams
+    , ymp_utmCookieName = 'utmsTrack';
+
+  window.yampiCheckoutUrl = '';
+
+  var checkoutBtncss = '<style id="ymp-btn-style" type="text/css"> body .ymp-CrtpageMainFrm input[type="submit"]:not([name="update"]), body .ymp-CrtpageMainFrm button[type="submit"]:not([name="update"]), body .ymp_check_mainBtn[name="checkout"]:not([class*="ymp_elem_"]):not([name="update"]), body input.ymp_check_mainBtn:not([class*="ymp_elem_"]):not([name="update"]) { display: none !important; }body .ymp-CrtpageMainFrm .ymp_check_mainBtn.ymp_elem_mainBtn[type="submit"]:not(.bold_hidden){ display: inline-block !important; } </style>';
+
+  function ymp_cartHasBundles(cartPayload) {
+    if (!cartPayload || !cartPayload.items) return false;
+    for (var i = 0; i < cartPayload.items.length; i++) {
+      if (cartPayload.items[i].has_components) return true;
+    }
+    return false;
+  }
+
+  // Loader Aura Premium (substitui o loader original)
+  function showYampiLoader() {
+    var el = document.getElementById('yampi-loader-aura');
+    if (el) el.classList.add('active');
+  }
+
+  function hideYampiLoader() {
+    var el = document.getElementById('yampi-loader-aura');
+    if (el) el.classList.remove('active');
+  }
+
+  // Cart
+  if (currentPage == 'cart') {
+    showYampiLoader();
+
+    getAjax('/cart.json', function (response) {
+      var cartPayload = JSON.parse(response);
+      var data = {
+        shop: window.location.host,
+        shopify_internal_domain: shopifyInternalUrl,
+        cart_payload: cartPayload
+      };
+
+      postAjax(cartEndpoint, JSON.stringify(data), function (response) {
+        var resp = JSON.parse(response);
+
+        if (!resp.active) {
+          hideYampiLoader();
+        } else {
+          var otherButtons = document.getElementsByClassName('cartX_check_mainBtn');
+          for (var i = 0; i < otherButtons.length; i++) {
+            otherButtons[i].setAttribute('style', 'display: none !important');
+          }
+
+          window.yampiCheckoutUrl = resp.checkout_direct_url;
+
+          if (resp.skip_cart && resp.checkout_direct_url != '') {
+            if (resp.fb_fallback && isAndroid() && isFacebookBrowser()) {
+              window.location = ymp_getUrlWithUtms(resp.checkout_direct_url);
+              setTimeout(function () {
+                showYampiPurchaseConfirmation(resp.checkout_direct_url);
+              }, 500);
+            } else if (ymp_cartHasBundles(cartPayload)) {
+              window.location = ymp_getUrlWithUtms(resp.checkout_direct_url);
+            } else {
+              postAjax('/cart/clear.js', JSON.stringify({}), function () {
+                window.location = ymp_getUrlWithUtms(resp.checkout_direct_url);
+              });
+            }
+          } else {
+            hideYampiLoader();
+            var getHead = document.getElementsByTagName('head')[0];
+            getHead.insertAdjacentHTML('beforeend', checkoutBtncss);
+            var getForm = document.getElementsByTagName('form');
+            var cartFrmId, getCheckoutBtn;
+
+            for (var i = 0; i < getForm.length; i++) {
+              var formAction = getForm[i].action;
+              formAction = formAction.split(shop);
+              if (formAction.includes('/cart') == true || formAction[0].includes('/cart') == true) {
+                if (getForm[i].getAttribute('id')) {
+                  cartFrmId = getForm[i].getAttribute('id');
+                } else {
+                  getForm[i].setAttribute('id', 'ymp-CrtpageMainFrm');
+                  cartFrmId = getForm[i].getAttribute('id');
+                }
+                getForm[i].classList.add('ymp-CrtpageMainFrm');
+                getCheckoutBtn = getForm[i].elements['checkout'] || document.querySelector('a[href="/checkout"]') || document.querySelector('form[action="/cart"] input[type="submit"]');
+
+                if (getCheckoutBtn.length == undefined) {
+                  var buttonValue = getCheckoutBtn.value ? getCheckoutBtn.value : getCheckoutBtn.textContent;
+                } else {
+                  var lastBtnID = getCheckoutBtn.length - 1;
+                  var buttonValue = getCheckoutBtn[lastBtnID].value ? getCheckoutBtn[lastBtnID].value : getCheckoutBtn[lastBtnID].textContent;
+                }
+                var getSubBtnId = getCheckoutBtn.id;
+                if (getSubBtnId) {
+                  getSubBtnId = getSubBtnId + 'ympButton';
+                } else {
+                  getSubBtnId = 'ympBtn';
+                }
+
+                if (getCheckoutBtn.length == undefined) {
+                  var inptBtn = '<button type="submit" class="' + getCheckoutBtn.className + ' ymp_check_mainBtn ymp_elem_mainBtn" id="' + getSubBtnId + '">' + buttonValue + '</button>';
+                  getCheckoutBtn.insertAdjacentHTML('afterEnd', inptBtn);
+                } else {
+                  var inptBtn = '<button type="submit" class="' + getCheckoutBtn[getCheckoutBtn.length - 1].className + ' ymp_check_mainBtn ymp_elem_mainBtn" id="' + getSubBtnId + '">' + buttonValue + '</button>';
+                  getCheckoutBtn[getCheckoutBtn.length - 1].insertAdjacentHTML('afterEnd', inptBtn);
+                }
+                document.getElementById(getSubBtnId).addEventListener('click', fakeClick);
+              }
+            }
+
+            if (window.$ || window.jQuery) {
+              var btns = $('a.btn-checkout[href="/checkout"]').not('.ymp_elem_mainBtn');
+              btns.hide();
+            }
+          }
+        }
+      });
+    });
+  }
+
+  function showYampiPurchaseConfirmation(purchaseUrl) {
+    var element = document.getElementById('yampiPurchaseConfirmationWrapper');
+    element.setAttribute('class', 'active');
+    hideYampiLoader();
+  }
+
+  function getAjax(url, success, error) {
+    var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+    xhr.open('GET', url);
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState > 3) {
+        if (xhr.status == 200) { success(xhr.responseText); }
+        else if (error) { error(xhr); }
+      }
+    };
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.send();
+    return xhr;
+  }
+
+  function postAjax(url, data, success) {
+    var params = typeof data == 'string' ? data : Object.keys(data).map(
+      function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(data[k]); }
+    ).join('&');
+    var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject('Microsoft.XMLHTTP');
+    xhr.open('POST', url);
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState > 3 && xhr.status == 200) { success(xhr.responseText); }
+    };
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(params);
+    return xhr;
+  }
+
+  var ympData = '';
+
+  if (window.$ || window.jQuery) {
+    var checkoutButtons = $('.btn-checkout');
+    checkoutButtons.each(function () {
+      var t = $(this);
+      if (t.attr('onclick') == "window.location='/checkout'") {
+        t.attr('onclick', "window.location='/cart'");
+      }
+    });
+
+    if (currentPage == 'product' || currentPage == 'index') {
+      var ympSelectors = $('input[name="add"], button[name="add"], #add-to-cart, .add-to-cart, #AddToCartText, #AddToCart, .ProductForm__AddToCart');
+      ympSelectors.attr('disabled', true);
+
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          ympData = JSON.parse(this.response);
+          if (ympData && ympData.data.active) {
+            ympSelectors = $('input[name="add"], button[name="add"], #add-to-cart, .add-to-cart, #AddToCartText, #AddToCart, .ProductForm__AddToCart');
+            ympSelectors.addClass('ymp_mainBtn ymp_elem_0');
+            ympSelectors.removeAttr('disabled');
+
+            $('.ymp_mainBtn').on('click', function (event) {
+              event.preventDefault();
+              var form = $(this).parents('form[action="/cart/add"]');
+              var xhr = new XMLHttpRequest();
+              xhr.open('POST', '/cart/add.js', true);
+              xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+              xhr.onreadystatechange = function () {
+                if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+                  window.location.href = '/cart?ref=yampi_buy_button';
+                }
+              };
+              xhr.send($(form).serialize());
+            });
+          } else {
+            ympSelectors.removeAttr('disabled');
+          }
+        }
+      };
+      xhttp.open('GET', 'https://api.dooki.com.br/v2/public/shopify/status?shop=' + window.location.host);
+      xhttp.send();
+    }
+  }
+
+  function fakeClick(event) {
+    event.preventDefault();
+    showYampiLoader();
+    getAjax('/cart.json', function (response) {
+      var cartPayload = JSON.parse(response);
+      var data = { shop: window.location.host, cart_payload: cartPayload };
+      postAjax(cartEndpoint, JSON.stringify(data), function (response) {
+        var resp = JSON.parse(response);
+        window.location.href = ymp_getUrlWithUtms(resp.checkout_direct_url);
+      });
+    });
+  }
+
+  function yampiClick() {
+    showYampiLoader();
+    getAjax('/cart.json', function (response) {
+      var cartPayload = JSON.parse(response);
+      var data = { shop: window.location.host, cart_payload: cartPayload };
+      postAjax(cartEndpoint, JSON.stringify(data), function (response) {
+        var resp = JSON.parse(response);
+        window.location.href = ymp_getUrlWithUtms(resp.checkout_direct_url);
+      });
+    });
+  }
+
+  function getNewCheckoutURL() {
+    getAjax('/cart.json', function (response) {
+      var cartPayload = JSON.parse(response);
+      var data = { shop: window.location.host, cart_payload: cartPayload };
+      postAjax(cartEndpoint, JSON.stringify(data), function (response) {
+        var resp = JSON.parse(response);
+        if (ymp_cartHasBundles(cartPayload)) {
+          window.location.href = ymp_getUrlWithUtms(resp.checkout_direct_url);
+          return;
+        }
+        postAjax('/cart/clear.js', JSON.stringify({}), function () {
+          window.location.href = ymp_getUrlWithUtms(resp.checkout_direct_url);
+        });
+      });
+    });
+  }
+
+  if (window.$ || window.jQuery) {
+    var oldLinks = $('a[href="/a/checkout"]').not('.yampi-btn-finalize').addClass('yampi-btn-finalize-single');
+    $('.yampi-btn-finalize-single').on('click', function (e) {
+      e.preventDefault();
+      if (currentPage == 'cart') {
+        window.location.href = ymp_getUrlWithUtms(window.yampiCheckoutUrl);
+      } else {
+        window.location = '/cart';
+      }
+    });
+  }
+
+  function isFacebookBrowser() {
+    var ua = navigator.userAgent || navigator.vendor || window.opera;
+    return (ua.indexOf('FBAN') > -1) || (ua.indexOf('FBAV') > -1);
+  }
+
+  function isAndroid() {
+    return navigator.userAgent.toLowerCase().indexOf('android') > -1;
+  }
+
+  if (ymp_hasUrlSupport) {
+    var ymp_terms = ['utm_source', 'utm_campaign', 'utm_term', 'utm_medium', 'utm_content'],
+        ymp_currentUrl = new URL(window.location.href),
+        ymp_urlParams = ymp_currentUrl.searchParams;
+    ymp_terms.forEach(function (term) {
+      if (ymp_urlParams.has(term)) ymp_setUtm(term, ymp_urlParams.get(term));
+    });
+  }
+
+  function ymp_getUrlWithUtms(url) {
+    if (!ymp_hasUrlSupport || !url) return url;
+    var currentUrl = new URL(url),
+        _ga = ymp_getCookie('_ga'),
+        cookiesUtms = ymp_getUtms();
+    cookiesUtms.forEach(function (value, key) { currentUrl.searchParams.set(key, value); });
+    if (_ga) currentUrl.searchParams.set('_ga', _ga);
+    return currentUrl.href;
+  }
+
+  function ymp_setUtm(term, value) {
+    var params = ymp_getUtms();
+    params.set(term, value);
+    ymp_setCookie(ymp_utmCookieName, params.toString(), 30);
+  }
+
+  function ymp_getUtms() {
+    var currentUtms = ymp_getCookie(ymp_utmCookieName);
+    if (currentUtms) return new URLSearchParams(currentUtms);
+    return new URLSearchParams();
+  }
+
+  function ymp_setCookie(name, value, days) {
+    var expires = '';
+    if (days) {
+      var date = new Date();
+      date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+      expires = '; expires=' + date.toUTCString();
+    }
+    document.cookie = name + '=' + (value || '') + expires + '; path=/';
+  }
+
+  function ymp_getCookie(name) {
+    var nameEQ = name + '=';
+    var ca = document.cookie.split(';');
+    for (var i = 0; i < ca.length; i++) {
+      var c = ca[i];
+      while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+  }
+</script>
+
+<!-- Modal de Confirmação Aura Premium -->
+<div id="yampiPurchaseConfirmationWrapper">
+  <div>
+    <p class="yampi_purchase_title">✔️ Peça adicionada com sucesso.</p>
+    <p class="yampi_purchase_subtitle">Sua seleção está pronta. Finalize para garantir a entrega com embalagem premium inclusa.</p>
+    <button type="button" onclick="getNewCheckoutURL()" id="yampiPurchaseConfirmationButton" class="yampi_purchase_confirmation_btn">Finalizar compra &rarr;</button>
+  </div>
+</div>

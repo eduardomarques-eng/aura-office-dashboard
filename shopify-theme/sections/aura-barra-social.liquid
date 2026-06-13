@@ -1,0 +1,204 @@
+{% comment %}
+  Aura Decore — Barra Social/Contato (clone da barra-inicial da Dcorada)
+  Posição: acima do header
+{% endcomment %}
+
+<style>
+  .aura-barra-social {
+    background-color: {{ section.settings.bg_color }};
+    color: {{ section.settings.text_color }};
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .aura-barra-social .aura-barra-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .aura-barra-social .aura-redes {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    list-style: none;
+    margin: 0; padding: 0;
+  }
+  .aura-barra-social .aura-redes a {
+    color: {{ section.settings.text_color }};
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    display: flex; align-items: center;
+    text-decoration: none;
+  }
+  .aura-barra-social .aura-redes a:hover { opacity: 1; }
+  .aura-barra-social .aura-redes svg { width: 14px; height: 14px; fill: currentColor; }
+  .aura-barra-social .aura-contato {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    list-style: none;
+    margin: 0; padding: 0;
+  }
+  .aura-barra-social .aura-contato li {
+    display: flex; align-items: center; gap: 5px;
+    color: {{ section.settings.text_color }};
+    opacity: 0.85;
+  }
+  .aura-barra-social .aura-contato a {
+    color: {{ section.settings.text_color }};
+    text-decoration: none;
+    opacity: 0.85;
+    transition: opacity 0.2s;
+  }
+  .aura-barra-social .aura-contato a:hover { opacity: 1; }
+  .aura-barra-social .aura-contato svg { width: 12px; height: 12px; fill: currentColor; }
+  @media (max-width: 749px) {
+    .aura-barra-social .aura-redes { display: none; }
+    .aura-barra-social .aura-barra-inner { justify-content: center; }
+    .aura-barra-social .aura-contato { gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .aura-barra-social .aura-contato .aura-fale-conosco { display: none; }
+  }
+</style>
+
+<div class="aura-barra-social">
+  <div class="aura-barra-inner">
+
+    {%- comment %} Redes Sociais {%- endcomment %}
+    <ul class="aura-redes">
+      {% if section.settings.facebook_url != blank %}
+      <li>
+        <a href="{{ section.settings.facebook_url }}" target="_blank" rel="noopener" aria-label="Facebook">
+          <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+        </a>
+      </li>
+      {% endif %}
+      {% if section.settings.instagram_url != blank %}
+      <li>
+        <a href="{{ section.settings.instagram_url }}" target="_blank" rel="noopener" aria-label="Instagram">
+          <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" style="fill:none;stroke:currentColor;stroke-width:2"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" style="stroke:currentColor;stroke-width:2"/></svg>
+        </a>
+      </li>
+      {% endif %}
+      {% if section.settings.pinterest_url != blank %}
+      <li>
+        <a href="{{ section.settings.pinterest_url }}" target="_blank" rel="noopener" aria-label="Pinterest">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.236 2.636 7.855 6.356 9.312-.088-.791-.167-2.005.035-2.868.181-.78 1.172-4.97 1.172-4.97s-.299-.598-.299-1.482c0-1.388.806-2.428 1.808-2.428.852 0 1.266.64 1.266 1.408 0 .858-.548 2.142-.83 3.33-.236.995.499 1.806 1.476 1.806 1.772 0 2.996-2.268 2.996-4.95 0-2.044-1.387-3.472-3.367-3.472-2.293 0-3.634 1.72-3.634 3.499 0 .693.267 1.436.6 1.841a.24.24 0 01.055.23c-.061.254-.197.8-.224.911-.035.147-.116.178-.268.107-1-.467-1.624-1.934-1.624-3.113 0-2.53 1.84-4.861 5.307-4.861 2.785 0 4.95 1.986 4.95 4.638 0 2.766-1.743 4.994-4.162 4.994-.813 0-1.578-.423-1.839-.921l-.5 1.869c-.181.697-.669 1.569-.997 2.099A10 10 0 1022 12 10 10 0 0012 2z"/></svg>
+        </a>
+      </li>
+      {% endif %}
+      {% if section.settings.tiktok_url != blank %}
+      <li>
+        <a href="{{ section.settings.tiktok_url }}" target="_blank" rel="noopener" aria-label="TikTok">
+          <svg viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.67a8.18 8.18 0 004.78 1.52V6.73a4.85 4.85 0 01-1.01-.04z"/></svg>
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+
+    {%- comment %} Canais de contato {%- endcomment %}
+    <ul class="aura-contato">
+      {% if section.settings.show_fale_conosco %}
+      <li class="aura-fale-conosco">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        <a href="mailto:{{ section.settings.email }}">Fale Conosco</a>
+      </li>
+      {% endif %}
+      {% if section.settings.telefone != blank %}
+      <li>
+        <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.95 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012.86 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L7.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        <span>{{ section.settings.telefone }}</span>
+      </li>
+      {% endif %}
+      {% if section.settings.whatsapp != blank %}
+      <li>
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+        <span>WhatsApp: {{ section.settings.whatsapp }}</span>
+      </li>
+      {% endif %}
+    </ul>
+
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Aura — Barra Social",
+  "settings": [
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Cor de fundo",
+      "default": "#2D2D2D"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Cor do texto",
+      "default": "#F0EAE0"
+    },
+    {
+      "type": "header",
+      "content": "Redes Sociais"
+    },
+    {
+      "type": "url",
+      "id": "facebook_url",
+      "label": "Facebook URL"
+    },
+    {
+      "type": "url",
+      "id": "instagram_url",
+      "label": "Instagram URL"
+    },
+    {
+      "type": "url",
+      "id": "pinterest_url",
+      "label": "Pinterest URL"
+    },
+    {
+      "type": "url",
+      "id": "tiktok_url",
+      "label": "TikTok URL"
+    },
+    {
+      "type": "header",
+      "content": "Contato"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_fale_conosco",
+      "label": "Mostrar Fale Conosco",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "email",
+      "label": "E-mail de contato",
+      "default": "contato@auradecore.com.br"
+    },
+    {
+      "type": "text",
+      "id": "telefone",
+      "label": "Telefone",
+      "default": "(85) 98195-7208"
+    },
+    {
+      "type": "text",
+      "id": "whatsapp",
+      "label": "WhatsApp",
+      "default": "(85) 98195-7208"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Aura — Barra Social"
+    }
+  ]
+}
+{% endschema %}

@@ -1029,6 +1029,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
         <span style="color:var(--gold);font-size:10px">⬤</span>
         <span id="feed-tab-live" class="feed-tab-btn active" onclick="feedSetTab('live')">Live</span>
         <span id="feed-tab-social" class="feed-tab-btn" onclick="feedSetTab('social')">Social</span>
+        <span id="feed-tab-fleet" class="feed-tab-btn" onclick="feedSetTab('fleet')">Frota</span>
         <span id="feed-tab-marathon" class="feed-tab-btn" onclick="feedSetTab('marathon')">Maratona</span>
         <span id="feed-tab-all" class="feed-tab-btn" onclick="feedSetTab('all')">Todos</span>
         <span id="feed-count" style="margin-left:auto;color:var(--gold);font-size:10px">0</span>
@@ -1781,8 +1782,122 @@ function feedSetTab(tab) {
   document.querySelectorAll('.feed-tab-btn').forEach(b => b.classList.remove('active'));
   const el = document.getElementById('feed-tab-' + tab);
   if (el) el.classList.add('active');
+  if (tab === 'fleet') { renderFleetPanel(); return; }
   feedRenderAll();
 }
+
+// ══ FLEET PANEL ══
+let _fleetData = null;
+async function loadFleetStatus() {
+  try {
+    const base = window._BACKEND_URL || 'http://localhost:8000';
+    const r = await fetch(base + '/api/fleet', {signal: AbortSignal.timeout(8000)});
+    _fleetData = await r.json();
+    // Update stats bar
+    const tasks = (_fleetData.scheduled_tasks || []).length;
+    const el = document.getElementById('sv-tasks');
+    if (el) el.textContent = tasks;
+    // Update topbar agents count
+    const agEl = document.getElementById('sv-agents');
+    if (agEl) {
+      const ok = Object.values(_fleetData.agents||{}).filter(a=>a.ok).length;
+      agEl.textContent = ok + '/5';
+    }
+    if (_feedTab === 'fleet') renderFleetPanel();
+  } catch(e) { console.warn('Fleet load failed', e); }
+}
+
+function renderFleetPanel() {
+  const list = document.getElementById('feed-list');
+  if (!_fleetData) {
+    list.innerHTML = '<div style="padding:16px;color:var(--text-d);font-size:10px">Carregando frota...</div>';
+    loadFleetStatus();
+    return;
+  }
+  const d = _fleetData;
+  const ok = v => v ? '<span style="color:var(--green)">✅</span>' : '<span style="color:var(--red)">❌</span>';
+  const ago = ts => { if(!ts) return '—'; try { return new Date(ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); } catch(e){return ts;} };
+
+  // Credentials
+  let credHtml = Object.entries(d.credentials||{}).map(([k,v]) =>
+    `<div style="display:flex;align-items:center;gap:6px;padding:2px 0">${ok(v)} <span style="font-size:9px;color:var(--text-m)">${k}</span></div>`
+  ).join('');
+
+  // Agents
+  let agHtml = Object.entries(d.agents||{}).map(([id,ag]) =>
+    `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border)">
+      ${ok(ag.ok)} <span style="font-size:10px;color:${ag.ok?'var(--green)':'var(--text-d)'};min-width:80px">${id}</span>
+      <span style="font-size:8px;color:var(--text-m);flex:1">${ag.desc}</span>
+      <span style="font-size:8px;color:var(--gold)">${ag.schedule}</span>
+    </div>`
+  ).join('');
+
+  // Scheduled tasks
+  let sched = (d.scheduled_tasks||[]).map(t =>
+    `<div style="display:flex;gap:6px;padding:2px 0;font-size:9px">
+      <span style="color:${t.status==='Pronto'?'var(--green)':'var(--text-d)'}">●</span>
+      <span style="color:var(--text-m);flex:1">${(t.name||'').replace('\\','')}</span>
+      <span style="color:var(--gold)">${(t.next_run||'').slice(11,16)||'N/A'}</span>
+    </div>`
+  ).join('');
+
+  // Last post
+  let lastPost = '';
+  if (d.last_post) {
+    const lp = d.last_post;
+    lastPost = `<div style="background:var(--bg3);border-radius:6px;padding:8px;margin-top:8px;font-size:9px">
+      <div style="color:var(--gold);margin-bottom:4px">📱 Último Post — ${lp.date||lp.file}</div>
+      <div style="color:var(--text-m)">📅 ${lp.tema||''} · ${lp.produto||''}</div>
+      ${(lp.instagram||'').slice(0,80)?`<div style="color:var(--text-d);margin-top:4px">"${(lp.instagram||'').slice(0,80)}..."</div>`:''}
+    </div>`;
+  }
+
+  list.innerHTML = `<div style="padding:10px;overflow-y:auto;height:100%">
+    <div style="color:var(--gold);font-size:9px;letter-spacing:2px;margin-bottom:8px">FROTA OPERACIONAL</div>
+    ${agHtml}
+    <div style="color:var(--gold);font-size:9px;letter-spacing:2px;margin:10px 0 6px">TASKS AGENDADAS</div>
+    ${sched || '<div style="color:var(--text-d);font-size:9px">Nenhuma task encontrada</div>'}
+    <div style="color:var(--gold);font-size:9px;letter-spacing:2px;margin:10px 0 6px">CREDENCIAIS</div>
+    ${credHtml}
+    ${lastPost}
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <div style="flex:1;background:var(--bg3);border-radius:6px;padding:6px;font-size:9px;text-align:center">
+        <div style="color:${d.social?.facebook?'var(--green)':'var(--red)'};font-size:14px">📘</div>
+        <div style="color:var(--text-m)">Facebook</div>
+        <div style="color:${d.social?.facebook?'var(--green)':'var(--red)'}">${d.social?.facebook?'OK':'FALHOU'}</div>
+      </div>
+      <div style="flex:1;background:var(--bg3);border-radius:6px;padding:6px;font-size:9px;text-align:center">
+        <div style="color:${d.social?.instagram?'var(--green)':'var(--red)'};font-size:14px">📸</div>
+        <div style="color:var(--text-m)">Instagram</div>
+        <div style="color:${d.social?.instagram?'var(--green)':'var(--text-d)'}">${d.social?.instagram?('@'+d.social.ig_user?.slice(-6)):'N/A'}</div>
+      </div>
+      <div style="flex:1;background:var(--bg3);border-radius:6px;padding:6px;font-size:9px;text-align:center">
+        <div style="font-size:14px">🛍️</div>
+        <div style="color:var(--text-m)">Shopify</div>
+        <div style="color:${d.shopify?.admin_token?'var(--green)':'var(--gold)'}"">${d.shopify?.admin_token?'shpat_ ✓':'sem shpat_'}</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:8px">
+      <button onclick="loadFleetStatus()" style="background:none;border:1px solid var(--border2);color:var(--text-d);border-radius:4px;padding:3px 10px;cursor:pointer;font-size:9px">↺ Atualizar</button>
+      <button onclick="runFleetNow()" style="background:rgba(180,148,90,.15);border:1px solid rgba(180,148,90,.3);color:var(--gold);border-radius:4px;padding:3px 10px;cursor:pointer;font-size:9px;margin-left:6px">▶ Postar Agora</button>
+    </div>
+  </div>`;
+}
+
+async function runFleetNow() {
+  showToast('Iniciando post social...');
+  try {
+    const base = window._BACKEND_URL || 'http://localhost:8000';
+    const r = await fetch(base + '/social/post', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({force:true})});
+    const d = await r.json();
+    showToast(d.status === 'ok' ? '✅ Post publicado!' : '⚠️ ' + (d.detail||d.status));
+    await loadFleetStatus();
+  } catch(e) { showToast('⚠️ Erro: ' + e.message); }
+}
+
+// Auto-load fleet on startup
+setTimeout(loadFleetStatus, 3000);
+setInterval(loadFleetStatus, 60000);
 
 function feedRenderAll() {
   const list = document.getElementById('feed-list');

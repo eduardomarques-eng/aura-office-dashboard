@@ -1,0 +1,1198 @@
+/*
+ * Aura Decore — aura-pages.css
+ * CSS premium para todas as páginas da loja
+ * Estilo Japandi / Bali / Neuroarquitetura
+ */
+
+/* ============================================
+   VARIÁVEIS DE DESIGN
+   ============================================ */
+:root {
+  --aura-cream: #FAFAF8;
+  --aura-bege: #F2EDE6;
+  --aura-terracota: #B8793A;
+  --aura-grafite: #3D3D3B;
+  --aura-cinza: #7A7A78;
+  --aura-escuro: #2A2520;
+  --aura-gold: #D4A96A;
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'DM Sans', sans-serif;
+  --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-soft: 0 4px 24px rgba(61,61,59,0.08);
+  --shadow-medium: 0 8px 40px rgba(61,61,59,0.12);
+  --shadow-strong: 0 16px 64px rgba(61,61,59,0.16);
+}
+
+/* ============================================
+   1. PÁGINAS DE COLEÇÃO
+   ============================================ */
+
+/* Hero da coleção */
+.aura-collection-hero {
+  position: relative;
+  min-height: 40vh;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  background: var(--aura-grafite);
+}
+
+.aura-collection-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(42,37,32,0.7) 0%,
+    rgba(42,37,32,0.2) 60%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.aura-collection-hero__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 8s ease;
+}
+
+.aura-collection-hero:hover .aura-collection-hero__img {
+  transform: scale(1.03);
+}
+
+.aura-collection-hero__content {
+  position: relative;
+  z-index: 1;
+  padding: 4.8rem 4rem;
+  width: 100%;
+}
+
+/* Título da coleção sobre a imagem */
+.collection-hero__title {
+  font-family: var(--font-serif);
+  font-size: clamp(3.2rem, 6vw, 8rem);
+  font-weight: 300;
+  color: #FAFAF8;
+  text-shadow: 0 2px 16px rgba(45,38,32,0.4);
+  margin: 0 0 1.2rem;
+  line-height: 1.05;
+}
+
+/* Descrição da coleção */
+.collection-hero__description {
+  font-size: clamp(1.4rem, 1.8vw, 1.7rem);
+  color: rgba(250,250,248,0.85);
+  max-width: 56rem;
+  line-height: 1.7;
+}
+
+/* Grid de produtos com borda suave entre cards */
+.collection-product-grid {
+  display: grid;
+  gap: 2.4rem;
+  grid-template-columns: repeat(auto-fill, minmax(28rem, 1fr));
+  padding: 3.2rem 0;
+}
+
+/* Filtros estilizados */
+.facets-wrapper {
+  background: var(--aura-cream);
+  border-bottom: 1px solid rgba(61,61,59,0.1);
+  padding: 1.6rem 0;
+}
+
+.facets-wrapper .facets__summary {
+  font-size: 1.2rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--aura-grafite);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.facets-wrapper .facets__checkbox:checked + .facet-checkbox__text {
+  color: var(--aura-terracota);
+}
+
+/* ============================================
+   2. PÁGINAS DE PRODUTO
+   ============================================ */
+
+/* Breadcrumb premium */
+.breadcrumb {
+  font-size: 1.2rem;
+  letter-spacing: 0.08em;
+  color: var(--aura-cinza);
+  padding: 1.6rem 0;
+}
+
+.breadcrumb a {
+  color: var(--aura-cinza);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.breadcrumb a:hover {
+  color: var(--aura-terracota);
+}
+
+/* Título do produto */
+.product__title h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(2.8rem, 4vw, 4.4rem);
+  font-weight: 300;
+  line-height: 1.1;
+  color: var(--aura-grafite);
+  margin-bottom: 1.6rem;
+}
+
+/* Badge vendor ao lado do título */
+.product__vendor {
+  font-size: 1.1rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--aura-terracota);
+  font-weight: 400;
+  display: inline-block;
+  padding: 0.4rem 1.2rem;
+  border: 1px solid rgba(184,121,58,0.3);
+  margin-bottom: 1.6rem;
+  transition: background 0.3s ease;
+}
+
+.product__vendor:hover {
+  background: rgba(184,121,58,0.06);
+}
+
+/* Galeria de imagens com borda sutil */
+.product__media-container {
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+/* Thumbnails elegantes */
+.thumbnail-list__item {
+  border: 2px solid transparent;
+  transition: border-color 0.3s ease;
+  cursor: pointer;
+}
+
+.thumbnail-list__item--active,
+.thumbnail-list__item:hover {
+  border-color: var(--aura-terracota);
+}
+
+/* Tabs de detalhes do produto */
+.product-details-tabs {
+  border-top: 1px solid rgba(61,61,59,0.1);
+  margin-top: 3.2rem;
+}
+
+.product-details-tab {
+  border-bottom: 1px solid rgba(61,61,59,0.1);
+  padding: 1.6rem 0;
+  cursor: pointer;
+}
+
+.product-details-tab summary {
+  font-size: 1.4rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--aura-grafite);
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.product-details-tab summary::-webkit-details-marker {
+  display: none;
+}
+
+.product-details-tab summary::after {
+  content: '+';
+  font-size: 2rem;
+  color: var(--aura-terracota);
+  transition: transform 0.3s ease;
+  font-weight: 300;
+}
+
+.product-details-tab[open] summary::after {
+  transform: rotate(45deg);
+}
+
+.product-details-tab .tab-content {
+  padding: 1.6rem 0;
+  font-size: 1.4rem;
+  color: var(--aura-cinza);
+  line-height: 1.8;
+}
+
+/* Preço do produto */
+.price .price__regular .price-item {
+  font-family: var(--font-serif);
+  font-size: 2.8rem;
+  font-weight: 400;
+  color: var(--aura-terracota);
+}
+
+.price .price__sale .price-item--sale {
+  font-family: var(--font-serif);
+  font-size: 2.8rem;
+  font-weight: 400;
+  color: var(--aura-terracota);
+}
+
+.price .price__sale .price-item--regular {
+  font-size: 1.6rem;
+  color: var(--aura-cinza);
+}
+
+/* ============================================
+   3. PÁGINAS ESTÁTICAS (page.json)
+   ============================================ */
+
+.shopify-policy__container,
+.main-page .page-width {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 6.4rem 2.4rem 9.6rem;
+}
+
+/* Títulos das páginas */
+.main-page h1,
+.page-title {
+  font-family: var(--font-serif);
+  font-size: clamp(3.2rem, 5vw, 6.4rem);
+  font-weight: 300;
+  color: var(--aura-grafite);
+  margin-bottom: 2.4rem;
+  line-height: 1.1;
+}
+
+/* Linha decorativa após o título */
+.main-page h1::after,
+.page-title::after {
+  content: '';
+  display: block;
+  width: 6.4rem;
+  height: 2px;
+  background: var(--aura-terracota);
+  margin-top: 2rem;
+}
+
+/* Parágrafos das páginas */
+.main-page p,
+.rte p {
+  font-size: 1.5rem;
+  line-height: 1.85;
+  color: var(--aura-cinza);
+  margin-bottom: 1.6rem;
+}
+
+/* h2/h3 nas páginas */
+.main-page h2,
+.rte h2 {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 3vw, 3.2rem);
+  font-weight: 400;
+  color: var(--aura-grafite);
+  margin: 3.2rem 0 1.2rem;
+}
+
+.main-page h3,
+.rte h3 {
+  font-family: var(--font-sans);
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: var(--aura-grafite);
+  letter-spacing: 0.04em;
+  margin: 2.4rem 0 0.8rem;
+}
+
+/* Listas */
+.main-page ul,
+.rte ul {
+  padding-left: 0;
+  list-style: none;
+}
+
+.main-page ul li::before,
+.rte ul li::before {
+  content: '\2726';
+  color: var(--aura-terracota);
+  margin-right: 0.8rem;
+  font-size: 1rem;
+}
+
+.main-page ol,
+.rte ol {
+  padding-left: 2rem;
+}
+
+.main-page ol li,
+.rte ol li {
+  line-height: 2;
+}
+
+/* Links em páginas */
+.main-page a,
+.rte a {
+  color: var(--aura-terracota);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(184,121,58,0.3);
+  transition: border-color 0.3s ease;
+}
+
+.main-page a:hover,
+.rte a:hover {
+  border-color: var(--aura-terracota);
+}
+
+/* Citações */
+.main-page blockquote,
+.rte blockquote {
+  border-left: 3px solid var(--aura-terracota);
+  padding: 1.6rem 2.4rem;
+  background: rgba(184,121,58,0.04);
+  font-family: var(--font-serif);
+  font-size: 1.8rem;
+  font-style: italic;
+  color: var(--aura-grafite);
+  margin: 3.2rem 0;
+}
+
+/* Tabelas */
+.main-page table,
+.rte table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1.4rem;
+}
+
+.main-page th,
+.rte th {
+  background: var(--aura-grafite);
+  color: var(--aura-cream);
+  padding: 1.2rem 1.6rem;
+  text-align: left;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+
+.main-page td,
+.rte td {
+  padding: 1.2rem 1.6rem;
+  border-bottom: 1px solid rgba(61,61,59,0.08);
+}
+
+.main-page tr:nth-child(even),
+.rte tr:nth-child(even) {
+  background: var(--aura-bege);
+}
+
+/* Caixas de destaque nas páginas */
+.aura-destaque-box {
+  background: linear-gradient(135deg, var(--aura-terracota), #C8894A);
+  color: white;
+  padding: 2rem 2.4rem;
+  margin: 2.4rem 0;
+  border-radius: 2px;
+}
+
+/* ============================================
+   4. BLOG — LISTA DE ARTIGOS
+   ============================================ */
+
+/* Grid de artigos */
+.blog-articles {
+  gap: 3.2rem;
+}
+
+/* Card de artigo */
+.article-card {
+  background: white;
+  overflow: hidden;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-soft);
+}
+
+.article-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-medium);
+}
+
+/* Imagem do artigo */
+.article-card__image-wrapper {
+  aspect-ratio: 16/9;
+  overflow: hidden;
+}
+
+.article-card__image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.article-card:hover .article-card__image-wrapper img {
+  transform: scale(1.05);
+}
+
+/* Categoria / tag */
+.article-card__badge {
+  font-size: 1.1rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--aura-terracota);
+  margin-bottom: 0.8rem;
+  display: block;
+}
+
+/* Título do artigo */
+.article-card .card__heading {
+  font-family: var(--font-serif);
+  font-size: clamp(1.8rem, 2.4vw, 2.4rem);
+  font-weight: 300;
+  line-height: 1.2;
+  color: var(--aura-grafite);
+  transition: color 0.3s ease;
+}
+
+.article-card:hover .card__heading {
+  color: var(--aura-terracota);
+}
+
+/* Excerpt */
+.article-card__excerpt {
+  font-size: 1.4rem;
+  color: var(--aura-cinza);
+  line-height: 1.7;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* "Ler artigo" link */
+.article-card .link {
+  font-size: 1.2rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--aura-terracota);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1.6rem;
+  transition: gap 0.3s ease;
+  border-bottom: none;
+}
+
+.article-card:hover .link {
+  gap: 1.2rem;
+}
+
+/* ============================================
+   5. ARTIGO INDIVIDUAL
+   ============================================ */
+
+/* Largura máxima do conteúdo */
+.article {
+  max-width: 76rem;
+  margin: 0 auto;
+}
+
+/* Header do artigo */
+.article__title {
+  font-family: var(--font-serif);
+  font-size: clamp(3.2rem, 5vw, 6.4rem);
+  font-weight: 300;
+  line-height: 1.1;
+  color: var(--aura-grafite);
+  margin-bottom: 2.4rem;
+}
+
+/* Imagem hero do artigo */
+.article__hero-image {
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  margin-bottom: 4.8rem;
+  border-radius: 2px;
+}
+
+.article__hero-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Metadata do artigo */
+.article__meta {
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  font-size: 1.2rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--aura-cinza);
+  margin-bottom: 3.2rem;
+}
+
+.article__meta::before {
+  content: '';
+  display: inline-block;
+  width: 3.2rem;
+  height: 1px;
+  background: var(--aura-terracota);
+}
+
+/* Corpo do artigo */
+.article__content h2 {
+  font-family: var(--font-serif);
+  font-size: clamp(2.4rem, 3.5vw, 3.6rem);
+  font-weight: 300;
+  color: var(--aura-grafite);
+  margin: 4.8rem 0 1.6rem;
+}
+
+.article__content h3 {
+  font-family: var(--font-sans);
+  font-size: 1.8rem;
+  font-weight: 500;
+  color: var(--aura-grafite);
+  margin: 3.2rem 0 1.2rem;
+}
+
+.article__content p {
+  font-size: 1.6rem;
+  line-height: 1.9;
+  color: rgba(61,61,59,0.85);
+  margin-bottom: 2rem;
+  max-width: 68rem;
+}
+
+.article__content ul li {
+  font-size: 1.5rem;
+  line-height: 1.8;
+  color: rgba(61,61,59,0.85);
+  padding-left: 2rem;
+  position: relative;
+  margin-bottom: 0.8rem;
+}
+
+.article__content ul li::before {
+  content: '\2726';
+  position: absolute;
+  left: 0;
+  color: var(--aura-terracota);
+  font-size: 1rem;
+  top: 0.4rem;
+}
+
+.article__content blockquote {
+  border-left: 3px solid var(--aura-terracota);
+  padding: 1.6rem 2.4rem;
+  background: rgba(184,121,58,0.04);
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-style: italic;
+  color: var(--aura-grafite);
+  margin: 4rem 0;
+}
+
+/* ============================================
+   6. CARRINHO
+   ============================================ */
+
+/* Drawer do carrinho — premium */
+.cart-drawer {
+  background: var(--aura-cream) !important;
+}
+
+.cart-drawer__header {
+  border-bottom: 1px solid rgba(61,61,59,0.1) !important;
+  padding: 2.4rem !important;
+}
+
+.cart-drawer__header h2 {
+  font-family: var(--font-serif);
+  font-size: 2.4rem;
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--aura-grafite);
+}
+
+/* Item do carrinho */
+.cart-item {
+  padding: 2rem 0 !important;
+  border-bottom: 1px solid rgba(61,61,59,0.08) !important;
+}
+
+.cart-item__name {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 300;
+  color: var(--aura-grafite) !important;
+}
+
+.cart-item__price-wrapper {
+  font-family: var(--font-serif);
+  color: var(--aura-terracota);
+}
+
+/* Mensagem de frete grátis no carrinho */
+.cart-drawer__footer::before {
+  content: '\2726 Frete gr\00e1tis para pedidos acima de R$ 299';
+  display: block;
+  text-align: center;
+  font-size: 1.2rem;
+  letter-spacing: 0.1em;
+  color: #2A7D4F;
+  background: rgba(42,125,79,0.08);
+  padding: 0.8rem;
+  margin-bottom: 1.6rem;
+  border-radius: 2px;
+}
+
+/* Subtotal */
+.totals__subtotal {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  color: var(--aura-grafite);
+}
+
+.totals__subtotal-value {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  color: var(--aura-terracota);
+}
+
+/* Botão de checkout no carrinho */
+.cart__checkout-button {
+  background: var(--aura-grafite) !important;
+  border-color: var(--aura-grafite) !important;
+  letter-spacing: 0.12em !important;
+  font-size: 1.2rem !important;
+  text-transform: uppercase !important;
+  transition: var(--transition-smooth) !important;
+}
+
+.cart__checkout-button:hover {
+  background: var(--aura-terracota) !important;
+  border-color: var(--aura-terracota) !important;
+}
+
+/* ============================================
+   7. BUSCA
+   ============================================ */
+
+/* Página de busca */
+.search-header {
+  text-align: center;
+  padding: 6.4rem 2.4rem 4.8rem;
+}
+
+.search-header h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(3.2rem, 5vw, 5.6rem);
+  font-weight: 300;
+  color: var(--aura-grafite);
+  margin-bottom: 3.2rem;
+}
+
+/* Campo de busca */
+.search__input,
+.predictive-search__input {
+  border: none !important;
+  border-bottom: 2px solid var(--aura-grafite) !important;
+  border-radius: 0 !important;
+  padding: 1.6rem 0 !important;
+  font-size: 2rem !important;
+  background: transparent !important;
+  font-family: var(--font-serif) !important;
+  color: var(--aura-grafite) !important;
+  width: 100% !important;
+}
+
+.search__input:focus,
+.predictive-search__input:focus {
+  outline: none !important;
+  border-color: var(--aura-terracota) !important;
+  box-shadow: none !important;
+}
+
+/* Resultados da busca */
+.search-result-item {
+  padding: 1.6rem 0;
+  border-bottom: 1px solid rgba(61,61,59,0.08);
+}
+
+.search-result-item__title {
+  font-family: var(--font-serif);
+  font-size: 1.8rem;
+  font-weight: 300;
+  color: var(--aura-grafite);
+  transition: color 0.3s ease;
+}
+
+.search-result-item:hover .search-result-item__title {
+  color: var(--aura-terracota);
+}
+
+/* Predictive search dropdown */
+.predictive-search {
+  border: 1px solid rgba(61,61,59,0.12);
+  border-top: none;
+  background: white;
+  box-shadow: var(--shadow-medium);
+}
+
+.predictive-search__item {
+  padding: 1.2rem 1.6rem;
+  transition: background 0.2s ease;
+}
+
+.predictive-search__item:hover {
+  background: var(--aura-bege);
+}
+
+/* ============================================
+   8. PÁGINA 404
+   ============================================ */
+
+.aura-404-container {
+  text-align: center;
+  padding: 12.8rem 2.4rem;
+}
+
+.aura-404-number {
+  font-family: var(--font-serif);
+  font-size: clamp(8rem, 20vw, 24rem);
+  font-weight: 300;
+  color: rgba(184,121,58,0.12);
+  line-height: 1;
+  display: block;
+  user-select: none;
+}
+
+.aura-404-title {
+  font-family: var(--font-serif);
+  font-size: clamp(2.4rem, 4vw, 4.8rem);
+  font-weight: 300;
+  color: var(--aura-grafite);
+  margin-bottom: 1.6rem;
+}
+
+.aura-404-text {
+  font-size: 1.6rem;
+  color: var(--aura-cinza);
+  margin-bottom: 3.2rem;
+  line-height: 1.7;
+}
+
+.aura-404-link {
+  display: inline-block;
+  padding: 1.4rem 3.2rem;
+  background: var(--aura-grafite);
+  color: white;
+  text-decoration: none;
+  font-size: 1.2rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: var(--transition-smooth);
+}
+
+.aura-404-link:hover {
+  background: var(--aura-terracota);
+}
+
+/* ============================================
+   9. PAGINAÇÃO
+   ============================================ */
+
+.pagination .pagination__item {
+  width: 4rem;
+  height: 4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(61,61,59,0.15);
+  font-size: 1.4rem;
+  color: var(--aura-grafite);
+  text-decoration: none;
+  transition: var(--transition-smooth);
+  margin: 0 0.2rem;
+}
+
+.pagination .pagination__item:hover,
+.pagination .pagination__item--current {
+  background: var(--aura-grafite);
+  color: white;
+  border-color: var(--aura-grafite);
+}
+
+.pagination .pagination__item--current {
+  font-weight: 600;
+  pointer-events: none;
+}
+
+/* ============================================
+   10. BREADCRUMB GLOBAL
+   ============================================ */
+
+.breadcrumbs {
+  font-size: 1.2rem;
+  letter-spacing: 0.06em;
+  color: var(--aura-cinza);
+  padding: 1.6rem 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+.breadcrumbs a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.breadcrumbs a:hover {
+  color: var(--aura-terracota);
+}
+
+.breadcrumbs span {
+  color: var(--aura-terracota);
+  margin: 0 0.6rem;
+}
+
+/* ============================================
+   11. FORMULÁRIO DE CONTATO
+   ============================================ */
+
+.contact-form .field {
+  margin-bottom: 2.4rem;
+}
+
+.contact-form .field__label {
+  font-size: 1.2rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--aura-grafite);
+  font-weight: 500;
+  margin-bottom: 0.8rem;
+  display: block;
+}
+
+.contact-form .field__input,
+.contact-form textarea {
+  border: 1px solid rgba(61,61,59,0.2) !important;
+  border-radius: 0 !important;
+  padding: 1.6rem !important;
+  font-size: 1.4rem !important;
+  font-family: var(--font-sans) !important;
+  background: var(--aura-cream) !important;
+  color: var(--aura-grafite) !important;
+  transition: border-color 0.3s ease !important;
+  width: 100% !important;
+}
+
+.contact-form .field__input:focus,
+.contact-form textarea:focus {
+  border-color: var(--aura-terracota) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(184,121,58,0.1) !important;
+}
+
+.contact-form .button {
+  background: var(--aura-grafite);
+  color: white;
+  border: none;
+  padding: 1.6rem 4rem;
+  font-size: 1.2rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  width: 100%;
+  font-family: var(--font-sans);
+}
+
+.contact-form .button:hover {
+  background: var(--aura-terracota);
+}
+
+/* ============================================
+   12. CONTA DO CLIENTE
+   ============================================ */
+
+.customer .page-header h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(2.8rem, 4vw, 4.8rem);
+  font-weight: 300;
+  color: var(--aura-grafite);
+}
+
+.customer .order-card {
+  border: 1px solid rgba(61,61,59,0.12);
+  padding: 2.4rem;
+  margin-bottom: 2rem;
+  transition: var(--transition-smooth);
+}
+
+.customer .order-card:hover {
+  border-color: var(--aura-terracota);
+  box-shadow: var(--shadow-soft);
+}
+
+.customer .order-number {
+  font-family: var(--font-serif);
+  font-size: 1.8rem;
+  font-weight: 400;
+  color: var(--aura-terracota);
+}
+
+/* ============================================
+   13. NEWSLETTER / POPUP
+   ============================================ */
+
+.popup {
+  background: var(--aura-cream);
+}
+
+.popup h2 {
+  font-family: var(--font-serif);
+  font-size: clamp(2.4rem, 3.5vw, 3.6rem);
+  font-weight: 300;
+  color: var(--aura-grafite);
+  line-height: 1.15;
+}
+
+.popup p {
+  font-size: 1.4rem;
+  color: var(--aura-cinza);
+  line-height: 1.7;
+}
+
+.popup .field__input {
+  border-radius: 0;
+  border: 1px solid rgba(61,61,59,0.2);
+  background: white;
+}
+
+.popup .button {
+  background: var(--aura-grafite);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 1.2rem;
+  border-radius: 0;
+  transition: var(--transition-smooth);
+}
+
+.popup .button:hover {
+  background: var(--aura-terracota);
+}
+
+/* ============================================
+   14. POLÍTICA (Frete, Troca, Privacidade)
+   ============================================ */
+
+.shopify-policy__title {
+  font-family: var(--font-serif);
+  font-size: clamp(3.2rem, 5vw, 5.6rem);
+  font-weight: 300;
+  color: var(--aura-grafite);
+  margin-bottom: 3.2rem;
+}
+
+.shopify-policy__title::after {
+  content: '';
+  display: block;
+  width: 6.4rem;
+  height: 2px;
+  background: var(--aura-terracota);
+  margin-top: 2rem;
+}
+
+.shopify-policy__body {
+  font-size: 1.5rem;
+  line-height: 1.85;
+  color: var(--aura-cinza);
+}
+
+.shopify-policy__body h2 {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 3vw, 2.8rem);
+  font-weight: 400;
+  color: var(--aura-grafite);
+  margin: 3.2rem 0 1.2rem;
+}
+
+/* ============================================
+   15. MOBILE REFINEMENTS
+   ============================================ */
+
+@media (max-width: 749px) {
+  .article__title {
+    font-size: clamp(2.8rem, 8vw, 4rem);
+  }
+
+  .collection-hero__title {
+    font-size: clamp(2.8rem, 8vw, 5rem);
+  }
+
+  .main-page h1 {
+    font-size: clamp(2.8rem, 8vw, 4rem);
+  }
+
+  .product__title h1 {
+    font-size: clamp(2.4rem, 7vw, 3.6rem);
+  }
+
+  .shopify-policy__container,
+  .main-page .page-width {
+    padding: 4rem 2rem 6.4rem;
+  }
+
+  .blog-articles {
+    grid-template-columns: 1fr !important;
+  }
+
+  .collection-product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.6rem;
+  }
+
+  .aura-collection-hero__content {
+    padding: 3.2rem 2rem;
+  }
+
+  .pagination .pagination__item {
+    width: 3.6rem;
+    height: 3.6rem;
+    font-size: 1.3rem;
+  }
+
+  .contact-form .button {
+    padding: 1.4rem 2.4rem;
+  }
+
+  .cart-drawer__footer::before {
+    font-size: 1.1rem;
+    padding: 0.6rem;
+  }
+
+  .article {
+    padding: 0 2rem;
+  }
+
+  .article__content p {
+    font-size: 1.5rem;
+  }
+
+  .aura-404-container {
+    padding: 8rem 2.4rem;
+  }
+}
+
+/* ============================================
+   16. UTILITIES & ANIMAÇÕES SUTIS
+   ============================================ */
+
+/* Skeleton loading para imagens */
+@keyframes aura-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.aura-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--aura-bege) 25%,
+    #EEDDD4 50%,
+    var(--aura-bege) 75%
+  );
+  background-size: 200% 100%;
+  animation: aura-shimmer 1.6s infinite;
+}
+
+/* Fade-in suave para conteúdo */
+@keyframes aura-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(1.6rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.aura-fade-in {
+  animation: aura-fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Separador decorativo Aura */
+.aura-divider {
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  margin: 4.8rem 0;
+  color: var(--aura-cinza);
+  font-size: 1.2rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.aura-divider::before,
+.aura-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(61,61,59,0.12);
+}
+
+.aura-divider-icon {
+  color: var(--aura-terracota);
+}
+
+/* Tag/badge de produto premium */
+.aura-badge {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  font-size: 1rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.aura-badge--novo {
+  background: var(--aura-terracota);
+  color: white;
+}
+
+.aura-badge--destaque {
+  background: var(--aura-grafite);
+  color: white;
+}
+
+.aura-badge--esgotado {
+  background: rgba(61,61,59,0.12);
+  color: var(--aura-cinza);
+}
+
+/* Scroll suave no site todo */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus visible acessível */
+:focus-visible {
+  outline: 2px solid var(--aura-terracota);
+  outline-offset: 3px;
+}

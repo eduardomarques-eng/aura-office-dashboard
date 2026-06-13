@@ -1,0 +1,84 @@
+﻿{
+  "name": "Aura Decore · 01 · Novo pedido Shopify → IVE + vault",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "shopify-novo-pedido",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "wh-shopify",
+      "name": "Webhook Shopify",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "webhookId": "shopify-novo-pedido"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "order_id", "value": "={{$json.id}}" },
+            { "name": "customer_email", "value": "={{$json.email}}" },
+            { "name": "total", "value": "={{$json.total_price}}" },
+            { "name": "products", "value": "={{$json.line_items.map(i => i.title + ' x' + i.quantity).join(', ')}}" }
+          ]
+        }
+      },
+      "id": "parse-order",
+      "name": "Parse Order",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/agent/exec",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"agent_id\": \"ive\",\n  \"message\": \"Novo pedido #{{$json.order_id}}: R${{$json.total}}, cliente {{$json.customer_email}}, produtos: {{$json.products}}. Resuma em 1 frase e marque se precisa de ação especial.\"\n}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "notify-ive",
+      "name": "Notifica IVE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/obsidian/update-agent",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"agent_id\": \"IVE\",\n  \"task\": \"Pedido #{{$node['Parse Order'].json.order_id}}: R${{$node['Parse Order'].json.total}}\",\n  \"status\": \"notificado\"\n}"
+      },
+      "id": "persist-vault",
+      "name": "Persiste no vault",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"processed\", \"order_id\": \"{{$node['Parse Order'].json.order_id}}\" }"
+      },
+      "id": "respond",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1000, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Shopify":   { "main": [[{ "node": "Parse Order",      "type": "main", "index": 0 }]] },
+    "Parse Order":       { "main": [[{ "node": "Notifica IVE",     "type": "main", "index": 0 }]] },
+    "Notifica IVE":      { "main": [[{ "node": "Persiste no vault","type": "main", "index": 0 }]] },
+    "Persiste no vault": { "main": [[{ "node": "Respond OK",       "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "auradecore" }, { "name": "shopify" }]
+}

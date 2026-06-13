@@ -1,0 +1,66 @@
+{% comment %} Aura Decore: Sticky Add to Cart (mobile) — Design Premium com Imagem {% endcomment %}
+<div id="aura-sticky-cart" class="aura-sticky-cart">
+  {% if product.featured_image %}
+    <img class="aura-sticky-cart__thumb" src="{{ product.featured_image | image_url: width: 80, height: 80, crop: 'center' }}" alt="{{ product.title }}" width="40" height="40" loading="lazy">
+  {% endif %}
+  <div class="aura-sticky-cart__info">
+    <span class="aura-sticky-cart__title">{{ product.title | truncate: 26 }}</span>
+    <span class="aura-sticky-cart__price">
+      {{ product.selected_or_first_available_variant.price | money }}
+      {% if product.selected_or_first_available_variant.compare_at_price > product.selected_or_first_available_variant.price %}
+        <span class="aura-sticky-cart__compare">{{ product.selected_or_first_available_variant.compare_at_price | money }}</span>
+      {% endif %}
+    </span>
+  </div>
+  <button type="button" class="aura-sticky-cart__btn" onclick="document.querySelector('[name=add]')?.click()">
+    Comprar 🛍️
+  </button>
+</div>
+
+<style>
+.aura-sticky-cart__thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 2px;
+  border: 1px solid rgba(26,26,26,0.08);
+}
+.aura-sticky-cart__compare {
+  font-size: 10px;
+  text-decoration: line-through;
+  color: var(--aura-stone, #8A8680);
+  margin-left: 6px;
+  font-weight: 300;
+}
+</style>
+
+<script>
+(function() {
+  const sticky = document.getElementById('aura-sticky-cart');
+  if (!sticky) return;
+  
+  // Ocultar se o botão principal de compra estiver na tela
+  const mainBtn = document.querySelector('[name=add]');
+  
+  window.addEventListener('scroll', function() {
+    const currentScroll = window.scrollY;
+    
+    if (mainBtn) {
+      const rect = mainBtn.getBoundingClientRect();
+      const isMainBtnVisible = (rect.top >= 0 && rect.bottom <= window.innerHeight);
+      
+      if (currentScroll > 350 && !isMainBtnVisible) {
+        sticky.classList.add('visible');
+      } else {
+        sticky.classList.remove('visible');
+      }
+    } else {
+      if (currentScroll > 450) {
+        sticky.classList.add('visible');
+      } else {
+        sticky.classList.remove('visible');
+      }
+    }
+  }, { passive: true });
+})();
+</script>

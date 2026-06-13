@@ -1,0 +1,91 @@
+{
+  "name": "Aura Decore · 04 · Mineração semanal NEXUS → KAI → IVE",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 3"
+            }
+          ]
+        }
+      },
+      "id": "cron-wednesday",
+      "name": "Cron quarta 9h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/crew/run",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"crew_type\": \"mining\",\n  \"context\": \"Mineração semanal automática. Foque em produtos japandi/wabi-sabi com margem > 35%. Considere tendências sazonais (mês atual {{$now.format('MM/YYYY')}}).\"\n}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "run-mining-crew",
+      "name": "Roda crew NEXUS+KAI+VERA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/tasks",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"title\": \"Revisar top 3 produtos minerados ({{$now.format('DD/MM')}})\",\n  \"briefing\": \"{{$json.result}}\",\n  \"agent_id\": \"ive\",\n  \"priority\": \"alta\",\n  \"tags\": [\"mineracao\", \"semanal\"],\n  \"execute_now\": false\n}"
+      },
+      "id": "create-review-task",
+      "name": "Cria tarefa para IVE",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        600,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Cron quarta 9h": {
+      "main": [
+        [
+          {
+            "node": "Roda crew NEXUS+KAI+VERA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Roda crew NEXUS+KAI+VERA": {
+      "main": [
+        [
+          {
+            "node": "Cria tarefa para IVE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [],
+  "id": 4
+}

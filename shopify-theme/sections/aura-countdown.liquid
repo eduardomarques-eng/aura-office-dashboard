@@ -1,0 +1,162 @@
+{% comment %}Aura Countdown Timer v1 — Urgência de oferta — Sprint 11{% endcomment %}
+
+{%- if section.settings.enabled -%}
+<div class="aura-countdown" id="AuraCountdown-{{ section.id }}">
+  <div class="aura-countdown__inner">
+    {%- if section.settings.kicker != blank -%}
+      <span class="aura-countdown__kicker">{{ section.settings.kicker }}</span>
+    {%- endif -%}
+    {%- if section.settings.heading != blank -%}
+      <span class="aura-countdown__heading">{{ section.settings.heading }}</span>
+    {%- endif -%}
+    <div class="aura-countdown__timer" id="AuraTimer-{{ section.id }}" aria-live="polite" aria-label="Tempo restante">
+      <div class="aura-countdown__unit">
+        <span class="aura-countdown__num" id="AuraH-{{ section.id }}">00</span>
+        <span class="aura-countdown__label">horas</span>
+      </div>
+      <span class="aura-countdown__sep" aria-hidden="true">:</span>
+      <div class="aura-countdown__unit">
+        <span class="aura-countdown__num" id="AuraM-{{ section.id }}">00</span>
+        <span class="aura-countdown__label">min</span>
+      </div>
+      <span class="aura-countdown__sep" aria-hidden="true">:</span>
+      <div class="aura-countdown__unit">
+        <span class="aura-countdown__num" id="AuraS-{{ section.id }}">00</span>
+        <span class="aura-countdown__label">seg</span>
+      </div>
+    </div>
+    {%- if section.settings.cta_label != blank -%}
+      <a href="{{ section.settings.cta_link | default: '/collections/all' }}" class="aura-countdown__cta">
+        {{ section.settings.cta_label }}
+      </a>
+    {%- endif -%}
+  </div>
+</div>
+
+<style>
+.aura-countdown {
+  background: var(--aura-terracota, #B8793A);
+  padding: 1.4rem 0;
+  text-align: center;
+}
+.aura-countdown__inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.4rem;
+  flex-wrap: wrap;
+  max-width: var(--page-width, 144rem);
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+.aura-countdown__kicker {
+  font-family: var(--font-body-family);
+  font-size: 1.05rem;
+  font-weight: 400;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(250,250,248,.8);
+}
+.aura-countdown__heading {
+  font-family: var(--font-body-family);
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: #fff;
+}
+.aura-countdown__timer {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+}
+.aura-countdown__unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .2rem;
+}
+.aura-countdown__num {
+  font-family: var(--font-heading-family, 'Cormorant Garamond', serif);
+  font-size: 2.6rem;
+  font-weight: 400;
+  color: #fff;
+  line-height: 1;
+  min-width: 2.4ch;
+  text-align: center;
+  display: block;
+}
+.aura-countdown__label {
+  font-family: var(--font-body-family);
+  font-size: .9rem;
+  font-weight: 300;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(250,250,248,.7);
+}
+.aura-countdown__sep {
+  font-family: var(--font-heading-family);
+  font-size: 2.4rem;
+  color: rgba(250,250,248,.5);
+  margin-top: -.4rem;
+}
+.aura-countdown__cta {
+  background: rgba(250,250,248,.15);
+  color: #fff;
+  border: 1px solid rgba(250,250,248,.4);
+  font-family: var(--font-body-family);
+  font-size: 1.1rem;
+  font-weight: 400;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: .9rem 2rem;
+  text-decoration: none;
+  transition: background .25s ease;
+}
+.aura-countdown__cta:hover { background: rgba(250,250,248,.25); }
+</style>
+
+<script>
+(function(){
+  var endStr = '{{ section.settings.end_date }}';
+  var hEl = document.getElementById('AuraH-{{ section.id }}');
+  var mEl = document.getElementById('AuraM-{{ section.id }}');
+  var sEl = document.getElementById('AuraS-{{ section.id }}');
+  if (!hEl || !mEl || !sEl) return;
+  var endDate = endStr ? new Date(endStr) : new Date(Date.now() + {{ section.settings.hours_from_now | default: 24 }} * 3600000);
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+  function tick() {
+    var diff = endDate - Date.now();
+    if (diff <= 0) {
+      hEl.textContent = '00'; mEl.textContent = '00'; sEl.textContent = '00';
+      clearInterval(iv);
+      return;
+    }
+    var h = Math.floor(diff / 3600000);
+    var m = Math.floor((diff % 3600000) / 60000);
+    var s = Math.floor((diff % 60000) / 1000);
+    hEl.textContent = pad(h);
+    mEl.textContent = pad(m);
+    sEl.textContent = pad(s);
+  }
+  tick();
+  var iv = setInterval(tick, 1000);
+})();
+</script>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Countdown Timer",
+  "tag": "div",
+  "class": "aura-countdown-wrap",
+  "settings": [
+    {"type":"checkbox","id":"enabled","label":"Ativar countdown","default":true},
+    {"type":"text","id":"kicker","label":"Kicker","default":"⏰ Oferta por tempo limitado"},
+    {"type":"text","id":"heading","label":"Mensagem","default":"Frete grátis encerrando em:"},
+    {"type":"text","id":"end_date","label":"Data/hora final (YYYY-MM-DDTHH:MM)","info":"Ex: 2026-06-01T23:59. Se vazio, usa 'Horas a partir de agora'."},
+    {"type":"range","id":"hours_from_now","min":1,"max":72,"step":1,"unit":"h","label":"Horas a partir de agora (fallback)","default":24},
+    {"type":"text","id":"cta_label","label":"Texto do botão","default":"Aproveitar agora"},
+    {"type":"url","id":"cta_link","label":"Link do botão"}
+  ],
+  "presets": [{"name":"Countdown Timer"}]
+}
+{% endschema %}

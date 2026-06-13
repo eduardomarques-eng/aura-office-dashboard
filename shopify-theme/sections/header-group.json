@@ -1,0 +1,113 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "name": "header",
+  "type": "header",
+  "sections": {
+    "countdown_bar": {
+      "type": "aura-countdown",
+      "settings": {
+        "enabled": true,
+        "kicker": "⏰ Oferta por tempo limitado",
+        "heading": "Frete grátis encerrando em:",
+        "hours_from_now": 24,
+        "cta_label": "Aproveitar agora",
+        "cta_link": "shopify://collections/all"
+      }
+    },
+    "announcement-bar": {
+      "type": "announcement-bar",
+      "blocks": {
+        "ann_frete": {
+          "type": "announcement",
+          "settings": {
+            "text": "FRETE GRÁTIS ACIMA DE R$ 299 · ENTREGA EM TODO O BRASIL",
+            "link": ""
+          }
+        },
+        "ann_curadoria": {
+          "type": "announcement",
+          "settings": {
+            "text": "CURADORIA JAPANDI · PEÇAS QUE HABITAM COM INTENÇÃO",
+            "link": ""
+          }
+        },
+        "ann_cupom": {
+          "type": "announcement",
+          "settings": {
+            "text": "USE BEMVINDO10 E GANHE 10% NA PRIMEIRA COMPRA",
+            "link": "/collections/all"
+          }
+        }
+      },
+      "block_order": [
+        "ann_frete",
+        "ann_curadoria",
+        "ann_cupom"
+      ],
+      "settings": {
+        "auto_rotate": true,
+        "color_scheme": "scheme-3"
+      }
+    },
+    "header": {
+      "type": "header",
+      "settings": {
+        "logo_position": "middle-center",
+        "menu": "main-menu",
+        "menu_type_desktop": "dropdown",
+        "sticky_header_type": "on-scroll-up",
+        "color_scheme": "scheme-1",
+        "enable_country_selector": false,
+        "enable_language_selector": false,
+        "padding_top": 20,
+        "padding_bottom": 20
+      }
+    },
+    "barra_social": {
+      "type": "aura-barra-social",
+      "settings": {
+        "bg_color": "#2D2D2D",
+        "text_color": "#F0EAE0",
+        "facebook_url": "https://facebook.com/auradecore",
+        "instagram_url": "https://instagram.com/auradecore",
+        "pinterest_url": "https://pinterest.com/auradecore",
+        "tiktok_url": "https://tiktok.com/@auradecore",
+        "show_fale_conosco": true,
+        "email": "contato@auradecore.com.br",
+        "telefone": "(85) 98195-7208",
+        "whatsapp": "(85) 98195-7208"
+      }
+    },
+    "popup_newsletter": {
+      "type": "aura-popup-newsletter",
+      "settings": {
+        "enabled": true,
+        "delay_seconds": 8,
+        "badge": "Oferta exclusiva",
+        "heading": "10% de desconto na primeira compra",
+        "subtext": "Inscreva-se e receba inspirações Japandi + um cupom exclusivo para estrear na Aura Decore.",
+        "coupon": "BEMVINDO10",
+        "input_placeholder": "seu@email.com",
+        "button_label": "Quero meu desconto",
+        "disclaimer": "Sem spam. Só beleza intencional, uma vez por semana.",
+        "skip_label": "Continuar sem desconto",
+        "image_url": "https://image.pollinations.ai/prompt/japandi%20interior%20minimal%20ceramic%20vase%20dried%20botanicals%20linen%20curtain%20warm%20light%20vertical%20portrait?width=480&height=640&model=flux-realism&seed=6001&nologo=true"
+      }
+    }
+  },
+  "order": [
+    "countdown_bar",
+    "announcement-bar",
+    "barra_social",
+    "header",
+    "popup_newsletter"
+  ]
+}

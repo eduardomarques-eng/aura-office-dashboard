@@ -1,0 +1,83 @@
+<!-- ════════════════════════════════════════════════════════════
+     AURA DECORE — Email de Carrinho Abandonado
+     Cole no Shopify: Marketing → Automações → "Checkout abandonado"
+     → Editar email → ícone < > (modo HTML) → colar tudo → Salvar → Ativar
+     Cupom embutido: AURA10 (10% OFF, já ATIVO na loja)
+     ════════════════════════════════════════════════════════════ -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F1EC;margin:0;padding:0;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <tr>
+    <td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.06);">
+
+        <!-- Cabeçalho -->
+        <tr>
+          <td align="center" style="background:#2E2A26;padding:28px 24px;">
+            <h1 style="margin:0;color:#F4F1EC;font-size:24px;letter-spacing:3px;font-weight:300;">AURA&nbsp;DECORE</h1>
+            <p style="margin:6px 0 0;color:#B8793A;font-size:12px;letter-spacing:2px;">JAPANDI · CASA & DECORAÇÃO</p>
+          </td>
+        </tr>
+
+        <!-- Corpo -->
+        <tr>
+          <td style="padding:40px 40px 24px;">
+            <h2 style="margin:0 0 16px;color:#2E2A26;font-size:22px;font-weight:400;">Você esqueceu algo especial 🌿</h2>
+            <p style="margin:0 0 20px;color:#5A554F;font-size:15px;line-height:1.7;">
+              Olá! Notamos que você deixou itens lindos no seu carrinho.
+              Eles trazem aquele equilíbrio Japandi — natural, calmo e atemporal — para o seu lar.
+              Ainda estão reservados para você.
+            </p>
+
+            <!-- Itens do carrinho (variável nativa do Shopify) -->
+            {% for line in checkout.line_items %}
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #ECE7DF;">
+              <tr>
+                <td width="64" style="padding:12px 0;">
+                  <img src="{{ line.image | img_url: '120x120' }}" width="56" height="56" style="border-radius:8px;display:block;" alt="{{ line.title }}">
+                </td>
+                <td style="padding:12px 12px;color:#2E2A26;font-size:14px;">{{ line.title }} &times; {{ line.quantity }}</td>
+                <td align="right" style="padding:12px 0;color:#2E2A26;font-size:14px;font-weight:600;">{{ line.line_price | money }}</td>
+              </tr>
+            </table>
+            {% endfor %}
+
+            <!-- Cupom -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0;">
+              <tr>
+                <td align="center" style="background:#F4F1EC;border:1px dashed #B8793A;border-radius:10px;padding:22px;">
+                  <p style="margin:0 0 6px;color:#5A554F;font-size:13px;letter-spacing:1px;">PRESENTE PARA VOCÊ FINALIZAR</p>
+                  <p style="margin:0 0 4px;color:#B8793A;font-size:30px;font-weight:700;letter-spacing:3px;">AURA10</p>
+                  <p style="margin:0;color:#2E2A26;font-size:14px;">10% OFF em todo o carrinho</p>
+                </td>
+              </tr>
+            </table>
+
+            <!-- Botão -->
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center" style="padding:8px 0 4px;">
+                  <a href="{{ checkout.url }}" style="display:inline-block;background:#2E2A26;color:#F4F1EC;text-decoration:none;font-size:15px;letter-spacing:1px;padding:16px 48px;border-radius:8px;">FINALIZAR MINHA COMPRA →</a>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:22px 0 0;text-align:center;color:#8A847C;font-size:12px;">
+              🚚 Frete grátis acima de R$299 · ✅ Pagamento seguro · 🌱 Curadoria Japandi
+            </p>
+          </td>
+        </tr>
+
+        <!-- Rodapé -->
+        <tr>
+          <td align="center" style="background:#F4F1EC;padding:24px;">
+            <p style="margin:0 0 6px;color:#5A554F;font-size:13px;">Aura Decore · auradecore.com.br</p>
+            <p style="margin:0;color:#8A847C;font-size:12px;">
+              <a href="https://www.instagram.com/auras.decore/" style="color:#B8793A;text-decoration:none;">Instagram</a> ·
+              <a href="https://www.facebook.com/profile.php?id=61590147064046" style="color:#B8793A;text-decoration:none;">Facebook</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>

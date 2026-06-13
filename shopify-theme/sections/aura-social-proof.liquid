@@ -1,0 +1,155 @@
+{% comment %}Aura Social Proof v1 — Notificações de compra em tempo real — Sprint 11{% endcomment %}
+
+{%- if section.settings.enabled -%}
+<div class="aura-sp" id="AuraSP-{{ section.id }}" aria-live="polite" aria-atomic="true"></div>
+
+<style>
+.aura-sp {
+  position: fixed;
+  bottom: {{ section.settings.bottom }}rem;
+  left: {{ section.settings.left }}rem;
+  z-index: 9988;
+  pointer-events: none;
+}
+.aura-sp__toast {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  background: var(--aura-off-white, #FAFAF8);
+  border: 1px solid var(--aura-borda, #E2DBD4);
+  box-shadow: 0 4px 24px rgba(61,61,59,.14), 0 1px 4px rgba(61,61,59,.08);
+  padding: 1.4rem 2rem;
+  max-width: 32rem;
+  animation: aura-sp-in .4s cubic-bezier(.16,1,.3,1) both;
+  pointer-events: auto;
+  border-left: 3px solid var(--aura-terracota, #B8793A);
+}
+@keyframes aura-sp-in {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.aura-sp__toast.is-leaving {
+  animation: aura-sp-out .35s ease forwards;
+}
+@keyframes aura-sp-out {
+  to { opacity: 0; transform: translateX(-16px); }
+}
+.aura-sp__emoji { font-size: 2.2rem; flex-shrink: 0; }
+.aura-sp__text { display: flex; flex-direction: column; gap: .2rem; }
+.aura-sp__name {
+  font-family: var(--font-body-family);
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: var(--aura-grafite, #3D3D3B);
+  line-height: 1.3;
+}
+.aura-sp__name strong { color: var(--aura-terracota, #B8793A); }
+.aura-sp__time {
+  font-family: var(--font-body-family);
+  font-size: 1.05rem;
+  font-weight: 300;
+  color: var(--aura-cinza, #7A7A78);
+}
+@media (max-width: 499px) { .aura-sp { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .aura-sp__toast, .aura-sp__toast.is-leaving { animation: none !important; }
+}
+</style>
+
+<script>
+(function(){
+  var purchases = [
+    {% for block in section.blocks %}{% if block.type == 'purchase' %}
+    {
+      name: {{ block.settings.name | json }},
+      city: {{ block.settings.city | json }},
+      product: {{ block.settings.product | json }},
+      time: {{ block.settings.time | json }},
+      emoji: {{ block.settings.emoji | default: '🛍️' | json }}
+    },
+    {% endif %}{% endfor %}
+  ];
+  if (!purchases.length) return;
+  var container = document.getElementById('AuraSP-{{ section.id }}');
+  if (!container) return;
+  var i = 0;
+  var delay = {{ section.settings.initial_delay }} * 1000;
+  var interval = {{ section.settings.interval }} * 1000;
+  var duration = {{ section.settings.display_duration }} * 1000;
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced) return;
+  function showToast() {
+    var p = purchases[i % purchases.length];
+    i++;
+    var toast = document.createElement('div');
+    toast.className = 'aura-sp__toast';
+    toast.setAttribute('role', 'status');
+    toast.innerHTML =
+      '<span class="aura-sp__emoji" aria-hidden="true">' + p.emoji + '</span>' +
+      '<div class="aura-sp__text">' +
+        '<span class="aura-sp__name"><strong>' + (p.name || 'Alguém') + '</strong>' +
+          (p.city ? ' de ' + p.city : '') +
+          (p.product ? ' comprou <strong>' + p.product + '</strong>' : ' fez um pedido') +
+        '</span>' +
+        '<span class="aura-sp__time">' + (p.time || 'agora mesmo') + '</span>' +
+      '</div>';
+    container.appendChild(toast);
+    setTimeout(function() {
+      toast.classList.add('is-leaving');
+      setTimeout(function() {
+        if (container.contains(toast)) container.removeChild(toast);
+      }, 400);
+    }, duration);
+  }
+  setTimeout(function() {
+    showToast();
+    setInterval(showToast, interval);
+  }, delay);
+})();
+</script>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Prova Social Popup",
+  "tag": "div",
+  "class": "aura-social-proof",
+  "settings": [
+    {"type":"checkbox","id":"enabled","label":"Ativar notificações","default":true},
+    {"type":"range","id":"initial_delay","min":2,"max":30,"step":1,"unit":"s","label":"Delay inicial","default":6},
+    {"type":"range","id":"interval","min":8,"max":60,"step":2,"unit":"s","label":"Intervalo entre compras","default":18},
+    {"type":"range","id":"display_duration","min":3,"max":10,"step":1,"unit":"s","label":"Duração de cada notificação","default":5},
+    {"type":"range","id":"bottom","min":2,"max":16,"step":1,"unit":"rem","label":"Distância inferior","default":3},
+    {"type":"range","id":"left","min":1,"max":8,"step":1,"unit":"rem","label":"Distância esquerda","default":2}
+  ],
+  "blocks": [
+    {
+      "type": "purchase",
+      "name": "Compra Recente",
+      "settings": [
+        {"type":"text","id":"name","label":"Nome","default":"Marina"},
+        {"type":"text","id":"city","label":"Cidade","default":"São Paulo"},
+        {"type":"text","id":"product","label":"Produto","default":"Vaso Wabi-Sabi"},
+        {"type":"text","id":"time","label":"Tempo","default":"há 2 minutos"},
+        {"type":"text","id":"emoji","label":"Emoji","default":"🛒"}
+      ]
+    }
+  ],
+  "max_blocks": 15,
+  "presets": [
+    {
+      "name": "Prova Social Popup",
+      "blocks": [
+        {"type":"purchase","settings":{"name":"Marina","city":"São Paulo","product":"Vaso Wabi-Sabi","time":"há 2 minutos","emoji":"🛒"}},
+        {"type":"purchase","settings":{"name":"Camila","city":"Curitiba","product":"Kit Botânica Seca","time":"há 5 minutos","emoji":"🌿"}},
+        {"type":"purchase","settings":{"name":"Juliana","city":"Rio de Janeiro","product":"Difusor Reed Premium","time":"há 8 minutos","emoji":"🕯️"}},
+        {"type":"purchase","settings":{"name":"Ana","city":"Belo Horizonte","product":"Vela Artesanal Bambu","time":"há 11 minutos","emoji":"🕫"}},
+        {"type":"purchase","settings":{"name":"Fernanda","city":"Florianópolis","product":"Pampas Premium","time":"há 14 minutos","emoji":"🌾"}},
+        {"type":"purchase","settings":{"name":"Beatriz","city":"Porto Alegre","product":"Bandeja Bambu P","time":"há 20 minutos","emoji":"✨"}},
+        {"type":"purchase","settings":{"name":"Sofia","city":"Brasília","product":"Vaso Cerâmica Alto","time":"há 25 minutos","emoji":"🏺"}},
+        {"type":"purchase","settings":{"name":"Lara","city":"Salvador","product":"Eucalipto Seco","time":"há 31 minutos","emoji":"🌿"}}
+      ]
+    }
+  ]
+}
+{% endschema %}

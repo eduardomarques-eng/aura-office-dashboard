@@ -1,0 +1,22 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "b13564b26fad4e6f533e80f9e586dee4"
+name = "APP Novo"
+application_url = "https://example.com"
+embedded = true
+handle = "aura-app-novo-1"
+
+[webhooks]
+api_version = "2026-04"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_files,write_files,read_products,write_products,read_content,write_content,read_themes,write_themes,unauthenticated_read_content"
+optional_scopes = [ ]
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = [ ]
+
+[pos]
+embedded = false

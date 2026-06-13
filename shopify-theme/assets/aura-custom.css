@@ -1,0 +1,11 @@
+/* Aura Decore - Custom CSS v1 */
+
+.product-media-container,.product__media,.media-gallery__item{aspect-ratio:1/1 !important;overflow:hidden !important;}
+.product-media-container img,.product__media img,.media-gallery__item img{width:100% !important;height:100% !important;object-fit:cover !important;object-position:center !important;}
+.card__media,.card-wrapper .media{aspect-ratio:1/1 !important;overflow:hidden !important;}
+.card__media img,.card-wrapper .media img{width:100% !important;height:100% !important;object-fit:cover !important;object-position:center top !important;}
+@media(max-width:750px){.card__media,.card-wrapper .media{aspect-ratio:4/5 !important;}}
+.aura-urgency-badge{display:inline-block;background:rgba(224,82,82,.1);border:1px solid rgba(224,82,82,.4);color:#E05252;font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;margin:8px 0;}
+.aura-shipping-bar{padding:8px 16px;background:rgba(180,148,90,.08);border-bottom:1px solid rgba(180,148,90,.2);text-align:center;font-size:13px;color:#6A5E52;}
+.aura-shipping-bar__track{height:4px;background:#E8E0D4;border-radius:2px;margin:4px auto;max-width:200px;overflow:hidden;}
+.aura-shipping-bar__fill{height:100%;background:linear-gradient(90deg,#B8793A,#D4AF72);border-radius:2px;transition:width .5s ease;}
