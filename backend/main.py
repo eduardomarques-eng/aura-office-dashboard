@@ -4267,4 +4267,59 @@ async def meta_feed_url():
     })
 
 
+# ── Aura Points — Programa de Fidelidade ─────────────────────────────────────
+
+_POINTS_FILE = Path(os.getenv("OBSIDIAN_VAULT", "/app/vault")) / "aura_points.json"
+
+
+def _load_points() -> dict:
+    if _POINTS_FILE.exists():
+        try:
+            return json.loads(_POINTS_FILE.read_text("utf-8"))
+        except Exception:
+            pass
+    return {}
+
+
+def _save_points(data: dict):
+    _POINTS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    _POINTS_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), "utf-8")
+
+
+@app.post("/loyalty/add-points")
+async def loyalty_add_points(request: Request):
+    body = await request.json()
+    customer_id = str(body.get("customer_id", ""))
+    email = str(body.get("email", ""))
+    pts = int(body.get("points", 0))
+    if not customer_id or pts <= 0:
+        return JSONResponse({"error": "customer_id e points são obrigatórios"}, status_code=400)
+    data = _load_points()
+    key = customer_id or email
+    prev = data.get(key, {}).get("points", 0)
+    data[key] = {
+        "customer_id": customer_id,
+        "email": email,
+        "points": prev + pts,
+        "updated_at": datetime.utcnow().isoformat(),
+    }
+    _save_points(data)
+    logger.info(f"[LOYALTY] {email} +{pts}pts → total {prev + pts}")
+    return JSONResponse({"ok": True, "customer_id": customer_id, "points_added": pts, "total": prev + pts})
+
+
+@app.get("/loyalty/points/{customer_id}")
+async def loyalty_get_points(customer_id: str):
+    data = _load_points()
+    entry = data.get(customer_id, {"points": 0})
+    return JSONResponse({"customer_id": customer_id, "points": entry.get("points", 0)})
+
+
+@app.get("/loyalty/leaderboard")
+async def loyalty_leaderboard():
+    data = _load_points()
+    ranked = sorted(data.values(), key=lambda x: x.get("points", 0), reverse=True)
+    return JSONResponse({"leaderboard": ranked[:20]})
+
+
 app.mount("/", StaticFiles(directory=str(_ROOT), html=True), name="static")
