@@ -3505,7 +3505,8 @@ async def cmd_stream(cmd: str, request: Request):
         yield f"data: {json.dumps({'type':'done','agent':'sys','provider':'command_router'})}\n\n"
         _log_activity("SYS", f"Comando: {cmd[:60]}", {"cmd": cmd})
 
-    return EventSourceResponse(event_gen())
+    return StreamingResponse(event_gen(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 @app.get("/cmd/list")
 async def cmd_list():
