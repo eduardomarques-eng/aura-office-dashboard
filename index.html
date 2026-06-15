@@ -1018,6 +1018,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
         <div class="qcmd" onclick="runQuick('@dev sprint shopify: melhorias CRO no tema live, urgency timer, cart upsell, PageSpeed mobile — o que priorizar esta semana?')">💻 dev sprint</div>
         <div class="qcmd" onclick="runQuick('@feed status das publicações hoje: Instagram @auras.decore + FB Comercial (Graph API) + FB Pessoal (Chrome MCP) — tudo postado?')">📲 feed status</div>
         <div class="qcmd" onclick="agentsEvolve()">🧬 kaizen evolve</div>
+        <div class="qcmd" onclick="runDashboardMaintenance(true)">🔧 manutenção</div>
         <div class="qcmd" onclick="runQuick('maratona do fim de semana: qual o status de cada agente e o que ainda precisa de aprovação?')">🏃 maratona</div>
         <div class="qcmd" onclick="window.open('../../../.gemini/antigravity-ide/scratch/aura-social-hub/index.html','_blank')">🎨 social hub</div>
         <div class="qcmd" onclick="runQuick('@nox execute o calendário desta semana: selecione o script do dia do Social Hub, passe brief para ARTE gerar visual, VERA finalizar legenda e FEED publicar — inicie agora')">📱 postar hoje</div>
@@ -3346,10 +3347,62 @@ async function fetchStoreStats() {
   } catch(e) {}
 }
 
+// ══════════════════════════════════════════════════════════
+// MANUTENÇÃO — health check do dashboard + status de manutenção
+// ══════════════════════════════════════════════════════════
+async function fetchMaintenanceStatus() {
+  const BACKEND = typeof BRIDGE !== 'undefined' ? BRIDGE : 'http://localhost:8000';
+  try {
+    const r = await fetch(`${BACKEND}/dashboard/status`, {signal: AbortSignal.timeout(5000)});
+    const d = await r.json();
+    // Atualiza badge de último relatório na stats bar se elemento existir
+    const el = document.getElementById('sv-manutencao');
+    if (el) {
+      const score = d.score_ultimo || '—';
+      el.textContent = score !== '—' ? score : 'OK';
+      el.title = `Último relatório: ${d.ultimo_relatorio} | Próximo: ${d.proximo_ciclo}`;
+    }
+  } catch(e) {}
+}
+
+async function runDashboardMaintenance(manual = true) {
+  const BACKEND = typeof BRIDGE !== 'undefined' ? BRIDGE : 'http://localhost:8000';
+  appendLine('🔧 Iniciando manutenção automática do dashboard...', 'system');
+  appendLine('   ECHO → auditando endpoints | PIPE → verificando workflows | DEV → checando código | THEO → validando loja', 'dim');
+  try {
+    const r = await fetch(`${BACKEND}/dashboard/maintain`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({triggered_by: manual ? 'dashboard-manual' : 'dashboard-auto'})
+    });
+    const d = await r.json();
+    if (d.status === 'ok') {
+      const score = d.health?.score;
+      const fixes = d.fixes_aplicados?.length || 0;
+      const status = d.health?.status;
+      const emoji = score >= 8 ? '✅' : score >= 5 ? '⚠️' : '🔴';
+      appendLine(`${emoji} Manutenção concluída — Score: ${score}/10 | Status: ${status?.toUpperCase()}`, score >= 8 ? 'ok' : 'warn');
+      if (d.fixes_aplicados?.length > 0) {
+        d.fixes_aplicados.slice(0, 5).forEach(f => appendLine(`   → ${f}`, 'dim'));
+      }
+      appendLine(`📋 Relatório salvo no Vault. Próximo ciclo: ${d.proximo_ciclo}`, 'dim');
+      // Atualiza stats
+      await fetchKaizenStats();
+      await fetchMaintenanceStatus();
+    } else {
+      appendLine(`⚠️ Manutenção retornou: ${JSON.stringify(d)}`, 'warn');
+    }
+  } catch(e) {
+    appendLine(`🔴 Erro na manutenção: ${e.message}`, 'error');
+  }
+}
+
 // Executa ao carregar
 setTimeout(fetchKaizenStats, 2000);
 setTimeout(fetchStoreStats, 2500);
-setInterval(fetchKaizenStats, 120000); // refresh a cada 2min
+setTimeout(fetchMaintenanceStatus, 3000);
+setInterval(fetchKaizenStats, 120000);        // refresh Kaizen a cada 2min
+setInterval(fetchMaintenanceStatus, 300000);  // refresh manutenção a cada 5min
 
 // Inicializa o Command Center
 buildCommandCenter();

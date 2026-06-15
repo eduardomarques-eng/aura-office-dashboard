@@ -1010,6 +1010,44 @@ async def seasonal_update_scheduler():
         await asyncio.sleep(300)
 
 
+async def dashboard_maintenance_scheduler():
+    """
+    Manutenção automática do dashboard — roda diariamente às 08h BRT (11h UTC).
+    Agentes responsáveis: ECHO (auditoria), PIPE (endpoints), DEV (código), THEO (loja).
+    """
+    await asyncio.sleep(60)  # aguarda 1min após startup para o servidor estabilizar
+    _fired_today: set[str] = set()
+    while True:
+        now_utc = datetime.utcnow()
+        today = now_utc.strftime("%Y-%m-%d")
+        fire_key = f"maintenance-{today}"
+        # 11h UTC = 08h BRT
+        if now_utc.hour == 11 and now_utc.minute < 5 and fire_key not in _fired_today:
+            _fired_today.add(fire_key)
+            try:
+                if _MAINTENANCE_OK:
+                    resultado = await run_daily_maintenance(triggered_by="scheduler-08h-brt")
+                    score = resultado["health"]["score"]
+                    await manager.broadcast(json.dumps({
+                        "type": "maintenance_complete",
+                        "score": score,
+                        "status": resultado["health"]["status"],
+                        "fixes": len(resultado["fixes_aplicados"]),
+                        "timestamp": resultado["health"]["timestamp"],
+                        "message": f"🔧 Manutenção diária concluída — Score {score}/10",
+                    }))
+                    print(f"[MANUTENÇÃO SCHEDULER] Score: {score}/10 — {today}")
+                    _log_activity("ECHO", "🔧 Manutenção diária concluída",
+                                  f"Score: {score}/10 | {resultado['health']['passing']}/{resultado['health']['total']} checks ok",
+                                  "manutencao")
+            except Exception as e:
+                print(f"[MANUTENÇÃO SCHEDULER] Erro: {e}")
+            await asyncio.sleep(300)
+        # Limpa set de dias anteriores
+        _fired_today = {k for k in _fired_today if k >= f"maintenance-{now_utc.strftime('%Y-%m-%d')}"}
+        await asyncio.sleep(60)
+
+
 async def daily_report_scheduler():
     """Gera relatório diário às 21h BRT (00h UTC) todos os dias."""
     await asyncio.sleep(180)  # aguarda 3min após startup
@@ -1257,6 +1295,7 @@ async def startup():
     asyncio.create_task(autonomous_task_scheduler())
     asyncio.create_task(full_throttle_scheduler())
     asyncio.create_task(shopify_live_updater_scheduler())
+    asyncio.create_task(dashboard_maintenance_scheduler())
 
 # ── WebSocket endpoint ────────────────────────────────────────────────────────
 
@@ -3349,6 +3388,89 @@ async def record_agent_execution(agent_id: str, body: dict):
         return {"status": "ok", "agent": agent_id}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MANUTENÇÃO AUTOMÁTICA DO DASHBOARD
+# ══════════════════════════════════════════════════════════════════════════════
+
+try:
+    from dashboard_maintenance import (
+        run_daily_maintenance, run_health_check, quick_dashboard_status
+    )
+    _MAINTENANCE_OK = True
+except Exception as _me:
+    _MAINTENANCE_OK = False
+    print(f"[WARN] dashboard_maintenance não carregado: {_me}")
+
+
+@app.get("/dashboard/status")
+async def dashboard_status():
+    """Status rápido do dashboard (sem rede) — lê do vault."""
+    if not _MAINTENANCE_OK:
+        return {"status": "modulo_indisponivel"}
+    return quick_dashboard_status()
+
+
+@app.get("/dashboard/health")
+async def dashboard_health_check():
+    """Health check completo de todos os endpoints do dashboard."""
+    if not _MAINTENANCE_OK:
+        return {"status": "modulo_indisponivel"}
+    try:
+        return await run_health_check()
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/dashboard/maintain")
+async def dashboard_maintain(request: Request):
+    """
+    Executa ciclo completo de manutenção diária.
+    Chamado automaticamente às 08h (Railway cron) ou pelo dashboard.
+    Agentes responsáveis: ECHO (auditoria), PIPE (endpoints), DEV (código), THEO (loja).
+    """
+    if not _MAINTENANCE_OK:
+        return {"status": "modulo_indisponivel"}
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass
+    triggered_by = body.get("triggered_by", "api")
+    try:
+        resultado = await run_daily_maintenance(triggered_by=triggered_by)
+        # Broadcast via WebSocket para o dashboard em tempo real
+        await manager.broadcast(json.dumps({
+            "type": "maintenance",
+            "score": resultado["health"]["score"],
+            "status": resultado["health"]["status"],
+            "fixes": len(resultado["fixes_aplicados"]),
+            "timestamp": resultado["health"]["timestamp"],
+        }))
+        return resultado
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+# ── Cron endpoint: Railway Health Check diário ────────────────────────────────
+@app.get("/cron/daily-maintenance")
+async def cron_daily_maintenance():
+    """
+    Endpoint para o Railway cron job chamar diariamente às 08h00.
+    Configurar em railway.toml:
+      [cron]
+      schedule = "0 8 * * *"
+      command = "curl -X GET https://web-production-f1cb5.up.railway.app/cron/daily-maintenance"
+    """
+    if not _MAINTENANCE_OK:
+        return {"status": "modulo_indisponivel"}
+    try:
+        resultado = await run_daily_maintenance(triggered_by="railway-cron-08h")
+        return {"status": "ok", "score": resultado["health"]["score"],
+                "fixes": len(resultado["fixes_aplicados"])}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # REDES SOCIAIS — stubs gracefully degradados (Facebook integration vive no bridge)
