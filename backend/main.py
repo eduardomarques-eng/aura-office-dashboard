@@ -4336,7 +4336,7 @@ async def meta_feed_url():
 
 # ── Aura Points — Programa de Fidelidade ─────────────────────────────────────
 
-_POINTS_FILE = Path(os.getenv("OBSIDIAN_VAULT", "/app/vault")) / "aura_points.json"
+_POINTS_FILE = _pl.Path(os.getenv("OBSIDIAN_VAULT", "/app/vault")) / "aura_points.json"
 
 
 def _load_points() -> dict:
