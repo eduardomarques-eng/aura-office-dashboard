@@ -186,7 +186,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 }
 /* Agent grid */
 .agent-cmd-grid{
-  display:grid;grid-template-columns:repeat(7,1fr);gap:6px;
+  display:grid;grid-template-columns:repeat(5,1fr);gap:6px;
 }
 .agent-cmd-card{
   background:var(--bg3);border:1px solid var(--border);border-radius:5px;
@@ -988,7 +988,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
       <div id="term-output">
         <div class="term-line system">╔══════════════════════════════════════════════╗</div>
         <div class="term-line system">║  🏮  Aura Decore — Terminal HQ v3               ║</div>
-        <div class="term-line system">║  cascata: groq → claude → ollama · 15 agentes ║</div>
+        <div class="term-line system">║  cascata: groq → claude → ollama · 20 agentes ║</div>
         <div class="term-line system">╚══════════════════════════════════════════════╝</div>
         <div class="term-line system">Digite um comando. Ive interpreta e executa.</div>
         <div class="term-line system">Exemplos: "busca 5 produtos japandi" • "@vera escreve copy" • "status da loja"</div>
@@ -1013,7 +1013,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
         <div class="qcmd" onclick="runQuick('@echo auditoria do dia: score da loja 0-10, top 3 urgências para Eduardo agir agora')">🔍 auditoria</div>
         <div class="qcmd" onclick="runQuick('plano da semana: foco em lançamento orgânico, 46 produtos, funil low→premium, sem tráfego pago')">📋 plano</div>
         <div class="qcmd" onclick="runQuick('@arte gere 3 prompts Pollinations.ai para hoje: 1 feed 1080x1080, 1 story vertical, 1 hero 1200x600')">🖼 imagens</div>
+        <div class="qcmd" onclick="runQuick('@vega roteiro de Reel hook 1.5s + storytelling japandi 30s: produto destaque desta semana, formato 9:16 nativo')">🎥 vídeo</div>
+        <div class="qcmd" onclick="runQuick('@fina relatório financeiro: fluxo de caixa atual, contas a pagar esta semana, status Nubank PJ e alertas de GUARD')">💳 finanças PJ</div>
+        <div class="qcmd" onclick="runQuick('@dev sprint shopify: melhorias CRO no tema live, urgency timer, cart upsell, PageSpeed mobile — o que priorizar esta semana?')">💻 dev sprint</div>
+        <div class="qcmd" onclick="runQuick('@feed status das publicações hoje: Instagram @auras.decore + FB Comercial (Graph API) + FB Pessoal (Chrome MCP) — tudo postado?')">📲 feed status</div>
+        <div class="qcmd" onclick="agentsEvolve()">🧬 kaizen evolve</div>
         <div class="qcmd" onclick="runQuick('maratona do fim de semana: qual o status de cada agente e o que ainda precisa de aprovação?')">🏃 maratona</div>
+        <div class="qcmd" onclick="window.open('../../../.gemini/antigravity-ide/scratch/aura-social-hub/index.html','_blank')">🎨 social hub</div>
+        <div class="qcmd" onclick="runQuick('@nox execute o calendário desta semana: selecione o script do dia do Social Hub, passe brief para ARTE gerar visual, VERA finalizar legenda e FEED publicar — inicie agora')">📱 postar hoje</div>
       </div>
 
       <div id="term-input-wrap">
@@ -1040,13 +1047,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 
     <!-- STATS BAR -->
     <div id="statsbar">
-      <div class="sv"><div class="sv-val" id="sv-agents">15</div><div class="sv-lbl">Agentes</div></div>
+      <div class="sv"><div class="sv-val" id="sv-agents">20</div><div class="sv-lbl">Agentes</div></div>
       <div class="sdiv"></div>
       <div class="sv"><div class="sv-val" id="sv-exec">0</div><div class="sv-lbl">Execuções</div></div>
       <div class="sdiv"></div>
       <div class="sv"><div class="sv-val" id="sv-tasks">0</div><div class="sv-lbl">Tarefas Hoje</div></div>
       <div class="sdiv"></div>
-      <div class="sv"><div class="sv-val" id="sv-phase" style="font-size:9px;color:var(--gold-l)">LANÇAMENTO</div><div class="sv-lbl">Fase</div></div>
+      <div class="sv"><div class="sv-val" id="sv-produtos" style="color:var(--green)">89</div><div class="sv-lbl">Produtos</div></div>
+      <div class="sdiv"></div>
+      <div class="sv"><div class="sv-val" id="sv-kaizen" style="font-size:10px;color:var(--blue)">—</div><div class="sv-lbl">Kaizen</div></div>
+      <div class="sdiv"></div>
+      <div class="sv"><div class="sv-val" id="sv-phase" style="font-size:9px;color:var(--gold-l)">OPERAÇÃO</div><div class="sv-lbl">Fase</div></div>
     </div>
   </div>
 </div>
@@ -1303,7 +1314,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 // CONFIG — BRIDGE / RAILWAY (dual-mode)
 // ══════════════════════════════════════════════════════════
 const IS_PROD = !['localhost','127.0.0.1',''].includes(location.hostname);
-const RAILWAY = 'https://aura-office-dashboard-production.up.railway.app';
+const RAILWAY = 'https://web-production-f1cb5.up.railway.app';
 let BRIDGE = IS_PROD ? RAILWAY : (localStorage.getItem('aura_bridge_url') || 'http://localhost:8000');
 
 // Railway WebSocket — live agent feed (only in prod)
@@ -1467,11 +1478,17 @@ const AGENTS = {
   luna:  {name:'Luna',  emoji:'🎨',  role:'Designer Visual',            color:'var(--purple)', left:'70%', top:'34%'},
   nox:   {name:'Nox',   emoji:'🎬',  role:'Conteúdo · Reels',           color:'var(--purple)', left:'88%', top:'34%'},
   // Fileira 3 — Crescimento + Atendimento
-  rex:   {name:'Rex',   emoji:'📈',  role:'Tráfego · Meta Ads',         color:'var(--green)',  left:'10%', top:'62%'},
-  sol:   {name:'Sol',   emoji:'🎯',  role:'Vendas · CRO',               color:'var(--green)',  left:'30%', top:'62%'},
-  mira:  {name:'Mira',  emoji:'🔎',  role:'SEO · Pesquisa',             color:'var(--blue)',   left:'50%', top:'62%'},
-  zara:  {name:'Zara',  emoji:'🌸',  role:'Community · Engagement',     color:'var(--gold)',   left:'70%', top:'62%'},
-  lena:  {name:'Lena',  emoji:'💬',  role:'Atendimento · CX',           color:'var(--green)',  left:'88%', top:'62%'},
+  rex:   {name:'Rex',   emoji:'📈',  role:'Tráfego · Meta Ads',         color:'var(--green)',  left:'10%', top:'57%'},
+  sol:   {name:'Sol',   emoji:'🎯',  role:'Vendas · CRO',               color:'var(--green)',  left:'30%', top:'57%'},
+  mira:  {name:'Mira',  emoji:'🔎',  role:'SEO · Pesquisa',             color:'var(--blue)',   left:'50%', top:'57%'},
+  zara:  {name:'Zara',  emoji:'🌸',  role:'Community · Engagement',     color:'var(--gold)',   left:'70%', top:'57%'},
+  lena:  {name:'Lena',  emoji:'💬',  role:'Atendimento · CX',           color:'var(--green)',  left:'88%', top:'57%'},
+  // Fileira 4 — Criativo + Publicação + Dev + Vídeo + Finanças
+  arte:  {name:'Arte',  emoji:'🖼️',  role:'Criativo · IA Visual',       color:'var(--purple)', left:'10%', top:'76%'},
+  feed:  {name:'Feed',  emoji:'📲',  role:'Publicador · Redes Sociais', color:'var(--blue)',   left:'30%', top:'76%'},
+  dev:   {name:'Dev',   emoji:'💻',  role:'Desenvolvedor · Shopify',    color:'var(--blue)',   left:'50%', top:'76%'},
+  vega:  {name:'Vega',  emoji:'🎥',  role:'Videomaker · Motion',        color:'var(--purple)', left:'70%', top:'76%'},
+  fina:  {name:'Fina',  emoji:'💳',  role:'Finanças Operacional · PJ',  color:'var(--gold)',   left:'88%', top:'76%'},
 };
 
 const WORKFLOWS = {
@@ -1480,16 +1497,21 @@ const WORKFLOWS = {
   nexus: ['Scan Pinterest Trends','Top 3 produtos novos','Score de fornecedor'],
   luna:  ['Briefing → Canva','Templates Stories','Brand consistency check'],
   vera:  ['Copy produto novo','Email abandono','Headline anúncio para Rex'],
-  theo:  ['Sync estoque diário','Processamento pedidos','PageSpeed 90+'],
-  kai:   ['Pausar produtos sem venda','Validar margem','Sync fornecedor'],
-  nox:   ['Reel da semana','Roteiro 30s','Caption + hashtags'],
-  rex:   ['Escalar criativo C','Pausar criativos < CTR 1.5%','Lookalike 1%'],
+  theo:  ['Sync estoque diário','publishablePublish 3 canais','PageSpeed 90+'],
+  kai:   ['Pausar produtos sem venda','Validar margem ≥35%','Sync fornecedor'],
+  nox:   ['Reel da semana','Roteiro 30s hook','Caption + hashtags'],
+  rex:   ['Escalar criativo C','Pausar criativos < CTR 1.5%','Lookalike 2%'],
   lena:  ['3 tickets/dia < 2h','Follow-up D+7','Resposta a reviews'],
-  echo:  ['Auditoria Dom 20h','Health check diário','Score 0-10 por agente'],
-  sol:   ['Recovery carrinho D+1/D+3/D+7','Upsell checkout','Frete grátis > R$199'],
+  echo:  ['Auditoria Dom 20h','Kaizen semanal agentes','Score 0-10 por agente'],
+  sol:   ['Recovery carrinho D+1/D+3/D+7','Upsell checkout','Frete grátis > R$299'],
   zara:  ['DMs Instagram < 1h','Cupom FOTO15 p/ UGC','Identificar embaixadoras'],
   mira:  ['Keyword cauda longa','Schema Product','Pinterest SEO'],
-  pipe:  ['Workflow Shopify→IVE','Z-API webhook','Cron auditoria Dom 20h'],
+  pipe:  ['17 workflows n8n ativos','Z-API webhook LENA','Cron auditoria Dom 20h'],
+  arte:  ['3 criativos/dia Pollinations','Prompt japandi 8k','Assets para FEED'],
+  feed:  ['Post 3x/dia IG+FB','Graph API Comercial','Chrome MCP FB Pessoal'],
+  dev:   ['Sprint quarta 9h','CRO snippets live','Backup tema antes de mexer'],
+  vega:  ['Roteiro Reel hook 1.5s','ASMR produto','Storytelling japandi 9:16'],
+  fina:  ['Relatório mensal GUARD','Fluxo caixa PJ','Pagar fornecedores aprovados'],
 };
 
 const THOUGHTS = {
@@ -1498,16 +1520,21 @@ const THOUGHTS = {
   nexus: ['Varrendo Pinterest...','Avaliando fornecedor...','Aplicando neuroarquitetura...'],
   luna:  ['Criando banner...','Ajustando paleta Japandi...','Exportando assets...'],
   vera:  ['Escrevendo copy...','Criando headline...','Revisando descrição...'],
-  theo:  ['Sincronizando produtos...','Processando pedido...','Otimizando PageSpeed...'],
-  kai:   ['Avaliando margem...','Pausando diffuser...','Validando portfólio...'],
-  nox:   ['Roteirizando Reel...','Hook em revisão...','Agendando postagem...'],
+  theo:  ['Sincronizando produtos...','publishablePublish 3 canais...','Otimizando PageSpeed...'],
+  kai:   ['Avaliando margem ≥35%...','Pausando sem tração...','Validando portfólio...'],
+  nox:   ['Roteirizando Reel...','Hook 3s em revisão...','Agendando postagem...'],
   rex:   ['Escalando criativo C...','Ajustando budget...','Monitorando ROAS...'],
-  lena:  ['Respondendo cliente...','Enviando cupom...','Follow-up D+7...'],
-  echo:  ['Verificando sistemas...','Calculando score...','Consolidando relatório...'],
-  sol:   ['Recuperando carrinhos...','Testando upsell...','Otimizando funil...'],
+  lena:  ['Respondendo cliente...','Enviando cupom AURA10...','Follow-up D+7...'],
+  echo:  ['Auditoria semanal...','Calculando score Kaizen...','Consolidando relatório...'],
+  sol:   ['Recuperando carrinhos...','Testando upsell R$299...','Otimizando funil...'],
   zara:  ['Respondendo DMs...','Engajando seguidores...','Curando UGC...'],
-  mira:  ['Pesquisando keywords...','Auditando SEO...','Otimizando schema...'],
-  pipe:  ['Construindo workflow...','Validando webhook...','Deploy n8n...'],
+  mira:  ['Pesquisando keywords...','Auditando GSC...','Otimizando schema...'],
+  pipe:  ['17 workflows ativos...','Validando webhook Z-API...','Deploy n8n...'],
+  arte:  ['Gerando criativo Pollinations...','Prompt japandi 8k...','Enviando para FEED...'],
+  feed:  ['Postando no Instagram...','Graph API FB Comercial...','Chrome MCP FB Pessoal...'],
+  dev:   ['Sprint Shopify...','CRO snippets...','Backup tema live...'],
+  vega:  ['Roteirizando Reel hook...','ASMR produto...','Editando 9:16...'],
+  fina:  ['Controlando fluxo caixa...','Relatório para GUARD...','Aguardando Nubank PJ...'],
 };
 
 // ══════════════════════════════════════════════════════════
@@ -1996,16 +2023,16 @@ let _ideEvtSrc = null;
 
 const IDE_ACTIONS = {
   ive:  [
-    {ico:'📋', lbl:'Plano semanal',         cmd:'crie o plano de ação desta semana para a loja'},
-    {ico:'📊', lbl:'Status da equipe',       cmd:'qual o status atual de cada agente?'},
-    {ico:'🎯', lbl:'Próxima prioridade',     cmd:'qual é a tarefa mais importante agora?'},
-    {ico:'🔄', lbl:'Orquestrar ciclo',       cmd:'execute um ciclo completo da equipe'},
+    {ico:'📋', lbl:'Plano semanal',         cmd:'crie o plano de ação desta semana para a loja Aura Decore com todos os 20 agentes'},
+    {ico:'📊', lbl:'Status da equipe',       cmd:'qual o status atual de cada um dos 20 agentes? quem está ativo, o que produziram hoje?'},
+    {ico:'🎯', lbl:'Próxima prioridade',     cmd:'qual é a tarefa mais importante agora para aumentar vendas e conversão?'},
+    {ico:'🧬', lbl:'Kaizen Evolve',          cmd:'execute /agents evolve — ciclo completo de aprendizado e evolução dos 20 agentes'},
   ],
-  kal:  [
-    {ico:'🔍', lbl:'Buscar produtos',        cmd:'pesquise 3 produtos japandi com margem >65%'},
-    {ico:'💰', lbl:'Calcular margem',        cmd:'calcule a margem de um produto a $12 USD'},
-    {ico:'⭐', lbl:'Top fornecedores',       cmd:'liste os melhores fornecedores japoneses'},
-    {ico:'🧾', lbl:'Relatório curadoria',    cmd:'faça um relatório dos produtos pesquisados hoje'},
+  nexus:[
+    {ico:'🔭', lbl:'Minerar tendências',    cmd:'mine 3 produtos em tendência no Pinterest e Google Trends BR'},
+    {ico:'🏭', lbl:'Avaliar fornecedor',    cmd:'avalie o Dropi e Habitoo: score de confiabilidade e prazo'},
+    {ico:'📐', lbl:'Neuroarquitetura',      cmd:'aplique teste neuroarquitetura nos produtos avaliados esta semana'},
+    {ico:'🗺️', lbl:'Matriz Ansoff',        cmd:'analise expansão de nicho usando Matriz Ansoff'},
   ],
   theo: [
     {ico:'🏪', lbl:'Configurar loja',        cmd:'liste os próximos passos para configurar a loja'},
@@ -2091,25 +2118,59 @@ const IDE_ACTIONS = {
     {ico:'📸', lbl:'Caption pack',         cmd:'10 captions com hashtags Japandi otimizadas para esta semana'},
     {ico:'📊', lbl:'Análise insights',     cmd:'analise quais tipos de post geraram mais engajamento'},
   ],
+  arte: [
+    {ico:'🖼️', lbl:'3 criativos do dia',   cmd:'gere 3 prompts Pollinations.ai: 1 feed 1080x1080, 1 story 1080x1920, 1 hero 1200x600 — estética japandi'},
+    {ico:'🌿', lbl:'Prompt biofilia',      cmd:'crie prompt detalhado japandi com biofilia: luz natural, materiais naturais, wabi-sabi para produto destaque'},
+    {ico:'🎨', lbl:'Pack visual semana',   cmd:'gere pack de 7 criativos para a semana: paleta terra #B8793A + off-white #F5F0EB'},
+    {ico:'📦', lbl:'Foto de produto',      cmd:'prompts para fotos de produto japandi: fundo linho, luz difusa, ângulo 3/4, textura em destaque'},
+  ],
+  feed: [
+    {ico:'📲', lbl:'Status publicações',   cmd:'qual o status das publicações de hoje nos 3 canais: Instagram + FB Comercial + FB Pessoal?'},
+    {ico:'📅', lbl:'Agendar semana',       cmd:'agende os posts da semana: IG @auras.decore 10h30/14h30/19h30 + espelhamento FB'},
+    {ico:'🔍', lbl:'Verificar falhas',     cmd:'verifique se houve falhas nas últimas 24h de publicação e reporte para IVE'},
+    {ico:'📊', lbl:'Relatório semanal',    cmd:'relatório de publicações desta semana: posts publicados, horários, plataformas, alcance estimado'},
+  ],
+  dev:  [
+    {ico:'🛒', lbl:'Sprint CRO',           cmd:'sprint CRO shopify: urgency timer, exit popup, cart upsell, social proof — o que priorizar?'},
+    {ico:'⚡', lbl:'PageSpeed audit',      cmd:'audite PageSpeed mobile do tema live 160266387561 — top 3 melhorias'},
+    {ico:'🎨', lbl:'CSS sazonal',          cmd:'atualize CSS sazonal do tema para estilo atual japandi: cores, fontes, espaçamentos'},
+    {ico:'🔧', lbl:'Fix tema',             cmd:'verifique erros JS e Liquid no tema live e liste correções urgentes'},
+  ],
+  vega: [
+    {ico:'🎥', lbl:'Roteiro hook 1.5s',    cmd:'crie roteiro de Reel: hook visual 0-1.5s + desenvolvimento 1.5-25s + CTA 25-30s para produto destaque'},
+    {ico:'🎵', lbl:'ASMR produto',         cmd:'roteiro ASMR: sequência de sons de produto japandi (cerâmica, linho, bambu) para Reel de alta retenção'},
+    {ico:'📖', lbl:'Storytelling',         cmd:'roteiro storytelling 30s: transformação do ambiente com produto Aura Decore — gancho emocional'},
+    {ico:'📋', lbl:'Pack 3 vídeos',        cmd:'crie pack de 3 roteiros de vídeo para esta semana: 1 produto, 1 lifestyle, 1 educativo japandi'},
+  ],
+  fina: [
+    {ico:'💰', lbl:'Fluxo de caixa',       cmd:'relatório de fluxo de caixa: saldo atual, entradas desta semana, contas a pagar próximos 7 dias'},
+    {ico:'📊', lbl:'Relatório para GUARD', cmd:'gere relatório mensal financeiro para GUARD: receita, despesas, margem, status MEI'},
+    {ico:'💳', lbl:'Status Nubank PJ',     cmd:'status da conta Nubank PJ: aguarda CNPJ ME? quais são os próximos passos?'},
+    {ico:'🧾', lbl:'Contas a pagar',       cmd:'liste todas as contas e fornecedores a pagar esta semana com valores e vencimentos'},
+  ],
 };
 
 const IDE_DESCS = {
-  ive:   'CEO da Aura Decore. Orquestra 14 agentes, toma decisões estratégicas e delega com precisão. Entrada para comandos gerais.',
-  kal:   'Curador de produtos Japandi. Pesquisa no AliExpress com critérios de margem e estética. Calcula preços automaticamente.',
-  theo:  'Técnico Shopify. Configura produtos, coleções, pixel Meta, PageSpeed e integrações AppMax/Yampi.',
-  vera:  'Copywriter afetiva. Escreve copy de produto, anúncio, email e SEO que conecta e converte.',
-  luna:  'Designer visual Japandi. Cria briefings de banner, stories, feed e brand kit com paleta e tipografia da marca.',
-  echo:  'Auditor do sistema. Score de performance dos agentes, health check de integrações e relatório semanal.',
-  kai:   'Curador de portfólio. Valida margem (>35%), giro de SKUs, novos produtos Dropi/Habitoo.',
-  rex:   'Especialista Meta Ads. Gerencia ROAS, budget diário, criativos e públicos para máxima conversão.',
-  guard: 'CFO severo. Monitora MEI (R$81k), ROAS mínimo 2x, chargebacks e caixa. Emite alertas VERDE→PRETO.',
-  lena:  'Atendimento CX com framework HERO. Resolve tickets <2h, fideliza com cupons, escala reembolso >R$200.',
-  nexus: 'Radar de oportunidades. Minera produtos via Pinterest/Google Trends, aplica teste neuroarquitetura.',
-  sol:   'CRO + Recovery. Recupera carrinhos D+1/D+3/D+7, cria bundles, upsell no checkout.',
-  zara:  'Community Instagram. Responde DMs <1h, envia cupons UGC, mapeia micro-influencers Japandi.',
-  mira:  'SEO orgânico. Keywords cauda longa, Search Console, meta tags Shopify e Pinterest SEO.',
-  pipe:  'Engenheiro n8n. Cria e mantém workflows: Shopify webhooks, Z-API, AppMax, vault Obsidian.',
-  nox:   'Criador de conteúdo. Calendário editorial, roteiros de reels e captions com hashtags estratégicas.',
+  ive:   'CEO da Aura Decore. Orquestra 20 agentes, toma decisões estratégicas e delega com precisão. Entrada para comandos gerais.',
+  nexus: 'Radar de oportunidades. Minera produtos via Pinterest/AliExpress/Dropi, aplica teste neuroarquitetura (biofilia +2, material natural +2).',
+  theo:  'Técnico Shopify. publishablePublish nos 3 canais, pixel Meta, PageSpeed 90+, AppMax/Yampi. Backup obrigatório antes de mexer no tema.',
+  vera:  'Copywriter afetiva. Escreve copy de produto, anúncio, email e SEO. Palavras que convertem: tranquilidade, lar dos sonhos, equilíbrio.',
+  luna:  'Diretora de arte. Brand kit: terra #B8793A + off-white #F5F0EB. Briefings para ARTE + Canva Pro + Figma. Identidade visual impecável.',
+  echo:  'Auditor Kaizen. Score 0-10 por agente toda semana. 1 melhoria específica por agente. DNA de aprendizado dos 20 agentes.',
+  kai:   'Curador de portfólio. Valida margem ≥35%, giro de SKUs. Pausa produto após 15 dias sem venda. Novos produtos Dropi/Habitoo.',
+  rex:   'Gestor Meta Ads. ROAS meta 4x, mínimo 2x. Pausa criativo com frequência >3.5. Lookalike 2% supera interesse frio.',
+  guard: 'CFO severo. MEI limite R$81k/ano, ROAS ≥2x, margem ≥35%, caixa ≥R$500. DAS R$70,60 dia 20. Veto sobre gastos.',
+  lena:  'Atendimento CX framework HERO. Responde <2h. Cupom AURA10 resolve 80% das reclamações. Escala reembolso >R$200 para GUARD.',
+  sol:   'CRO + Recovery. D+1 AURA10 (15% recovery). Bundle +35% ticket. Frete grátis ≥R$299. Pós-compra D+7 = UGC.',
+  zara:  'Community Instagram @auras.decore. DMs <1h. Identifica embaixadoras (3+ compras → AURAEMBAIXADORA20). UGC incentivado.',
+  mira:  'SEO orgânico. Cauda longa "vaso japandi cerâmica brasil" > termos genéricos. GSC + Pinterest SEO + schema Shopify.',
+  pipe:  'Engenheiro n8n. 17 workflows ATIVOS. Z-API LENA. Retry backoff 1min/5min/15min. Reconectar Z-API se >6h inativo.',
+  nox:   'Diretor de conteúdo. Mix 40% educativo / 30% inspiracional / 30% produto. Posts 10h30/14h30/19h30. Hook visual <3s.',
+  arte:  'Estúdio IA visual. Pollinations.ai (flux). 3 criativos/dia: 1 produto, 1 lifestyle, 1 story. Fundo linho > fundo branco.',
+  feed:  'Publicador automático. 3 canais: IG @auras.decore + FB Comercial (Graph API) + FB Pessoal (Chrome MCP). Alerta em 2 falhas.',
+  dev:   'Dev Shopify. Tema live 160266387561. Backup obrigatório. CRO: urgency timer > exit popup > cart upsell. body_scale=110.',
+  vega:  'Videomaker. Hook visual 0-1.5s > texto. ASMR produto = 4x retenção. Formato 9:16 nativo. Higgsfield API pendente.',
+  fina:  'Tesoureira PJ. Aguarda Nubank PJ (CNPJ ME). Pagamentos só com aprovação Eduardo. Relatório dia 1 para GUARD.',
 };
 
 function openModal(id) { openIDE(id); }  // compatibilidade
@@ -3006,32 +3067,42 @@ setTimeout(refreshTasks, 1500); // primeiro fetch pra atualizar o badge
 const CMD_AGENTS = [
   {id:'ive',   emoji:'👑', name:'IVE',   role:'CEO · Estratégia'},
   {id:'guard', emoji:'🛡️', name:'GUARD', role:'CFO · MEI'},
-  {id:'theo',  emoji:'⚙️',  name:'THEO',  role:'Shopify · Técnico'},
+  {id:'nexus', emoji:'🔭', name:'NEXUS', role:'Mineração · Produtos'},
   {id:'kai',   emoji:'📦', name:'KAI',   role:'Produtos · Curadoria'},
   {id:'vera',  emoji:'✍️',  name:'VERA',  role:'Copy · Textos'},
   {id:'luna',  emoji:'🎨', name:'LUNA',  role:'Design · Visual'},
   {id:'nox',   emoji:'📹', name:'NOX',   role:'Conteúdo · Reels'},
   {id:'rex',   emoji:'📈', name:'REX',   role:'Tráfego · Meta Ads'},
-  {id:'echo',  emoji:'🩺', name:'ECHO',  role:'Auditor · Score'},
+  {id:'theo',  emoji:'⚙️',  name:'THEO',  role:'Shopify · Técnico'},
+  {id:'echo',  emoji:'🔍', name:'ECHO',  role:'Auditor · Kaizen'},
   {id:'lena',  emoji:'💬', name:'LENA',  role:'Atendimento · CX'},
-  {id:'nexus', emoji:'🔭', name:'NEXUS', role:'Mineração · Produtos'},
-  {id:'sol',   emoji:'💹', name:'SOL',   role:'Vendas · CRO'},
-  {id:'zara',  emoji:'💫', name:'ZARA',  role:'Community · IG'},
-  {id:'mira',  emoji:'🔍', name:'MIRA',  role:'SEO · Keywords'},
-  {id:'pipe',  emoji:'🔧', name:'PIPE',  role:'Automação · n8n'},
+  {id:'sol',   emoji:'🎯', name:'SOL',   role:'Vendas · CRO'},
+  {id:'zara',  emoji:'🌸', name:'ZARA',  role:'Community · IG'},
+  {id:'mira',  emoji:'🔎', name:'MIRA',  role:'SEO · Keywords'},
+  {id:'pipe',  emoji:'🔌', name:'PIPE',  role:'Automação · n8n'},
+  {id:'arte',  emoji:'🖼️', name:'ARTE',  role:'Criativo · IA Visual'},
+  {id:'feed',  emoji:'📲', name:'FEED',  role:'Publicador · Redes'},
+  {id:'dev',   emoji:'💻', name:'DEV',   role:'Dev · Shopify'},
+  {id:'vega',  emoji:'🎥', name:'VEGA',  role:'Videomaker · Motion'},
+  {id:'fina',  emoji:'💳', name:'FINA',  role:'Finanças PJ'},
 ];
 
 const CMD_CREWS = [
-  {type:'weekly',     ico:'🗓️',  name:'SEMANAL',    desc:'IVE + REX + KAI + VERA + LUNA + NOX + ECHO'},
-  {type:'financial',  ico:'💰', name:'FINANCEIRA',  desc:'GUARD + REX — análise MEI, ROAS e caixa'},
-  {type:'mining',     ico:'🔭', name:'MINERAÇÃO',   desc:'NEXUS + KAI + VERA — produtos vencedores'},
-  {type:'content',    ico:'🎬', name:'CONTEÚDO',    desc:'VERA + LUNA + NOX — copy + design + reel'},
-  {type:'sales',      ico:'💹', name:'VENDAS',      desc:'SOL + VERA + REX — CRO + recovery + ads'},
-  {type:'marketing',  ico:'📣', name:'MARKETING',   desc:'NOX + VERA + ZARA — calendar + captions'},
-  {type:'seo',        ico:'🔍', name:'SEO',         desc:'MIRA + VERA + THEO — keywords + meta'},
-  {type:'automation', ico:'⚙️',  name:'AUTOMAÇÃO',  desc:'PIPE + THEO — workflows n8n completos'},
-  {type:'cx',         ico:'💬', name:'CX',          desc:'LENA — resolver ticket de cliente'},
-  {type:'audit',      ico:'🩺', name:'AUDITORIA',   desc:'THEO + REX + ECHO — diagnóstico geral'},
+  {type:'weekly',       ico:'🗓️',  name:'SEMANAL',     desc:'IVE + KAI + VERA + LUNA + NOX + ECHO'},
+  {type:'financial',    ico:'💰', name:'FINANCEIRA',   desc:'GUARD + FINA — MEI, ROAS, caixa, PJ'},
+  {type:'mining',       ico:'🔭', name:'MINERAÇÃO',    desc:'NEXUS + KAI + VERA — produtos vencedores'},
+  {type:'content',      ico:'🎬', name:'CONTEÚDO',     desc:'VERA + LUNA + NOX — copy + design + reel'},
+  {type:'sales',        ico:'🎯', name:'VENDAS',       desc:'SOL + VERA + REX — CRO + recovery + ads'},
+  {type:'marketing',    ico:'📣', name:'MARKETING',    desc:'NOX + VERA + ZARA — calendar + captions'},
+  {type:'seo',          ico:'🔎', name:'SEO',          desc:'MIRA + VERA + THEO — keywords + meta'},
+  {type:'automation',   ico:'🔌', name:'AUTOMAÇÃO',    desc:'PIPE + THEO — 17 workflows n8n'},
+  {type:'cx',           ico:'💬', name:'CX',           desc:'LENA + ZARA — tickets + DMs + fidelização'},
+  {type:'audit',        ico:'🔍', name:'AUDITORIA',    desc:'ECHO + THEO + REX — diagnóstico Kaizen'},
+  {type:'design',       ico:'🎨', name:'DESIGN',       desc:'LUNA + ARTE + FEED — criativos + publicação'},
+  {type:'video',        ico:'🎥', name:'VÍDEO',        desc:'VEGA + NOX + ARTE — roteiro + motion + Reel'},
+  {type:'social_post',  ico:'📲', name:'POST HOJE',    desc:'NOX + ARTE + VERA + FEED — postar agora'},
+  {type:'store_update', ico:'🛍️', name:'LOJA',         desc:'THEO + KAI + VERA — produtos + SEO + CRO'},
+  {type:'financial_ops',ico:'💳', name:'FINANÇAS PJ',  desc:'FINA + GUARD — pagamentos + relatório mensal'},
 ];
 
 function buildCommandCenter() {
@@ -3191,6 +3262,95 @@ async function cmdLaunchCrew(crewType) {
   }
 }
 
+// ══════════════════════════════════════════════════════════
+// KAIZEN EVOLVE — /agents evolve
+// ══════════════════════════════════════════════════════════
+async function agentsEvolve() {
+  const BACKEND = typeof BRIDGE !== 'undefined' ? BRIDGE : 'http://localhost:8000';
+  showToast('🧬 Iniciando evolução Kaizen dos 20 agentes...');
+  appendLine('🧬 /agents evolve — iniciando ciclo de aprendizado contínuo...', 'system');
+
+  const btn = document.querySelector('.qcmd[onclick="agentsEvolve()"]');
+  if (btn) { btn.style.opacity = '0.5'; btn.style.pointerEvents = 'none'; }
+
+  try {
+    const r = await fetch(`${BACKEND}/agents/evolve`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({context: 'Ciclo semanal Kaizen — evolução automática dos 20 agentes'})
+    });
+    const d = await r.json();
+    const rel = d.relatorio || {};
+
+    appendLine(`✅ Kaizen concluído — ${rel.agentes_evoluidos || 20} agentes evoluídos`, 'success-log');
+    if (rel.resumo_executivo) {
+      appendLine(rel.resumo_executivo, 'response');
+    }
+    appendLine(`📊 Score médio: ${rel.score_medio_antes} → ${rel.score_medio_depois}`, 'agent-tag');
+    if (rel.top_performers?.length) {
+      appendLine(`🏆 Top: ${rel.top_performers.join(' · ')}`, 'agent-tag');
+    }
+    if (rel.precisa_atencao?.length) {
+      appendLine(`⚠️  Atenção: ${rel.precisa_atencao.join(' · ')}`, 'error');
+    }
+
+    // Atualiza o score na statsbar
+    const el = document.getElementById('sv-kaizen');
+    if (el && rel.score_medio_depois) el.textContent = rel.score_medio_depois + '/10';
+
+    showToast(`✅ Kaizen: ${rel.agentes_evoluidos} agentes evoluídos`);
+
+    feedAddEntry({
+      ts: new Date().toISOString().slice(0,19).replace('T',' '),
+      ts_short: new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+      agent: 'ECHO',
+      action: `Kaizen ${rel.semana} — score ${rel.score_medio_antes}→${rel.score_medio_depois}`,
+      detail: rel.resumo_executivo?.slice(0,200) || '',
+      category: 'agent',
+    });
+  } catch(e) {
+    appendLine(`⚠️ Kaizen offline — backend não acessível: ${e.message}`, 'error');
+    showToast('⚠️ Backend offline — inicie o servidor');
+  } finally {
+    if (btn) { btn.style.opacity = ''; btn.style.pointerEvents = ''; }
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// STATS — busca Kaizen score + dados da loja
+// ══════════════════════════════════════════════════════════
+async function fetchKaizenStats() {
+  const BACKEND = typeof BRIDGE !== 'undefined' ? BRIDGE : 'http://localhost:8000';
+  try {
+    const r = await fetch(`${BACKEND}/agents/kaizen`, {signal: AbortSignal.timeout(5000)});
+    const d = await r.json();
+    const score = d.kaizen?.score_medio;
+    const el = document.getElementById('sv-kaizen');
+    if (el && score) el.textContent = score + '/10';
+  } catch(e) {}
+}
+
+async function fetchStoreStats() {
+  const BACKEND = typeof BRIDGE !== 'undefined' ? BRIDGE : 'http://localhost:8000';
+  try {
+    const r = await fetch(`${BACKEND}/store/status`, {signal: AbortSignal.timeout(5000)});
+    const d = await r.json();
+    const pEl = document.getElementById('sv-produtos');
+    if (pEl && d.products_active) pEl.textContent = d.products_active;
+    const aEl = document.getElementById('sv-agents');
+    if (aEl && d.agents_count) aEl.textContent = d.agents_count;
+    const phEl = document.getElementById('sv-phase');
+    if (phEl && d.fase) phEl.textContent = (d.fase || 'OPERAÇÃO').toUpperCase().slice(0,12);
+    const taskEl = document.getElementById('sv-exec');
+    if (taskEl && d.workflows_executed !== undefined) taskEl.textContent = d.workflows_executed;
+  } catch(e) {}
+}
+
+// Executa ao carregar
+setTimeout(fetchKaizenStats, 2000);
+setTimeout(fetchStoreStats, 2500);
+setInterval(fetchKaizenStats, 120000); // refresh a cada 2min
+
 // Inicializa o Command Center
 buildCommandCenter();
 
@@ -3221,10 +3381,10 @@ document.addEventListener('keydown', e => {
   <div id="mar-header">
     <div>
       <div class="mar-logo">🏃 MARATONA FIM DE SEMANA</div>
-      <div class="mar-sub">SEXTA · SÁBADO · DOMINGO — 17 agentes em operação total</div>
+      <div class="mar-sub">SEXTA · SÁBADO · DOMINGO — 20 agentes em operação total</div>
     </div>
     <div id="mar-progress-bar"><div id="mar-progress-fill"></div></div>
-    <span id="mar-progress-txt">0 / 17 concluídas</span>
+    <span id="mar-progress-txt">0 / 20 concluídas</span>
     <button class="mar-close" onclick="closeMarathon()">✕</button>
   </div>
 
@@ -3271,9 +3431,10 @@ document.addEventListener('keydown', e => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 const AGENT_EMOJIS = {
-  ive:'👑', guard:'🛡️', nexus:'🔭', theo:'⚙️', kai:'💎', vera:'✍️',
-  luna:'🎨', nox:'📸', rex:'📈', echo:'🔍', lena:'💬', sol:'💰',
-  zara:'🌸', mira:'🔎', pipe:'🔗', arte:'🖼️', feed:'📣', dev:'💻',
+  ive:'👑', guard:'🛡️', nexus:'🔭', theo:'⚙️', kai:'📦', vera:'✍️',
+  luna:'🎨', nox:'🎬', rex:'📈', echo:'🔍', lena:'💬', sol:'🎯',
+  zara:'🌸', mira:'🔎', pipe:'🔌', arte:'🖼️', feed:'📲', dev:'💻',
+  vega:'🎥', fina:'💳',
 };
 const AREA_COLORS = {
   site:'#5B8FD4', social:'#9B7FD4', produto:'#B4945A', marketing:'#E05252', operacoes:'#4CAF82',
@@ -3475,7 +3636,7 @@ async function marReset() {
   await fetch(`${BACKEND}/marathon/reset`, {method:'POST'}).catch(()=>{});
   _marData = null;
   document.getElementById('mar-progress-fill').style.width = '0%';
-  document.getElementById('mar-progress-txt').textContent = '0 / 17 concluídas';
+  document.getElementById('mar-progress-txt').textContent = '0 / 20 concluídas';
   document.getElementById('mar-tasks-panel').innerHTML = '';
   document.getElementById('mar-dec-list').innerHTML = '<div style="color:var(--text-d);font-size:9px;text-align:center;padding:30px 10px;line-height:1.8">Sem decisões pendentes.</div>';
   showToast('↺ Maratona resetada');

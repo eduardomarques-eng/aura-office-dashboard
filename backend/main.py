@@ -768,6 +768,7 @@ async def _run_crew_background(crew_type: str, context: str, agent_notify: str =
         from crew_agents import (
             build_design_crew, build_social_post_crew, build_store_update_crew,
             build_shopify_dev_crew, build_seasonal_update_crew, build_conversion_crew,
+            build_product_images_crew,
             _kickoff_with_retry,
         )
         loop = asyncio.get_event_loop()
@@ -783,6 +784,8 @@ async def _run_crew_background(crew_type: str, context: str, agent_notify: str =
             crew = build_seasonal_update_crew(context)
         elif crew_type == "conversion":
             crew = build_conversion_crew(context)
+        elif crew_type == "product_images":
+            crew = build_product_images_crew()
         else:
             return
         result = await loop.run_in_executor(None, lambda: _kickoff_with_retry(crew))
@@ -1756,6 +1759,7 @@ async def run_crew(body: CrewBody):
             build_sales_crew, build_marketing_crew, build_seo_crew, build_automation_crew,
             build_design_crew, build_social_post_crew, build_store_update_crew,
             build_shopify_dev_crew, build_seasonal_update_crew, build_conversion_crew,
+            build_product_images_crew,
         )
         loop = asyncio.get_event_loop()
 
@@ -1775,6 +1779,7 @@ async def run_crew(body: CrewBody):
         elif body.crew_type == "shopify_dev":      crew = build_shopify_dev_crew(ctx)
         elif body.crew_type == "seasonal_update":  crew = build_seasonal_update_crew(body.product or "")
         elif body.crew_type == "conversion":       crew = build_conversion_crew(ctx)
+        elif body.crew_type == "product_images":   crew = build_product_images_crew()
         else:                                      crew = build_weekly_crew(ctx)
 
         result = await loop.run_in_executor(None, crew.kickoff)
@@ -2027,8 +2032,8 @@ async def health():
     return {
         "status": "online" if not issues else "degraded",
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "agents": len(AGENT_SYSTEMS),
-        "phase": "lançamento",
+        "agents": 20,
+        "phase": "operacao",
         "ts": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "apis": {
             "groq": {
@@ -3273,7 +3278,7 @@ async def bridge_compat_status():
 
 @app.get("/agents")
 async def list_agents_compat():
-    """Lista os 15 agentes ativos."""
+    """Lista os agentes ativos com score Kaizen quando disponível."""
     agents_info = {
         aid: {
             "name": AGENT_DISPLAY[aid][0],
@@ -3281,7 +3286,69 @@ async def list_agents_compat():
             "system": AGENT_SYSTEMS[aid][:120] + "...",
         } for aid in AGENT_SYSTEMS
     }
-    return {"agents": agents_info, "phase": "operacao"}
+    try:
+        from agent_kaizen import get_kaizen_summary
+        kaizen = get_kaizen_summary()
+        for aid, info in agents_info.items():
+            nome = AGENT_DISPLAY[aid][0].split(" — ")[0] if " — " in AGENT_DISPLAY[aid][0] else AGENT_DISPLAY[aid][0]
+            agent_kaizen = kaizen["agentes"].get(nome, {})
+            info["kaizen_score"] = agent_kaizen.get("score", None)
+            info["kaizen_execucoes"] = agent_kaizen.get("execucoes", 0)
+        agents_info["_kaizen_score_medio"] = kaizen["score_medio"]
+        agents_info["_kaizen_semana"] = kaizen["semana"]
+    except Exception:
+        pass
+    return {"agents": agents_info, "phase": "operacao", "total": 20}
+
+
+class EvolveBody(BaseModel):
+    context: str = ""  # Contexto adicional de Eduardo para guiar a evolução
+
+
+@app.post("/agents/evolve")
+async def agents_evolve(body: EvolveBody = EvolveBody()):
+    """
+    Comando /agents evolve — Executa evolução Kaizen completa de todos os 20 agentes.
+    - Audita performance de cada agente
+    - Atualiza skills com base em métricas reais
+    - Escreve DNA de aprendizado no vault
+    - Atualiza DNA compartilhado entre todos os agentes
+    - Retorna relatório executivo com IVE
+    """
+    try:
+        from agent_kaizen import run_agents_evolve
+        relatorio = run_agents_evolve(eduardo_context=body.context)
+        return {"status": "ok", "relatorio": relatorio}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/agents/kaizen")
+async def agents_kaizen_status():
+    """Retorna o estado atual do sistema Kaizen de todos os agentes."""
+    try:
+        from agent_kaizen import get_kaizen_summary
+        return {"status": "ok", "kaizen": get_kaizen_summary()}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/agents/{agent_id}/record-execution")
+async def record_agent_execution(agent_id: str, body: dict):
+    """Registra uma execução de tarefa no histórico Kaizen do agente."""
+    try:
+        from agent_kaizen import record_execution
+        record_execution(
+            agent_id=agent_id.lower(),
+            task=body.get("task", ""),
+            success=body.get("success", True),
+            duration_min=float(body.get("duration_min", 0)),
+            quality_score=float(body.get("quality_score", 7.0)),
+            notes=body.get("notes", ""),
+        )
+        return {"status": "ok", "agent": agent_id}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 # ══════════════════════════════════════════════════════════════════════════════
 # REDES SOCIAIS — stubs gracefully degradados (Facebook integration vive no bridge)
