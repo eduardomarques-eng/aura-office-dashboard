@@ -37,6 +37,13 @@ PINTEREST_URL         = os.getenv("PINTEREST_URL", "https://br.pinterest.com/aur
 PINTEREST_ACCESS_TOKEN = os.getenv("PINTEREST_ACCESS_TOKEN", "")  # OAuth via developers.pinterest.com
 TIKTOK_URL            = os.getenv("TIKTOK_URL", "https://www.tiktok.com/@decore.aura")
 TIKTOK_ACCESS_TOKEN   = os.getenv("TIKTOK_ACCESS_TOKEN", "")      # OAuth via business.tiktok.com
+TIKTOK_CLIENT_KEY     = os.getenv("TIKTOK_CLIENT_KEY", "")        # app "Aura Decore Social" (7651513140559300629)
+TIKTOK_CLIENT_SECRET  = os.getenv("TIKTOK_CLIENT_SECRET", "")
+# Auto-publish só liga quando o app está aprovado pela plataforma E a publicação via API
+# está implementada. Ter o token NÃO basta: Pinterest exige consumer type Business e
+# TikTok exige Content Posting API + redirect URI configurados no portal. Até lá → manual.
+PINTEREST_API_READY   = os.getenv("PINTEREST_API_READY", "false").lower() == "true"
+TIKTOK_API_READY      = os.getenv("TIKTOK_API_READY", "false").lower() == "true"
 
 
 def get_valid_token() -> str:
@@ -304,8 +311,11 @@ def salvar_post_arquivo(content: dict, produto: dict) -> str:
         "facebook": content.get("facebook"),
         "pinterest": _gerar_conteudo_pinterest(produto, ig_caption),
         "tiktok": _gerar_conteudo_tiktok(ig_caption),
-        "canais_auto": ["instagram", "facebook"],
-        "canais_manual": [] + (["pinterest"] if not PINTEREST_ACCESS_TOKEN else []) + (["tiktok"] if not TIKTOK_ACCESS_TOKEN else []),
+        "canais_auto": ["instagram", "facebook"]
+                       + (["pinterest"] if PINTEREST_API_READY else [])
+                       + (["tiktok"] if TIKTOK_API_READY else []),
+        "canais_manual": ([] if PINTEREST_API_READY else ["pinterest"])
+                       + ([] if TIKTOK_API_READY else ["tiktok"]),
         "gerado_em": datetime.now().isoformat()
     }
     with open(filepath, "w", encoding="utf-8") as f:
@@ -347,10 +357,12 @@ def main(dry_run: bool = False):
     tiktok_content = _gerar_conteudo_tiktok(content.get("instagram", ""))
     print(f"\n  📌 PINTEREST (manual):\n  {pinterest_content[:150]}...")
     print(f"\n  🎵 TIKTOK (manual):\n  {tiktok_content[:150]}...")
-    if not PINTEREST_ACCESS_TOKEN:
-        print(f"  ⚠️  Pinterest: PINTEREST_ACCESS_TOKEN ausente — postar manualmente em {PINTEREST_URL}")
-    if not TIKTOK_ACCESS_TOKEN:
-        print(f"  ⚠️  TikTok: TIKTOK_ACCESS_TOKEN ausente — postar manualmente em {TIKTOK_URL}")
+    if not PINTEREST_API_READY:
+        motivo = "app aguarda consumer type Business" if PINTEREST_ACCESS_TOKEN else "PINTEREST_ACCESS_TOKEN ausente"
+        print(f"  ⚠️  Pinterest ({motivo}) — postar manualmente em {PINTEREST_URL}")
+    if not TIKTOK_API_READY:
+        motivo = "app aguarda Content Posting API + redirect URI" if TIKTOK_CLIENT_KEY else "TIKTOK_ACCESS_TOKEN ausente"
+        print(f"  ⚠️  TikTok ({motivo}) — postar manualmente em {TIKTOK_URL}")
 
     # ── 4. Publicar ──
     if dry_run:
