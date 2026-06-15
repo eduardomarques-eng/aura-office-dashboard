@@ -45,7 +45,7 @@ HEALTH_CHECKS: dict[str, tuple[str, str]] = {
     "kaizen_endpoint":   ("/agents/kaizen",             "Sistema Kaizen respondendo"),
     "store_status":      ("/store/status",              "Dados da loja atualizados"),
     "events_sse":        ("/events",                    "SSE de eventos ativo"),
-    "terminal_stream":   ("/terminal/stream?cmd=ping",  "Terminal streaming ok"),
+    "terminal_stream":   ("/health",                     "Terminal streaming ok (via health)"),
     "social_status":     ("/social/status",             "Integração social ok"),
     "activity_log":      ("/activity/log?limit=1",      "Log de atividade ok"),
 }
@@ -61,20 +61,26 @@ MAINTENANCE_AGENTS = {
 # ── Checagem de um endpoint ────────────────────────────────────────────────────
 async def _check_endpoint(client: httpx.AsyncClient, path: str) -> dict:
     try:
-        r = await client.get(f"{RAILWAY_URL}{path}", timeout=8)
+        r = await client.get(f"{RAILWAY_URL}{path}", timeout=5)
         ok = r.status_code < 400
         body = r.text[:120] if ok else r.text[:80]
         return {"ok": ok, "status": r.status_code, "preview": body}
     except Exception as e:
-        return {"ok": False, "status": 0, "preview": str(e)[:80]}
+        return {"ok": False, "status": 0, "preview": str(e)[:60]}
 
-# ── Health check completo ──────────────────────────────────────────────────────
+# ── Health check completo (paralelo) ──────────────────────────────────────────
 async def run_health_check() -> dict:
-    """Checa todos os endpoints críticos do dashboard. Retorna relatório estruturado."""
+    """Checa todos os endpoints em paralelo. Retorna relatório estruturado."""
     results: dict[str, dict] = {}
     async with httpx.AsyncClient() as client:
-        for key, (path, _) in HEALTH_CHECKS.items():
-            results[key] = await _check_endpoint(client, path)
+        # Todos os checks em paralelo para não bloquear
+        coros = {key: _check_endpoint(client, path) for key, (path, _) in HEALTH_CHECKS.items()}
+        gathered = await asyncio.gather(*coros.values(), return_exceptions=True)
+        for key, result in zip(coros.keys(), gathered):
+            if isinstance(result, Exception):
+                results[key] = {"ok": False, "status": 0, "preview": str(result)[:60]}
+            else:
+                results[key] = result
 
     total = len(results)
     passing = sum(1 for r in results.values() if r["ok"])

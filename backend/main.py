@@ -1028,14 +1028,14 @@ async def dashboard_maintenance_scheduler():
                 if _MAINTENANCE_OK:
                     resultado = await run_daily_maintenance(triggered_by="scheduler-08h-brt")
                     score = resultado["health"]["score"]
-                    await manager.broadcast(json.dumps({
+                    await manager.broadcast({
                         "type": "maintenance_complete",
                         "score": score,
                         "status": resultado["health"]["status"],
                         "fixes": len(resultado["fixes_aplicados"]),
                         "timestamp": resultado["health"]["timestamp"],
-                        "message": f"🔧 Manutenção diária concluída — Score {score}/10",
-                    }))
+                        "message": f"Manutencao diaria concluida — Score {score}/10",
+                    })
                     print(f"[MANUTENÇÃO SCHEDULER] Score: {score}/10 — {today}")
                     _log_activity("ECHO", "🔧 Manutenção diária concluída",
                                   f"Score: {score}/10 | {resultado['health']['passing']}/{resultado['health']['total']} checks ok",
@@ -3439,14 +3439,17 @@ async def dashboard_maintain(request: Request):
     triggered_by = body.get("triggered_by", "api")
     try:
         resultado = await run_daily_maintenance(triggered_by=triggered_by)
-        # Broadcast via WebSocket para o dashboard em tempo real
-        await manager.broadcast(json.dumps({
-            "type": "maintenance",
-            "score": resultado["health"]["score"],
-            "status": resultado["health"]["status"],
-            "fixes": len(resultado["fixes_aplicados"]),
-            "timestamp": resultado["health"]["timestamp"],
-        }))
+        # Broadcast via WebSocket (não bloqueia se não houver conexões)
+        try:
+            await manager.broadcast({
+                "type": "maintenance",
+                "score": resultado["health"]["score"],
+                "status": resultado["health"]["status"],
+                "fixes": len(resultado["fixes_aplicados"]),
+                "timestamp": resultado["health"]["timestamp"],
+            })
+        except Exception:
+            pass
         return resultado
     except Exception as e:
         return {"status": "error", "message": str(e)}
