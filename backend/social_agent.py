@@ -10,7 +10,7 @@ Uso:
   python social_agent.py --dry-run     # Gera sem postar (preview)
   python social_agent.py --schedule    # Mostra config do agendador
 """
-import os, sys, json, time, pathlib, argparse
+import os, sys, json, time, pathlib, argparse, subprocess
 from datetime import datetime
 import httpx
 from dotenv import load_dotenv
@@ -44,6 +44,8 @@ TIKTOK_CLIENT_SECRET  = os.getenv("TIKTOK_CLIENT_SECRET", "")
 # TikTok exige Content Posting API + redirect URI configurados no portal. Até lá → manual.
 PINTEREST_API_READY   = os.getenv("PINTEREST_API_READY", "false").lower() == "true"
 TIKTOK_API_READY      = os.getenv("TIKTOK_API_READY", "false").lower() == "true"
+# Chrome automation: posta via TikTok Studio (sem API — igual ao FB Pessoal)
+TIKTOK_CHROME_ENABLED = os.getenv("TIKTOK_CHROME_ENABLED", "true").lower() == "true"
 
 
 def get_valid_token() -> str:
@@ -277,6 +279,28 @@ def postar_instagram(caption: str, image_url: str = "", dry_run: bool = False) -
         return {"ok": False, "msg": str(e)}
 
 
+def postar_tiktok_chrome(video_path: str, caption: str, dry_run: bool = False) -> dict:
+    """Posta vídeo no TikTok @decore.aura via Chrome automation (Playwright).
+    Usa tiktok_chrome_post.py — não requer API TikTok, só sessão Chrome ativa."""
+    if not video_path or not pathlib.Path(video_path).exists():
+        return {"ok": False, "msg": f"Vídeo não encontrado: {video_path}"}
+
+    script = pathlib.Path(__file__).parent / "tiktok_chrome_post.py"
+    cmd = [sys.executable, str(script), "--video", video_path, "--caption", caption]
+    if dry_run:
+        cmd.append("--dry-run")
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300, encoding="utf-8")
+        if result.returncode == 0:
+            return {"ok": True, "msg": "Publicado via TikTok Studio Chrome"}
+        return {"ok": False, "msg": result.stderr or result.stdout or "Erro desconhecido"}
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "msg": "Timeout: upload demorou mais de 5 min"}
+    except Exception as e:
+        return {"ok": False, "msg": str(e)}
+
+
 def _gerar_conteudo_pinterest(produto: dict, caption_ig: str) -> str:
     """Adapta caption IG para formato Pinterest pin (título SEO + descrição curta + link)."""
     nome = produto.get("name", "")
@@ -313,9 +337,9 @@ def salvar_post_arquivo(content: dict, produto: dict) -> str:
         "tiktok": _gerar_conteudo_tiktok(ig_caption),
         "canais_auto": ["instagram", "facebook"]
                        + (["pinterest"] if PINTEREST_API_READY else [])
-                       + (["tiktok"] if TIKTOK_API_READY else []),
+                       + (["tiktok"] if (TIKTOK_API_READY or TIKTOK_CHROME_ENABLED) else []),
         "canais_manual": ([] if PINTEREST_API_READY else ["pinterest"])
-                       + ([] if TIKTOK_API_READY else ["tiktok"]),
+                       + ([] if (TIKTOK_API_READY or TIKTOK_CHROME_ENABLED) else ["tiktok"]),
         "gerado_em": datetime.now().isoformat()
     }
     with open(filepath, "w", encoding="utf-8") as f:
@@ -356,13 +380,12 @@ def main(dry_run: bool = False):
     pinterest_content = _gerar_conteudo_pinterest(produto, content.get("instagram", ""))
     tiktok_content = _gerar_conteudo_tiktok(content.get("instagram", ""))
     print(f"\n  📌 PINTEREST (manual):\n  {pinterest_content[:150]}...")
-    print(f"\n  🎵 TIKTOK (manual):\n  {tiktok_content[:150]}...")
+    print(f"\n  🎵 TIKTOK caption:\n  {tiktok_content[:150]}...")
     if not PINTEREST_API_READY:
         motivo = "app aguarda consumer type Business" if PINTEREST_ACCESS_TOKEN else "PINTEREST_ACCESS_TOKEN ausente"
         print(f"  ⚠️  Pinterest ({motivo}) — postar manualmente em {PINTEREST_URL}")
-    if not TIKTOK_API_READY:
-        motivo = "app aguarda Content Posting API + redirect URI" if TIKTOK_CLIENT_KEY else "TIKTOK_ACCESS_TOKEN ausente"
-        print(f"  ⚠️  TikTok ({motivo}) — postar manualmente em {TIKTOK_URL}")
+    if not TIKTOK_API_READY and not TIKTOK_CHROME_ENABLED:
+        print(f"  ⚠️  TikTok — postar manualmente em {TIKTOK_URL}")
 
     # ── 4. Publicar ──
     if dry_run:
@@ -370,6 +393,7 @@ def main(dry_run: bool = False):
         return
 
     print("\n  [3/3] Publicando...")
+    tiktok_video = getattr(main, "_tiktok_video", "")
 
     fb_result = postar_facebook(content["facebook"])
     if fb_result["ok"]:
@@ -390,6 +414,18 @@ def main(dry_run: bool = False):
         if "não configurado" in ig_result.get("msg", ""):
             print("     → Configure META_ACCESS_TOKEN no .env (= FB_PAGE_TOKEN)")
 
+    # TikTok via Chrome (se vídeo fornecido e Chrome habilitado)
+    if TIKTOK_CHROME_ENABLED and tiktok_video:
+        print(f"\n  🎵 TikTok (Chrome) — publicando: {pathlib.Path(tiktok_video).name}")
+        tt_result = postar_tiktok_chrome(tiktok_video, tiktok_content)
+        if tt_result["ok"]:
+            print(f"  ✅ TikTok publicado! {tt_result.get('msg', '')}")
+        else:
+            print(f"  ❌ TikTok: {tt_result['msg']}")
+    elif TIKTOK_CHROME_ENABLED and not tiktok_video:
+        print(f"\n  🎵 TikTok (Chrome habilitado) — passe --tiktok-video para publicar")
+        print(f"     Caption salvo: social_posts/{datetime.now().strftime('%Y-%m-%d')}.json")
+
     print("\n" + "=" * 60)
     print("  CONCLUÍDO")
     print("=" * 60)
@@ -399,6 +435,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Aura Decore Social Agent")
     parser.add_argument("--dry-run", action="store_true", help="Preview sem publicar")
     parser.add_argument("--schedule", action="store_true", help="Mostrar config agendador")
+    parser.add_argument("--tiktok-video", default="", help="Caminho do vídeo .mp4 para postar no TikTok via Chrome")
     args = parser.parse_args()
 
     if args.schedule:
@@ -413,4 +450,5 @@ Agendamento diário (Railway cron via Procfile):
   command = "python backend/social_agent.py"
 """)
     else:
+        main._tiktok_video = args.tiktok_video
         main(dry_run=args.dry_run)
