@@ -60,51 +60,69 @@ def postar_tiktok(video_path: str, caption: str, dry_run: bool = False) -> dict:
     print(f"\n  🎵 TikTok Studio — iniciando Chrome...")
 
     with sync_playwright() as p:
-        # Usa o perfil Chrome existente (sessão TikTok já logada)
-        try:
-            ctx = p.chromium.launch_persistent_context(
-                user_data_dir=CHROME_PROFILE,
-                channel="chrome",
-                headless=False,
-                args=["--no-sandbox", "--disable-dev-shm-usage"],
-                timeout=30000,
-            )
-        except Exception as e:
-            # Chrome já aberto com esse perfil — tenta perfil temporário com cookies copiados
-            print(f"  ⚠️  Chrome já aberto: {e}")
-            print(f"  → Tentando com Chromium sem perfil...")
-            ctx = p.chromium.launch_persistent_context(
-                user_data_dir=str(pathlib.Path(__file__).parent / ".tiktok_session"),
-                headless=False,
-            )
+        ctx = None
+        browser = None
+        using_cdp = False
 
-        page = ctx.new_page()
+        # 1ª tentativa: conectar ao Chrome já aberto via CDP (se --remote-debugging-port=9222 ativo)
+        try:
+            browser = p.chromium.connect_over_cdp("http://localhost:9222")
+            ctx_list = browser.contexts
+            ctx_obj = ctx_list[0] if ctx_list else browser.new_context()
+            using_cdp = True
+            print(f"  ✅ Conectado ao Chrome via CDP (porta 9222)")
+        except Exception as cdp_err:
+            # CDP não disponível — tentar lançar Chrome com perfil
+            print(f"  → CDP não disponível: {cdp_err}")
+            print(f"  → Tentando iniciar Chrome com perfil existente...")
+            try:
+                ctx_obj = p.chromium.launch_persistent_context(
+                    user_data_dir=CHROME_PROFILE,
+                    channel="chrome",
+                    headless=False,
+                    args=["--no-sandbox", "--disable-dev-shm-usage"],
+                    timeout=30000,
+                )
+            except Exception as profile_err:
+                msg = (
+                    f"Chrome já está aberto e CDP não está ativo.\n"
+                    f"Execute setup_chrome_debug.bat para ativar CDP, ou feche o Chrome e tente novamente.\n"
+                    f"Detalhes: CDP={cdp_err} | Profile={profile_err}"
+                )
+                return {"ok": False, "msg": msg}
+
+        page = ctx_obj.new_page()
+
+        def _close():
+            try:
+                if using_cdp and browser:
+                    browser.close()
+                elif ctx_obj:
+                    ctx_obj.close()
+            except Exception:
+                pass
 
         try:
             print(f"  → Navegando para {UPLOAD_URL}")
             page.goto(UPLOAD_URL, wait_until="domcontentloaded", timeout=30000)
             page.wait_for_timeout(3000)
 
-            # Verificar se está logado
             content = page.inner_text("body")
             if "Log in" in content or "Iniciar sessão" in content or "Entrar" in content:
-                ctx.close()
+                _close()
                 return {"ok": False, "msg": "TikTok não está logado no Chrome. Faça login em tiktok.com e tente novamente."}
 
-            # Aguardar o input de arquivo aparecer
             print(f"  → Aguardando página de upload...")
             try:
                 page.wait_for_selector(SEL_FILE_INPUT, timeout=15000)
             except PwTimeout:
-                ctx.close()
+                _close()
                 return {"ok": False, "msg": "Página de upload não carregou (timeout). TikTok pode estar com problemas."}
 
-            # Fazer upload do arquivo de vídeo
             print(f"  → Enviando vídeo: {pathlib.Path(video_path).name}")
             file_input = page.locator(SEL_FILE_INPUT).first
             file_input.set_input_files(video_path)
 
-            # Aguardar o editor de caption aparecer (indica que o upload iniciou)
             print(f"  → Aguardando upload processar (pode levar 30-120s)...")
             try:
                 page.wait_for_selector(
@@ -112,12 +130,11 @@ def postar_tiktok(video_path: str, caption: str, dry_run: bool = False) -> dict:
                     timeout=120000
                 )
             except PwTimeout:
-                ctx.close()
+                _close()
                 return {"ok": False, "msg": "Upload demorou mais de 2 min — verifique o Chrome manualmente"}
 
             page.wait_for_timeout(2000)
 
-            # Preencher caption
             print(f"  → Preenchendo caption...")
             caption_el = None
             for sel in [SEL_CAPTION, 'div[contenteditable="true"]', "textarea"]:
@@ -138,7 +155,6 @@ def postar_tiktok(video_path: str, caption: str, dry_run: bool = False) -> dict:
 
             page.wait_for_timeout(2000)
 
-            # Clicar no botão de publicar
             print(f"  → Publicando...")
             posted = False
             for sel in [SEL_POST_BTN, 'button[class*="post"]', 'button[class*="submit"]']:
@@ -152,29 +168,23 @@ def postar_tiktok(video_path: str, caption: str, dry_run: bool = False) -> dict:
                     continue
 
             if not posted:
-                print(f"  ⚠️  Botão de publicar não encontrado — o Chrome está aberto, finalize manualmente")
-                page.wait_for_timeout(30000)  # deixa 30s para ação manual
-                ctx.close()
+                print(f"  ⚠️  Botão de publicar não encontrado")
+                _close()
                 return {"ok": False, "msg": "Botão 'Publicar' não encontrado — publicação manual necessária"}
 
-            # Aguardar confirmação de sucesso
             page.wait_for_timeout(5000)
             final_text = page.inner_text("body")
+            _close()
             if any(w in final_text.lower() for w in ["sucesso", "publicado", "success", "posted"]):
                 print(f"  ✅ TikTok publicado com sucesso!")
-                ctx.close()
                 return {"ok": True, "msg": "Publicado via TikTok Studio"}
             else:
-                print(f"  ✅ Post enviado (sem mensagem de confirmação explícita)")
-                ctx.close()
+                print(f"  ✅ Post enviado (verificar @decore.aura)")
                 return {"ok": True, "msg": "Post enviado — verifique @decore.aura"}
 
         except Exception as e:
             print(f"  ❌ Erro durante postagem: {e}")
-            try:
-                ctx.close()
-            except Exception:
-                pass
+            _close()
             return {"ok": False, "msg": str(e)}
 
 
