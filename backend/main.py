@@ -3476,6 +3476,59 @@ async def cron_daily_maintenance():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# SISTEMA DE COMANDOS SLASH — /cmd/stream
+# ══════════════════════════════════════════════════════════════════════════════
+
+try:
+    import command_router as _cmd_router
+    _CMD_ROUTER_OK = True
+except Exception as _cre:
+    _CMD_ROUTER_OK = False
+    print(f"[WARN] command_router não carregado: {_cre}")
+
+@app.get("/cmd/stream")
+async def cmd_stream(cmd: str, request: Request):
+    """SSE: executa comando slash (/echo now, /i week, etc.) com streaming."""
+    async def event_gen():
+        if not _CMD_ROUTER_OK:
+            yield f"data: {json.dumps({'type':'token','content':'❌ Command router offline'})}\n\n"
+            yield f"data: {json.dumps({'type':'done'})}\n\n"
+            return
+        try:
+            async for line in _cmd_router.execute(cmd):
+                if await request.is_disconnected():
+                    break
+                yield f"data: {json.dumps({'type':'token','content':line})}\n\n"
+                await asyncio.sleep(0)
+        except Exception as e:
+            yield f"data: {json.dumps({'type':'token','content':f'\\n❌ Erro: {e}'})}\n\n"
+        yield f"data: {json.dumps({'type':'done','agent':'sys','provider':'command_router'})}\n\n"
+        _log_activity("SYS", f"Comando: {cmd[:60]}", {"cmd": cmd})
+
+    return EventSourceResponse(event_gen())
+
+@app.get("/cmd/list")
+async def cmd_list():
+    """Lista todos os comandos disponíveis."""
+    return {
+        "commands": {
+            "/i": ["week", "month", "report", "status", "evolve"],
+            "/echo": ["now", "weekly", "kaizen", "<agente>"],
+            "/v": ["reel <tema>", "stories <tema>", "ads <produto>", "auto"],
+            "/l": ["image <desc>", "feed <qtd>", "banner", "product <nome>", "auto"],
+            "/vera": ["product <nome>", "caption <tema>", "ad <produto>", "auto"],
+            "/r": ["report", "optimize", "scale <produto>", "campaign <tipo>"],
+            "/m": ["week", "month", "auto"],
+            "/len": ["script <situação>", "auto"],
+            "/k": ["research <cat>", "portfolio", "auto"],
+            "/t": ["check", "optimize", "status"],
+            "/g": ["report", "alert", "mei"],
+            "/sys": ["status", "weekly", "monthly", "evolve", "fullauto"],
+        },
+        "help": "/help ou /? para lista completa no terminal",
+    }
+
+# ══════════════════════════════════════════════════════════════════════════════
 # REDES SOCIAIS — stubs gracefully degradados (Facebook integration vive no bridge)
 # ══════════════════════════════════════════════════════════════════════════════
 _FB_PAGE_ID    = os.getenv("FB_PAGE_ID", "")
