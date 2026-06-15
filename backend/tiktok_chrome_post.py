@@ -22,9 +22,12 @@ try:
 except Exception:
     pass
 
-UPLOAD_URL  = "https://www.tiktok.com/tiktokstudio/upload"
-POSTS_DIR   = pathlib.Path(__file__).parent / "social_posts"
-CHROME_PROFILE = os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\User Data")
+UPLOAD_URL      = "https://www.tiktok.com/tiktokstudio/upload"
+POSTS_DIR       = pathlib.Path(__file__).parent / "social_posts"
+CHROME_PROFILE  = os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\User Data")
+# Perfil separado para automação (criado por setup_tiktok_profile.bat — funciona com Chrome aberto)
+TIKTOK_PROFILE  = str(pathlib.Path(__file__).parent / "tiktok-chrome-profile")
+EDGE_PROFILE    = str(pathlib.Path(__file__).parent / "tiktok-edge-profile")
 
 # Seletores TikTok Studio (testados em jun/2026)
 SEL_FILE_INPUT  = 'input[type=file][accept*="video"]'
@@ -72,22 +75,31 @@ def postar_tiktok(video_path: str, caption: str, dry_run: bool = False) -> dict:
             using_cdp = True
             print(f"  ✅ Conectado ao Chrome via CDP (porta 9222)")
         except Exception as cdp_err:
-            # CDP não disponível — tentar lançar Chrome com perfil
-            print(f"  → CDP não disponível: {cdp_err}")
-            print(f"  → Tentando iniciar Chrome com perfil existente...")
-            try:
-                ctx_obj = p.chromium.launch_persistent_context(
-                    user_data_dir=CHROME_PROFILE,
-                    channel="chrome",
-                    headless=False,
-                    args=["--no-sandbox", "--disable-dev-shm-usage"],
-                    timeout=30000,
-                )
-            except Exception as profile_err:
+            print(f"  → CDP não disponível.")
+
+            # 2ª tentativa: Edge com perfil TikTok dedicado (criado por setup_edge_tiktok.py)
+            # Edge é um processo SEPARADO do Chrome — funciona mesmo com Chrome aberto
+            edge_profile_ok = pathlib.Path(EDGE_PROFILE).exists()
+            if edge_profile_ok:
+                print(f"  → Usando Microsoft Edge + perfil TikTok dedicado...")
+                try:
+                    ctx_obj = p.chromium.launch_persistent_context(
+                        user_data_dir=EDGE_PROFILE,
+                        channel="msedge",
+                        headless=False,
+                        args=["--no-sandbox"],
+                        timeout=30000,
+                    )
+                except Exception as edge_err:
+                    print(f"  ⚠️  Edge falhou: {edge_err}")
+                    edge_profile_ok = False
+
+            if not edge_profile_ok:
                 msg = (
-                    f"Chrome já está aberto e CDP não está ativo.\n"
-                    f"Execute setup_chrome_debug.bat para ativar CDP, ou feche o Chrome e tente novamente.\n"
-                    f"Detalhes: CDP={cdp_err} | Profile={profile_err}"
+                    f"Perfil Edge TikTok não encontrado. Execute o setup uma vez:\n\n"
+                    f"  python setup_edge_tiktok.py\n\n"
+                    f"Isso abre o Edge para você fazer login no TikTok. Depois, todos os posts são automáticos.\n"
+                    f"(Edge funciona com Chrome aberto — executáveis separados)"
                 )
                 return {"ok": False, "msg": msg}
 
