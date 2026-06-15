@@ -192,17 +192,18 @@ VERA = make_agent(
 )
 
 LUNA = Agent(
-    role="LUNA — Design · Visual",
-    goal="Criar briefings visuais, gerar imagens com IA, exportar designs do Canva Pro e sincronizar tokens do Figma com a loja.",
+    role="LUNA — Design · Visual · Creative Director",
+    goal="Criar criativos profissionais para redes sociais e loja, mantendo identidade visual Japandi premium em todos os materiais.",
     backstory=(
-        "LUNA é a diretora de arte da Aura Decore. Usa o brand kit: terra #B8793A, "
-        "off-white #F5F0EB, Cormorant Garamond + DM Sans. "
-        "Cria briefings visuais detalhados e usa DesignBrief + ImageGen para produzir "
-        "assets reais: posts, banners, fotos de produto, stories. "
-        "Exporta designs do Canva Pro (CanvaExport, CanvaUploadShopify) e sincroniza "
-        "tokens de design do Figma (FigmaTokensSync) para manter o CSS da loja "
-        "sempre alinhado com o design system. "
-        "Garante consistência visual em todos os materiais."
+        "LUNA é a diretora de arte da Aura Decore. Brand kit: terra #B8793A, terracota claro #D4A574, "
+        "areia #EDE5D8, off-white #F5F0EB, verde sálvia #7A9076. Fontes: Cormorant Garamond (títulos) + DM Sans (corpo). "
+        "Opera com o Social Hub como referência: 12 criativos tipificados (4 feed posts, 2 carrosseis, 2 stories, "
+        "2 reel covers, 2 ad creatives). Gera assets via Pollinations AI com prompts detalhados: "
+        "'editorial photography, japandi interior design, terracotta vase, natural light, wabi-sabi aesthetic, "
+        "minimal composition, warm earth tones, 8k quality, no text'. "
+        "Formatos: 1080x1080 feed, 1080x1920 story, 1920x1080 banner loja. "
+        "Exporta via Canva Pro (CanvaExport) e sobe fotos de produto para Shopify (CanvaUploadShopify). "
+        "Sincroniza tokens Figma (FigmaTokensSync) para manter CSS da loja alinhado ao design system."
     ),
     llm=_resolve_llm(SONNET, allow_groq=False),
     tools=LUNA_TOOLS + CANVA_TOOLS + FIGMA_TOOLS,
@@ -211,14 +212,19 @@ LUNA = Agent(
 )
 
 NOX = Agent(
-    role="NOX — Conteúdo · Reels",
-    goal="Produzir calendário de conteúdo, roteiros e briefings visuais para Instagram.",
+    role="NOX — Conteúdo · Reels · Social Media Director",
+    goal="Executar o calendário semanal do Social Hub com scripts de alta conversão, briefings visuais e plano de publicação diário.",
     backstory=(
-        "NOX cria conteúdo orgânico que converte: posts, stories e reels focados em "
-        "decoração e lifestyle Japandi. Usa DesignBrief para estruturar cada criativo. "
-        "Entrega roteiros de 30s (hook 0-3s, dev 3-25s, CTA 25-30s), caption + hashtags. "
-        "Trabalha com LUNA para visual e VERA para copy. "
-        "Posta 3x/dia nos horários de pico: 9h, 14h, 19h."
+        "NOX é o diretor de conteúdo da Aura Decore. Opera com base no Social Media Creative Hub "
+        "(8 scripts de vídeo completos com hook/corpo/CTA, 12 criativos categorizados, calendário semanal). "
+        "Scripts disponíveis: 1-Um Minuto de Paz, 2-Segredo das Casas Bonitas, 3-Unboxing ASMR, "
+        "4-Antes vs Depois Japandi, 5-3 Erros na Decoração, 6-O Que é Japandi, "
+        "7-Canto de Leitura, 8-Por Que Seu Lar Parece Vazio. "
+        "Cada script tem hook 0-3s, corpo 3-22s, CTA 22-30s, caption PT-BR e 10 hashtags otimizadas. "
+        "Pilares: Lifestyle 40%, Produtos 30%, Educação 15%, Bastidores 10%, Social Proof 5%. "
+        "Calendário: posts às 10h (Reel), 14h (Story/Poll), 19h (Carrossel/Feed). "
+        "Usa DesignBrief para briefar LUNA/ARTE com paleta terracota #B8793A, Cormorant Garamond. "
+        "Trabalha com ARTE para gerar criativos via Pollinations, VERA para copy, FEED para publicar."
     ),
     llm=_resolve_llm(SONNET, allow_groq=False),
     tools=NOX_TOOLS,
@@ -355,13 +361,15 @@ FEED = Agent(
     role="FEED — Publicador · Redes Sociais",
     goal="Publicar conteúdo no Facebook e Instagram da Aura Decore de forma autônoma.",
     backstory=(
-        "FEED é o publicador automático da Aura Decore. "
-        "Usa FacebookPost para publicar na página do Facebook e "
-        "InstagramPost para o Instagram Business Account. "
+        "FEED é o publicador automático da Aura Decore. Publica em 3 canais espelhados: "
+        "(1) Instagram Business @auras.decore via Graph API; "
+        "(2) Facebook Página Comercial (ID 1111100822090245) via Graph API; "
+        "(3) Facebook Perfil Pessoal Aura (facebook.com/auras.decore) via Chrome MCP — "
+        "TODA publicação feita na comercial e no Instagram DEVE ser espelhada também no perfil pessoal. "
         "Recebe criativos do ARTE e copy da VERA/NOX e executa a publicação. "
         "Publica 3x/dia nos horários de pico: 9h (produto do dia), "
         "14h (conteúdo educativo/inspiracional), 19h (lifestyle/conversão). "
-        "Reporta ID do post, alcance estimado e status de publicação."
+        "Reporta ID do post de cada canal, alcance estimado e status de publicação."
     ),
     llm=_resolve_llm(SONNET),
     tools=FEED_TOOLS,
@@ -388,6 +396,118 @@ DEV = Agent(
     verbose=True,
     allow_delegation=False,
 )
+
+# ── Agente Financeiro Operacional (adicionado 2026-06-14) ─────────────────────
+
+FINA = make_agent(
+    "FINA", "Finanças Operacional · Pagamentos PJ",
+    "Rastrear custos, alertar vencimentos, registrar assinaturas e preparar relatório financeiro mensal.",
+    "FINA é o agente de operações financeiras da Aura Decore. "
+    "Rastreia todas as assinaturas (Railway, Z-API, Shopify, Anthropic, Canva, Higgsfield etc.), "
+    "alerta Eduardo D-5 antes de cada vencimento, e gera relatório mensal P&L simplificado para GUARD. "
+    "Supervisiona conta PJ (Nubank PJ recomendado), categoriza custos por tipo "
+    "(infra / conteúdo / marketing / ferramentas / fornecedores), "
+    "e propõe novas assinaturas apenas quando ROI é claro. "
+    "FINA nunca executa pagamentos sozinha — prepara, alerta e documenta para Eduardo aprovar. "
+    "Meta: manter custo ferramentas < 15% do faturamento mensal.",
+)
+
+# ── Agente de Vídeo & Motion (adicionado 2026-06-14) ──────────────────────────
+
+# Ferramentas de vídeo (Higgsfield MCP + design_tools)
+try:
+    from video_tools import VEGA_TOOLS
+    _VIDEO_TOOLS_OK = True
+except Exception:
+    VEGA_TOOLS = []
+    _VIDEO_TOOLS_OK = False
+
+VEGA = Agent(
+    role="VEGA — Videomaker · Motion Director",
+    goal="Criar, dirigir e otimizar todos os vídeos da Aura Decore com alto poder de conversão: Reels, Stories, Ads e Shorts.",
+    backstory=(
+        "VEGA é o diretor de vídeo e motion design da Aura Decore. "
+        "Especialista em vídeo para conversão: estrutura Hook (1-3s) → Storytelling → Prova → CTA. "
+        "Domina os 8 templates de roteiro da marca (V01-V08) e aplica sempre a estética Japandi: "
+        "luz natural dourada, movimentos suaves (Ken Burns, parallax, stagger reveal), "
+        "color grading com tons quentes (temperatura +15, HSL laranja +25), "
+        "legendagem animada com Cormorant Garamond italic. "
+        "Paleta: terra #B8793A · areia #EDE5D8 · off-white #F5F0EB · verde sálvia #7A9076. "
+        "Otimiza por plataforma: Reels IG/TikTok (15-30s), YouTube Shorts (30-60s), "
+        "Meta Ads (6-15s), Stories sequenciais (5-7s/frame). "
+        "Meta semanal: 3 Reels + 7 Stories + 3 versões Ads + 2 Shorts = 15 vídeos/semana. "
+        "Orquestra LUNA (assets visuais), ARTE (frames IA), VERA (copy/legenda), "
+        "NOX (calendário), REX (ads), FEED (publicação). "
+        "KPIs: watch time > 60%, salvamentos > 3%, CTR > 2%, ROAS ads > 2.5x."
+    ),
+    llm=_resolve_llm(SONNET, allow_groq=False),
+    tools=VEGA_TOOLS + CANVA_TOOLS,
+    verbose=True,
+    allow_delegation=False,
+)
+
+
+def build_video_crew(tipo: str, tema: str) -> Crew:
+    """Crew de vídeo: VEGA dirige, LUNA entrega assets, VERA escreve copy, NOX agenda publicação."""
+    task_vega_brief = Task(
+        description=(
+            f"Crie um briefing completo de produção de vídeo. Tipo: '{tipo}'. Tema: '{tema}'.\n"
+            "Entregue:\n"
+            "1. Roteiro completo no formato VEGA (HOOK 0-3s / PROBLEMA 3-8s / SOLUÇÃO 8-18s / PROVA 18-24s / CTA 24-30s)\n"
+            "2. Prompt visual para cada cena (estética Japandi, luz natural, paleta terra #B8793A)\n"
+            "3. Técnicas de motion: Ken Burns, parallax, stagger reveal — onde aplicar\n"
+            "4. Color grading: temperatura +15, HSL laranja +25, highlights -20\n"
+            "5. Versão ads (6-15s): versão compacta com CTA direto\n"
+            "6. Formato e resolução por plataforma (Reel 9:16, Ads 1:1 ou 9:16)\n"
+            "Tom: calmo, poético, sofisticado. Nunca urgente ou agressivo. Voz Aura Decore."
+        ),
+        agent=VEGA,
+        expected_output="Roteiro completo + prompts visuais por cena + diretrizes de motion + versão ads.",
+    )
+    task_luna_assets = Task(
+        description=(
+            f"Com base no briefing do VEGA para o tema '{tema}', entregue assets visuais:\n"
+            "1. Use ImageGen para gerar frame principal do vídeo (1080x1920 vertical)\n"
+            "2. Gere thumbnail do Reel (1080x1080) — composição wabi-sabi com produto\n"
+            "3. Gere capa para story (1080x1920) — texto overlay clean\n"
+            "Todos os assets: paleta terra #B8793A + off-white #F5F0EB, luz natural, sem texto sobre produto."
+        ),
+        agent=LUNA,
+        expected_output="3 assets gerados: frame principal + thumbnail Reel + capa Story. URLs confirmadas.",
+    )
+    task_vera_copy = Task(
+        description=(
+            f"Para o vídeo sobre '{tema}', escreva:\n"
+            "1. Legenda completa do Reel (max 150 chars PT-BR, poética, japandi vibe)\n"
+            "2. Narração/script de voz (opcional): frases curtas, cadência calma\n"
+            "3. Texto overlay para cada cena (fonte Cormorant Garamond italic, max 6 palavras por frame)\n"
+            "4. CTA final do vídeo (max 10 palavras, suave, não agressivo)\n"
+            "5. 15 hashtags: #AuraDecore + japondi + decoração + alcance geral\n"
+            "6. Caption do post com o vídeo (Instagram, 200 chars)"
+        ),
+        agent=VERA,
+        expected_output="Legenda Reel + texto overlay por cena + CTA + hashtags + caption Instagram.",
+    )
+    task_nox_schedule = Task(
+        description=(
+            f"Com o vídeo '{tipo}' sobre '{tema}' pronto (briefing VEGA + assets LUNA + copy VERA), "
+            "defina o plano de publicação:\n"
+            "1. Data e horário ideal (Reels: 10h ou 19h em dia de pico)\n"
+            "2. Versão Stories sequenciais: dividir em 3-5 frames de 5s cada\n"
+            "3. Versão Ads (6-15s): passado para REX adaptar no Meta\n"
+            "4. Versão Shorts YouTube: adaptar descrição e thumbnail\n"
+            "5. Calendário de repostagem em 7 dias (Stories reminder)"
+        ),
+        agent=NOX,
+        expected_output="Plano de publicação: data/hora Reel + frames Stories + instrução REX + Shorts + repostagem.",
+    )
+    return Crew(
+        agents=[VEGA, LUNA, VERA, NOX],
+        tasks=[task_vega_brief, task_luna_assets, task_vera_copy, task_nox_schedule],
+        process=Process.sequential,
+        verbose=True,
+    )
+
 
 def build_design_crew(brief: str) -> Crew:
     """Crew de design: LUNA cria briefing, ARTE gera imagem, VERA prepara copy."""
@@ -428,46 +548,81 @@ def build_design_crew(brief: str) -> Crew:
 
 
 def build_social_post_crew(theme: str) -> Crew:
-    """Crew de post social: NOX planeja, ARTE gera visual, VERA escreve copy, FEED publica."""
+    """Crew Social Media completa: NOX seleciona script do hub, ARTE gera criativo, VERA finaliza copy, FEED publica."""
     task_nox = Task(
         description=(
-            f"Crie o plano de conteúdo para o post de hoje sobre: {theme}. "
-            "Use DesignBrief para estruturar o conceito visual. "
-            "Defina: tipo de post (produto/lifestyle/educativo/inspiracional), "
-            "horário ideal, hook de atenção, mensagem principal e CTA."
+            f"Execute o planejamento de conteúdo para hoje com tema: {theme}. "
+            "1. Selecione o script mais adequado da biblioteca do Social Hub (8 disponíveis): "
+            "   - Lifestyle/Branding → Script 1 (Um Minuto de Paz) ou Script 7 (Canto de Leitura) "
+            "   - Educativo/Autoridade → Script 2 (Segredo das Casas Bonitas), 5 (3 Erros), 6 (O Que é Japandi) "
+            "   - Produto/ASMR → Script 3 (Unboxing), Script 8 (Por Que Seu Lar Parece Vazio) "
+            "   - Conversão/Viral → Script 4 (Antes vs Depois) "
+            "2. Adapte o hook (0-3s) para o contexto atual se necessário. "
+            "3. Use DesignBrief para criar o briefing visual com: paleta terracota/areia, composição Japandi, "
+            "   produto em destaque, iluminação natural dourada, wabi-sabi aesthetic. "
+            "4. Defina horário: 10h (Reel/principal), 14h (Story/Poll), 19h (Carrossel/feed). "
+            "5. Pilares: Lifestyle 40% / Produto 30% / Educação 15% / Bastidores 10% / Social Proof 5%."
         ),
         agent=NOX,
-        expected_output="Plano de conteúdo: tipo, conceito visual, hook, mensagem, CTA e briefing para ImageGen.",
+        expected_output=(
+            "Briefing completo: script selecionado (número + nome), hook adaptado, "
+            "conceito visual detalhado para ARTE, horários de publicação e pilar de conteúdo."
+        ),
     )
     task_arte = Task(
         description=(
-            "Gere a imagem para o post usando o briefing do NOX. "
-            "Use ImageGen com o prompt do briefing. "
-            "Formato: 1080x1080 para feed. "
-            "Filename: 'social_post_hoje'."
+            "Gere o criativo visual para o post usando o briefing do NOX. "
+            "Use ImageGen com prompt detalhado em inglês seguindo o brand kit Aura Decore: "
+            "'editorial photography, japandi interior design, wabi-sabi aesthetic, warm earth tones, "
+            "terracotta #B8793A accent, natural golden light, minimal composition, 8k quality, "
+            "no text overlay, clean negative space'. "
+            "Formatos: 1080x1080 para feed, 1080x1920 para story vertical. "
+            "Salve como 'social_post_{data_hoje}'. "
+            "Se tema incluir produto específico, inclua-o como ponto focal da composição. "
+            "Gere variação adicional com fundo escuro (#0a0806) para versão noturna."
         ),
         agent=ARTE,
-        expected_output="URL da imagem gerada para o post.",
+        expected_output="URLs das 2 imagens geradas (feed 1:1 + story 9:16) com descrição da composição visual.",
     )
     task_vera = Task(
         description=(
-            f"Escreva a copy para o post sobre: {theme}. "
-            "Caption: 150-200 chars, emocional, termina com link auradecore.com.br. "
-            "Hashtags: 20 hashtags (mistura: #AuraDecore + nicho + tendência). "
-            "Tom: sofisticado, acolhedor, inspira estilo de vida."
+            f"Finalize a copy completa para publicação com tema: {theme}. "
+            "Use o script e briefing do NOX + imagem do ARTE. "
+            "LEGENDA (PT-BR): "
+            "  - Abre com linha poética (Cormorant Garamond vibe — elegante, contemplativa) "
+            "  - Desenvolve a mensagem em 3-4 linhas curtas com quebras de linha "
+            "  - Inclui benefício emocional do produto/lifestyle Japandi "
+            "  - Termina com CTA: 'Link na bio ↗' ou '✧ Aura Decore — link na bio' "
+            "  - Tom: calmo, poético, minimalista, sofisticado. NUNCA urgente ou agressivo. "
+            "HASHTAGS: 20 tags otimizadas = 3 marca + 5 estilo + 5 nicho + 4 alcance + 3 local. "
+            "Inclua sempre: #AuraDecore #Japandi #DecorMinimalista "
+            "COPY STORY: versão curta (max 3 linhas) para o story com enquete ou CTA."
         ),
         agent=VERA,
-        expected_output="Caption completa + 20 hashtags prontos para publicar.",
+        expected_output=(
+            "Caption completa (legenda + hashtags), "
+            "copy para story/enquete, "
+            "sugestão de áudio/trilha."
+        ),
     )
     task_feed = Task(
         description=(
-            "Publique o post no Facebook e Instagram usando os resultados anteriores. "
-            "Use FacebookPost com a imagem e caption do ARTE/VERA. "
-            "Use InstagramPost com a mesma imagem e caption. "
-            "Reporte o ID de cada post publicado."
+            "Publique o conteúdo completo nos 3 CANAIS ESPELHADOS usando os resultados anteriores. "
+            "1. Instagram Feed @auras.decore: FacebookPost (Instagram via Graph API) com imagem 1:1 + caption + hashtags. "
+            "2. Instagram Story: post da versão story 9:16 (se gerada pelo ARTE). "
+            "3. Facebook Página Comercial (ID 1111100822090245): FacebookPost com mesma imagem + caption simplificada. "
+            "4. Facebook Perfil Pessoal (facebook.com/auras.decore): ESPELHAR o MESMO post da comercial/Instagram "
+            "via Chrome MCP (perfil pessoal não tem API) — mesma imagem + mesma caption. "
+            "Regra: tudo que vai para a comercial e o Instagram TAMBÉM vai para o perfil pessoal. "
+            "Se publicação automática falhar por token expirado (FB_PAGE_TOKEN), "
+            "entregue o pacote completo formatado: imagem URL + caption + hashtags + horário sugerido "
+            "para Eduardo publicar manualmente via agendador (Later/Buffer/Meta Business Suite)."
         ),
         agent=FEED,
-        expected_output="IDs dos posts publicados no Facebook e Instagram (ou status de erro com instruções).",
+        expected_output=(
+            "IDs dos posts publicados no Instagram, Facebook Comercial e confirmação do espelhamento no Perfil Pessoal, "
+            "ou pacote completo para publicação manual com todos os assets organizados."
+        ),
     )
     return Crew(
         agents=[NOX, ARTE, VERA, FEED],
@@ -525,6 +680,72 @@ def build_store_update_crew(context: str) -> Crew:
     return Crew(
         agents=[THEO, VERA, ARTE],
         tasks=[task_theo_list, task_vera, task_arte, task_theo_update],
+        process=Process.sequential,
+        verbose=True,
+    )
+
+
+def build_product_images_crew(products: list = None) -> Crew:
+    """Missão diária: KAI prioriza, ARTE gera imagens profissionais, LUNA aprova, THEO sobe no Shopify.
+    Meta: 5-7 produtos/dia com 1 capa + 2 lifestyle + fotos fornecedor até todos os 54 estarem completos."""
+    context = f"Produtos a atualizar hoje: {products}" if products else "Priorizar produtos mais visitados e com maior margem"
+    task_kai = Task(
+        description=(
+            "Defina a fila de produtos a atualizar HOJE com imagens profissionais. "
+            "Selecione 5–7 produtos priorizando: (1) produtos minerados NEXUS com oportunidade ENTRAR AGORA, "
+            "(2) produtos estrela (Vela Âmbar, Vaso Cerâmica), (3) produtos sem foto profissional. "
+            f"Contexto: {context} "
+            "Retorne lista ordenada com nome do produto, ID Shopify e tipo de imagem necessária."
+        ),
+        agent=KAI,
+        expected_output="Lista priorizada de 5–7 produtos com ID Shopify e briefing de imagem para ARTE.",
+    )
+    task_arte = Task(
+        description=(
+            "Para CADA produto na fila do KAI, gere o pacote completo de imagens:\n"
+            "1. CAPA PROFISSIONAL (800×800px WebP): prompt japandi — '[produto], japandi minimalist product photo, "
+            "warm earth tones #B8793A, soft natural light, ceramic texture, clean background, "
+            "wabi-sabi aesthetic, premium e-commerce photography, ultra realistic, 8K'\n"
+            "2. FOTO LIFESTYLE 1 (800×800px): produto em ambiente japandi decorado — linho, planta seca, madeira\n"
+            "3. FOTO LIFESTYLE 2 (800×800px): close-up textura/material — sensação tátil premium\n"
+            "Gere via Pollinations.ai (rápido) → se baixa qualidade, regerar via Google Imagen (Gemini API). "
+            "Nomear arquivos: [produto-slug]_capa.webp, [produto-slug]_lifestyle1.webp, [produto-slug]_lifestyle2.webp\n"
+            "Adicionar logo Aura watermark sutil (15% opacity, canto inferior direito) via Canva Pro MCP."
+        ),
+        agent=ARTE,
+        expected_output="URLs/paths das imagens geradas (capa + 2 lifestyle) para cada produto, prontas para revisão da LUNA.",
+    )
+    task_luna = Task(
+        description=(
+            "Revise e aprove CADA imagem gerada pelo ARTE. Critérios obrigatórios:\n"
+            "✅ Paleta correta (#B8793A, #F5F0EB, #EDE5D8, #7A9076)\n"
+            "✅ Fundo neutro sem elementos discordantes\n"
+            "✅ Logo Aura visível mas sutil (15% opacity)\n"
+            "✅ Resolução mínima 800×800px, formato WebP\n"
+            "✅ Estética japandi consistente\n"
+            "Se REPROVADA: devolver para ARTE com feedback específico de prompt. "
+            "Se APROVADA: passar para THEO com ordem de exibição definida:\n"
+            "Posição 1: capa profissional | Posição 2: lifestyle 1 | Posição 3: lifestyle 2 | Posição 4+: fornecedor"
+        ),
+        agent=LUNA,
+        expected_output="Lista de imagens aprovadas por produto com ordem de exibição para THEO subir no Shopify.",
+    )
+    task_theo = Task(
+        description=(
+            "Suba TODAS as imagens aprovadas pela LUNA no Shopify para cada produto:\n"
+            "1. Use Shopify Admin API / ShopifyProduct com product_id para cada produto\n"
+            "2. Upload das imagens na ordem definida pela LUNA (capa primeiro)\n"
+            "3. Converter para WebP se necessário (PageSpeed)\n"
+            "4. Definir alt text SEO: '[nome produto] japandi minimalista | Aura Decore'\n"
+            "5. Confirmar upload e registrar produto como ATUALIZADO no vault\n"
+            "Reportar: lista de produtos atualizados hoje + contador acumulado (X/54 completos)."
+        ),
+        agent=THEO,
+        expected_output="Confirmação de upload para cada produto, contador total (X/54 produtos com imagens profissionais completas).",
+    )
+    return Crew(
+        agents=[KAI, ARTE, LUNA, THEO],
+        tasks=[task_kai, task_arte, task_luna, task_theo],
         process=Process.sequential,
         verbose=True,
     )
@@ -874,21 +1095,44 @@ def build_weekly_crew(context: str) -> Crew:
 
 
 def build_content_crew(product: str, copy_angle: str) -> Crew:
-    """Crew focada em criação de conteúdo: VERA + LUNA + NOX."""
+    """Crew focada em criação de conteúdo premium: VERA + LUNA + NOX — alinhada ao Social Media Creative Hub."""
     task_vera = Task(
-        description=f"Escreva copy completa para '{product}' com ângulo: {copy_angle}. Inclua headline, subheadline e 3 bullets.",
+        description=(
+            f"Escreva copy de alta conversão para '{product}' com ângulo: {copy_angle}. "
+            "Siga o brand voice Aura Decore: calmo, poético, minimalista, sofisticado. "
+            "Entregue: headline (máx 8 palavras), subheadline (1 linha), 3 bullets de benefício emocional, "
+            "caption Instagram PT-BR (150-200 chars) + CTA 'link na bio', 15 hashtags otimizadas. "
+            "Tom: nunca urgente, nunca agressivo. Aspira estilo de vida Japandi."
+        ),
         agent=VERA,
-        expected_output="Headline, subheadline e 3 bullets de benefício.",
+        expected_output="Headline, subheadline, 3 bullets, caption IG + hashtags.",
     )
     task_luna = Task(
-        description=f"Crie briefing visual para '{product}' baseado na copy da VERA. Paleta, tipografia e formato.",
+        description=(
+            f"Crie briefing visual completo para criativo de '{product}' seguindo o Social Hub brand kit. "
+            "Paleta: terra #B8793A + areia #EDE5D8 + off-white #F5F0EB. "
+            "Fontes: Cormorant Garamond (headlines) + DM Sans (body). "
+            "Especifique: 3 prompts Pollinations para ImageGen (feed 1080x1080, story 1080x1920, "
+            "thumbnail reel 1080x1080), composição visual (produto como ponto focal, wabi-sabi, "
+            "luz natural dourada, elementos naturais: linho, madeira, cerâmica). "
+            "Use DesignBrief + ImageGen para gerar as imagens."
+        ),
         agent=LUNA,
-        expected_output="Briefing visual em até 4 itens.",
+        expected_output="3 prompts Pollinations + URLs das imagens geradas + especificação visual.",
     )
     task_nox = Task(
-        description=f"Crie roteiro de Reel 30s para '{product}' usando copy da VERA e visual da LUNA.",
+        description=(
+            f"Crie roteiro completo de Reel 30s para '{product}' usando copy da VERA e visual da LUNA. "
+            "Siga estrutura do Social Hub: "
+            "  HOOK (0-3s): pergunta impactante ou visual hipnótico + texto overlay provocativo "
+            "  CORPO (3-22s): 4 cenas com timestamps, produto integrado naturalmente, narrativa Japandi "
+            "  CTA (22-30s): texto overlay clean + logo Aura + call to action suave "
+            "  LEGENDA: adapte a copy da VERA para formato Instagram "
+            "  ÁUDIO: sugira música (lo-fi ambient / piano / ASMR) "
+            "Entregue roteiro pronto para produção, sem necessidade de edição."
+        ),
         agent=NOX,
-        expected_output="Roteiro completo: hook + desenvolvimento + CTA.",
+        expected_output="Roteiro completo com hook/corpo/CTA + legenda + hashtags + sugestão de áudio.",
     )
     return Crew(
         agents=[VERA, LUNA, NOX],
@@ -929,21 +1173,44 @@ def build_sales_crew(context: str) -> Crew:
 
 
 def build_marketing_crew(theme: str) -> Crew:
-    """Crew de marketing: NOX cria conteúdo, VERA escreve copy, ZARA engaja a comunidade."""
+    """Crew de marketing completa: NOX planeja semana com Social Hub, VERA escreve copy premium, ZARA engaja comunidade."""
     task_nox = Task(
-        description=f"Crie um calendário de 7 posts para Instagram com o tema '{theme}'. Mix de feed, stories e reels. Detalhe pillar (educativo/aspiracional/promocional) de cada post.",
+        description=(
+            f"Execute o planejamento semanal de marketing com tema: '{theme}'. "
+            "Crie calendário de 7 dias baseado no Social Media Creative Hub: "
+            "Distribuição por pilares: Lifestyle 40% / Produto 30% / Educação 15% / Bastidores 10% / Social Proof 5%. "
+            "Mix por tipo: Reels (4), Carrosseis (3), Stories diários (7), Foto (1). "
+            "Para cada post defina: dia, horário (10h/14h/19h), tipo, pilar, script_id do hub (1-8 se for Reel), "
+            "produto destaque, hook principal e objetivo (branding/conversão/engajamento/autoridade). "
+            "Inclua pelo menos 1 post que use cada um dos 4 produtos Aura Decore na semana."
+        ),
         agent=NOX,
-        expected_output="Calendário 7 posts: data, tipo, pillar, briefing curto de cada um.",
+        expected_output="Calendário 7 dias completo: data, hora, tipo, pilar, script vinculado, produto, hook, objetivo.",
     )
     task_vera_mkt = Task(
-        description="Para os 7 posts do NOX, escreva caption + 5 hashtags Japandi otimizadas (mix de alta e baixa concorrência).",
+        description=(
+            f"Para os 7 posts do calendário NOX com tema '{theme}', escreva copy completa: "
+            "Caption PT-BR: poética, calma, minimalista (voice Aura Decore). Máx 200 chars. "
+            "15 hashtags por post: 3 marca (#AuraDecore + 2) + 5 estilo Japandi + 5 nicho decoração + 2 alcance geral. "
+            "Para posts de Reel: inclua CTA de legenda alinhado ao script (ex: 'Salva esse reel ✧'). "
+            "Para carrosseis: inclua CTA de deslizar ('Deslize para ver ↓'). "
+            "Para stories: texto curto (<50 chars) + sugestão de enquete ou reação."
+        ),
         agent=VERA,
-        expected_output="Caption + hashtags por post.",
+        expected_output="7 captions completas + 15 hashtags por post + copy de story.",
     )
     task_zara_mkt = Task(
-        description="Para cada post, sugira 3 ações de engagement: contas para marcar, perguntas para stories, formato de enquete. Identifique 2 micro-influencers para colaboração baseada no tema.",
+        description=(
+            "Com base no calendário semanal, crie plano de engajamento da comunidade: "
+            "1. Para cada post: 3 ações (contas para marcar, pergunta para stories, CTA de comentário). "
+            "2. DM de boas-vindas para novos seguidores (texto warm, Japandi vibe). "
+            "3. Resposta padrão para comentários de 'preço?' e 'como comprar?'. "
+            "4. Identifique 3 micro-influencers de decoração brasileira para collab orgânica "
+            "   (perfis com 5K-50K seguidores, estética alinhada, sem custo). "
+            "5. Sugestão de hashtags challenge que @auradecore poderia criar para UGC."
+        ),
         agent=ZARA,
-        expected_output="Plano de engagement por post + 2 micro-influencers sugeridos.",
+        expected_output="Plano de engagement por post + DM boas-vindas + respostas padrão + 3 micro-influencers + ideia de challenge.",
     )
     return Crew(
         agents=[NOX, VERA, ZARA],
