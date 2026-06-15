@@ -32,6 +32,12 @@ STORE_URL       = "https://auradecore.com.br"
 GRAPH_BASE      = "https://graph.facebook.com/v20.0"
 GEMINI_URL      = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 
+# ── Canais extras (Pinterest + TikTok) ────────────────────────
+PINTEREST_URL         = os.getenv("PINTEREST_URL", "https://br.pinterest.com/auradecoracao/")
+PINTEREST_ACCESS_TOKEN = os.getenv("PINTEREST_ACCESS_TOKEN", "")  # OAuth via developers.pinterest.com
+TIKTOK_URL            = os.getenv("TIKTOK_URL", "https://www.tiktok.com/@decore.aura")
+TIKTOK_ACCESS_TOKEN   = os.getenv("TIKTOK_ACCESS_TOKEN", "")      # OAuth via business.tiktok.com
+
 
 def get_valid_token() -> str:
     """Retorna token valido. Se expirado, faz exchange automatico pelo user token."""
@@ -264,20 +270,42 @@ def postar_instagram(caption: str, image_url: str = "", dry_run: bool = False) -
         return {"ok": False, "msg": str(e)}
 
 
+def _gerar_conteudo_pinterest(produto: dict, caption_ig: str) -> str:
+    """Adapta caption IG para formato Pinterest pin (título SEO + descrição curta + link)."""
+    nome = produto.get("name", "")
+    preco = produto.get("price", "")
+    url = produto.get("url", STORE_URL)
+    return f"{nome} — {preco} | Decoração Japandi | Aura Decore\n\n" \
+           f"{caption_ig[:200].strip()}...\n\n" \
+           f"Compre em: {url}"
+
+
+def _gerar_conteudo_tiktok(caption_ig: str) -> str:
+    """Adapta caption IG para TikTok (mais curto, trending hooks, hashtags TikTok-friendly)."""
+    linhas = [l for l in caption_ig.split("\n") if l.strip()]
+    hook = linhas[0] if linhas else "Decoração que transforma."
+    return f"{hook}\n\n#AuraDecore #Japandi #DecorTikTok #CasaMinimalista #WabiSabi #HomeDecorBrasil #DecorInspo"
+
+
 def salvar_post_arquivo(content: dict, produto: dict) -> str:
     """Salva o post gerado em arquivo JSON para revisão."""
     posts_dir = pathlib.Path(__file__).parent / "social_posts"
     posts_dir.mkdir(exist_ok=True)
     today = datetime.now().strftime("%Y-%m-%d")
     filepath = posts_dir / f"{today}.json"
+    ig_caption = content.get("instagram", "")
     post_data = {
         "date": today,
         "tema": content.get("tema"),
         "produto": content.get("produto"),
         "produto_url": produto.get("url"),
         "produto_price": produto.get("price"),
-        "instagram": content.get("instagram"),
+        "instagram": ig_caption,
         "facebook": content.get("facebook"),
+        "pinterest": _gerar_conteudo_pinterest(produto, ig_caption),
+        "tiktok": _gerar_conteudo_tiktok(ig_caption),
+        "canais_auto": ["instagram", "facebook"],
+        "canais_manual": [] + (["pinterest"] if not PINTEREST_ACCESS_TOKEN else []) + (["tiktok"] if not TIKTOK_ACCESS_TOKEN else []),
         "gerado_em": datetime.now().isoformat()
     }
     with open(filepath, "w", encoding="utf-8") as f:
@@ -313,6 +341,16 @@ def main(dry_run: bool = False):
     # ── 3. Salvar ──
     saved_path = salvar_post_arquivo(content, produto)
     print(f"\n  ✅ Post salvo: {saved_path}")
+
+    # ── Preview Pinterest + TikTok ──
+    pinterest_content = _gerar_conteudo_pinterest(produto, content.get("instagram", ""))
+    tiktok_content = _gerar_conteudo_tiktok(content.get("instagram", ""))
+    print(f"\n  📌 PINTEREST (manual):\n  {pinterest_content[:150]}...")
+    print(f"\n  🎵 TIKTOK (manual):\n  {tiktok_content[:150]}...")
+    if not PINTEREST_ACCESS_TOKEN:
+        print(f"  ⚠️  Pinterest: PINTEREST_ACCESS_TOKEN ausente — postar manualmente em {PINTEREST_URL}")
+    if not TIKTOK_ACCESS_TOKEN:
+        print(f"  ⚠️  TikTok: TIKTOK_ACCESS_TOKEN ausente — postar manualmente em {TIKTOK_URL}")
 
     # ── 4. Publicar ──
     if dry_run:
