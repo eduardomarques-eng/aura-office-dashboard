@@ -1327,7 +1327,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 // ══════════════════════════════════════════════════════════
 // CONFIG — BRIDGE / RAILWAY (dual-mode)
 // ══════════════════════════════════════════════════════════
-const IS_PROD = !['localhost','127.0.0.1',''].includes(location.hostname);
+// file:// protocol também é produção (Railway) — só localhost real é local
+const IS_PROD = location.protocol === 'file:' || !['localhost','127.0.0.1',''].includes(location.hostname);
 const RAILWAY = 'https://web-production-f1cb5.up.railway.app';
 let BRIDGE = IS_PROD ? RAILWAY : (localStorage.getItem('aura_bridge_url') || 'http://localhost:8000');
 
@@ -1878,7 +1879,7 @@ function feedSetTab(tab) {
 let _fleetData = null;
 async function loadFleetStatus() {
   try {
-    const base = window._BACKEND_URL || 'http://localhost:8000';
+    const base = window._BACKEND_URL || BRIDGE;
     const r = await fetch(base + '/api/fleet', {signal: AbortSignal.timeout(8000)});
     _fleetData = await r.json();
     // Update stats bar
@@ -1975,7 +1976,7 @@ function renderFleetPanel() {
 async function runFleetNow() {
   showToast('Iniciando post social...');
   try {
-    const base = window._BACKEND_URL || 'http://localhost:8000';
+    const base = window._BACKEND_URL || BRIDGE;
     const r = await fetch(base + '/social/post', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({force:true})});
     const d = await r.json();
     showToast(d.status === 'ok' ? '✅ Post publicado!' : '⚠️ ' + (d.detail||d.status));
