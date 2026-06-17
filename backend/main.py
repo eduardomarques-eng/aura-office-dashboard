@@ -1661,6 +1661,234 @@ async def whatsapp_sessions():
     sessions.sort(key=lambda x: x["idle_min"])
     return {"sessions": sessions, "total": len(sessions)}
 
+# ── Neuromarketing & Disparos Promocionais (NEURO + PROMO) ───────────────────
+
+try:
+    from neuromarketing_engine import (
+        build_neuro_prompt, score_lead, get_template,
+        generate_promo_blast, get_sequence_for_event,
+        DESIRE_MAP, PAIN_MAP, NURTURING_SEQUENCES,
+    )
+    _NEURO_ENGINE_OK = True
+except Exception:
+    _NEURO_ENGINE_OK = False
+
+
+@app.post("/neuro/copy")
+async def neuro_copy(request: Request):
+    """
+    Gera copy de neuromarketing personalizado para um lead.
+    Body: { phone, nome, produto, score?, intent?, history? }
+    Retorna: { message_a, message_b, framework, desejo, dor, lead_score }
+    """
+    try:
+        body = await request.json()
+        phone   = body.get("phone", "")
+        nome    = body.get("nome", "")
+        produto = body.get("produto", "")
+        intent  = body.get("intent", "desejo")
+        history = body.get("history", [])
+
+        customer_ctx = {
+            "first_name":    nome,
+            "orders_count":  body.get("orders_count", 0),
+            "total_spent":   body.get("total_spent", 0),
+            "last_order_at": body.get("last_order_at"),
+        }
+        lead_score = score_lead(customer_ctx) if _NEURO_ENGINE_OK else "morno"
+        neuro_ctx  = build_neuro_prompt({
+            "intent": intent, "customer": customer_ctx, "produto": produto,
+        }) if _NEURO_ENGINE_OK else ""
+
+        # Roteamento para agente NEURO via cascade LLM
+        if _WA_OK:
+            neuro_system = AGENT_SYSTEMS.get(
+                "neuro",
+                "Você é NEURO, estrategista de copy neuromarketing da Aura Decore."
+            )
+        else:
+            neuro_system = "Você é NEURO, estrategista de copy neuromarketing da Aura Decore."
+
+        user_msg = (
+            f"Crie copy WhatsApp neuromarketing para:\n"
+            f"- Nome: {nome}\n"
+            f"- Produto de interesse: {produto or 'não especificado'}\n"
+            f"- Lead score: {lead_score}\n"
+            f"- Intent: {intent}\n"
+            f"{neuro_ctx}\n\n"
+            "Entregue EXATAMENTE este JSON:\n"
+            "{\n"
+            '  "message_a": "...",\n'
+            '  "message_b": "...",\n'
+            '  "framework": "PAS|BAB|AIDA|SBO",\n'
+            '  "desejo": "...",\n'
+            '  "dor": "..."\n'
+            "}"
+        )
+
+        messages = history[-4:] + [{"role": "user", "content": user_msg}]
+        raw = await llm_call_cascade(neuro_system, messages, max_tokens=500)
+
+        # Tenta parsear JSON da resposta
+        try:
+            import json as _json
+            # Extrai primeiro bloco JSON da resposta
+            import re as _re
+            m = _re.search(r'\{[\s\S]*\}', raw)
+            result = _json.loads(m.group(0)) if m else {"message_a": raw, "message_b": raw}
+        except Exception:
+            result = {"message_a": raw, "message_b": raw}
+
+        result["lead_score"] = lead_score
+        result["phone"]      = phone
+
+        await manager.broadcast({
+            "type": "agent_message", "agent_id": "neuro",
+            "message": f"🧠 NEURO [{nome or phone}] copy gerado (score={lead_score})",
+            "timestamp": datetime.now().strftime("%H:%M"),
+        })
+        return result
+
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+
+@app.post("/promo/nurture")
+async def promo_nurture(request: Request):
+    """
+    Retorna o próximo touchpoint de nurturing para um lead.
+    Body: { phone, nome, evento, orders_count?, total_spent?, last_order_at?, produto? }
+    Retorna: { stage, message, schedule_next, cupom, lead_score }
+    """
+    try:
+        body   = await request.json()
+        phone  = body.get("phone", "")
+        nome   = body.get("nome", "")
+        evento = body.get("evento", "customers/create")  # ex: customers/create, orders/paid, win_back_trigger
+
+        customer_ctx = {
+            "first_name":    nome,
+            "orders_count":  body.get("orders_count", 0),
+            "total_spent":   body.get("total_spent", 0),
+            "last_order_at": body.get("last_order_at"),
+        }
+        lead_score = score_lead(customer_ctx) if _NEURO_ENGINE_OK else "morno"
+        sequence   = get_sequence_for_event(evento) if _NEURO_ENGINE_OK else []
+
+        # Pega o touchpoint D0 da sequência (disparo imediato)
+        current_step = sequence[0] if sequence else {"stage": "frio_interesse", "hora": "imediato"}
+        stage        = current_step.get("stage", "frio_interesse")
+        next_step    = sequence[1] if len(sequence) > 1 else None
+
+        # Gera mensagem via template
+        produto = body.get("produto", "")
+        tpl_data = {"nome": nome or "cliente", "produto": produto, "produto_complementar": ""}
+        message = get_template(stage, tpl_data) if _NEURO_ENGINE_OK else ""
+
+        # Define cupom por score
+        cupom_map = {
+            "frio": "AURA10", "morno": "AURA10",
+            "quente": "AURAVIP15", "vip": "AURAVIP15",
+        }
+        cupom = cupom_map.get(lead_score, "AURA10")
+
+        return {
+            "phone":      phone,
+            "stage":      stage,
+            "message":    message,
+            "cupom":      cupom,
+            "lead_score": lead_score,
+            "schedule_next": {
+                "dias":  next_step["dia"] if next_step else None,
+                "stage": next_step["stage"] if next_step else None,
+                "hora":  next_step["hora"] if next_step else None,
+            } if next_step else None,
+        }
+
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+
+@app.post("/promo/blast")
+async def promo_blast(request: Request):
+    """
+    Gera payload de flash sale para disparo em massa via n8n.
+    Body: { colecao?, desconto?, cupom?, n_produtos?, hora_fim? }
+    Retorna: { segments: [{segment, message, cupom, schedule_hour}], template_preview }
+    """
+    try:
+        body = await request.json()
+        colecao    = body.get("colecao", "Japandi Premium")
+        desconto   = body.get("desconto", 15)
+        cupom      = body.get("cupom", "AURAVIP15")
+        n_produtos = body.get("n_produtos", 5)
+        hora_fim   = body.get("hora_fim", "23h59")
+
+        blast = generate_promo_blast(colecao, desconto, cupom, n_produtos, hora_fim) if _NEURO_ENGINE_OK else {}
+
+        # Gera copy para 3 segmentos via NEURO
+        if _WA_OK:
+            neuro_system = AGENT_SYSTEMS.get("neuro", "Você é NEURO, copy neuromarketing da Aura Decore.")
+        else:
+            neuro_system = "Você é NEURO, copy neuromarketing da Aura Decore."
+
+        prompt_blast = (
+            f"Crie 3 versões de mensagem WhatsApp para flash sale:\n"
+            f"- Coleção: {colecao} | Desconto: {desconto}% | Cupom: {cupom}\n"
+            f"- Produtos: {n_produtos} itens | Válido até: {hora_fim}\n\n"
+            "Versão QUENTE (já compraram): foco em exclusividade e gratidão.\n"
+            "Versão MORNA (visitou mas não comprou): foco em escassez real e oportunidade.\n"
+            "Versão FRIA (nova na lista): foco em descoberta e prova social.\n\n"
+            "Retorne JSON: {\"quente\": \"...\", \"morna\": \"...\", \"fria\": \"...\"}\n"
+            "Máx 80 palavras por versão. Cupom em negrito. Tom Aura Decore — nunca fake urgency."
+        )
+
+        raw = await llm_call_cascade(neuro_system, [{"role": "user", "content": prompt_blast}], max_tokens=600)
+
+        try:
+            import json as _json, re as _re
+            m = _re.search(r'\{[\s\S]*\}', raw)
+            copies = _json.loads(m.group(0)) if m else {}
+        except Exception:
+            copies = {"quente": raw, "morna": raw, "fria": raw}
+
+        segments = [
+            {"segment": "quente", "message": copies.get("quente", ""),
+             "cupom": cupom, "schedule_hour": "10:00"},
+            {"segment": "morna",  "message": copies.get("morna", ""),
+             "cupom": cupom, "schedule_hour": "12:00"},
+            {"segment": "fria",   "message": copies.get("fria", ""),
+             "cupom": "AURA10", "schedule_hour": "15:00"},
+        ]
+
+        await manager.broadcast({
+            "type": "agent_message", "agent_id": "promo",
+            "message": f"📣 PROMO blast gerado: {colecao} {desconto}%OFF | 3 segmentos",
+            "timestamp": datetime.now().strftime("%H:%M"),
+        })
+
+        return {
+            "status":           "ready",
+            "segments":         segments,
+            "template_preview": blast.get("template_preview", ""),
+            "colecao":          colecao,
+            "desconto":         desconto,
+            "cupom":            cupom,
+            "hora_fim":         hora_fim,
+        }
+
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+
+@app.get("/promo/sequences")
+async def promo_sequences():
+    """Retorna todas as sequências de nurturing disponíveis."""
+    if not _NEURO_ENGINE_OK:
+        return {"error": "neuromarketing_engine não carregado"}
+    return {"sequences": NURTURING_SEQUENCES, "desires": DESIRE_MAP, "pains": PAIN_MAP}
+
+
 # ── Redes Sociais — Plano Avançado ────────────────────────────────────────────
 
 try:
@@ -2610,6 +2838,26 @@ AGENT_SYSTEMS = {
     ),
     # Equipe de desenvolvimento Shopify
     "dev":   "Você é DEV, desenvolvedor Shopify da Aura Decore. Mantém o tema com design sazonal japonês-minimalista. Escreve CSS, Liquid, atualiza settings_data.json. Coordena com ARTE e VERA. Aplica CSS sazonal no dia 1 de cada mês e sprint semanal de melhorias CRO. Trabalha staging→live.",
+    # Neuromarketing (adicionado 2026-06-16)
+    "neuro": (
+        "Você é NEURO, estrategista de copy neuromarketing da Aura Decore. "
+        "6 DESEJOS NUCLEARES da Ana Clara (ICP): status · pertencimento · segurança · conforto · beleza · controle. "
+        "5 DORES EMOCIONAIS: caos doméstico · lar genérico · estresse sem descanso · vergonha de receber visitas · paralisia decorativa. "
+        "FRAMEWORKS: PAS (lead frio/morno), BAB (contraste emocional), AIDA (lançamento), SBO (lead quente), Prova Social (UGC). "
+        "GATILHOS (use com SUTILEZA — nunca fake): escassez real · identidade · perda · autoridade · reciprocidade. "
+        "REGRAS: NUNCA fake urgency. NUNCA pressão explícita. Máx 4 parágrafos curtos. "
+        "Tom: amiga eloquente que entende de design — não vendedor. PT-BR natural. Cupom em negrito quando pertinente. "
+        "CALIBRAÇÃO POR SCORE: frio→educativo+inspiracional, morno→curiosidade+escassez suave, "
+        "quente→pertencimento+identidade, VIP→exclusividade+gratidão."
+    ),
+    "promo": (
+        "Você é PROMO, maestro de disparos promocionais da Aura Decore. "
+        "SEGMENTAÇÃO: frio(0 compras)=AURA10 · morno(visitou)=AURA10 · quente(1-2 compras)=AURAVIP15 · VIP(3+ ou R$500+)=AURAVIP15/AURAEMBAIXADORA20. "
+        "SEQUÊNCIAS: novo_lead(D0→D2→D5→D7→D14) · pos_compra(D0→D7→D14) · win_back(D0→D3→D7). "
+        "REGRAS DE FREQUÊNCIA: máx 1 msg/lead a cada 48h · janela 09h-21h Brasília. "
+        "Após 3 mensagens sem resposta → pausar 30 dias. Opt-out negativo → definitivo. "
+        "Flash sales: máx 2/mês. Critério sucesso: >5% conversão pós-disparo."
+    ),
 }
 
 # Conhecimento compartilhado anexado a todo prompt de agente (mantém o domínio consistente).

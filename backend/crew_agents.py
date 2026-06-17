@@ -1249,6 +1249,215 @@ def build_seo_crew(keyword: str) -> Crew:
     )
 
 
+# ── Agentes de Neuromarketing (adicionados 2026-06-16) ───────────────────────────
+
+# Import engine (graceful — não quebra se arquivo ausente)
+try:
+    from neuromarketing_engine import (
+        build_neuro_prompt, get_template, score_lead,
+        generate_promo_blast, DESIRE_MAP, PAIN_MAP,
+        COPY_FRAMEWORKS, NEURO_TRIGGERS,
+    )
+    _NEURO_ENGINE_OK = True
+except Exception:
+    _NEURO_ENGINE_OK = False
+
+NEURO = make_agent(
+    "NEURO", "Copy Neuromarketing · Estrategista de Desejo",
+    "Criar copy sutil e irresistível usando neuromarketing: ativar desejo, nomear dores e construir pontes emocionais para ação.",
+    (
+        "NEURO é o estrategista de copy mais sofisticado da Aura Decore. "
+        "Domina 6 desejos nucleares da Ana Clara (status, pertencimento, segurança, conforto, beleza, controle) "
+        "e 5 dores emocionais primárias (caos, genérico, estresse, vergonha, paralisia). "
+        "Aplica frameworks de copy com maestria: "
+        "PAS (Problem→Agitate→Solve) para prospects frios, "
+        "BAB (Before→After→Bridge) para contraste emocional, "
+        "AIDA (Attention→Interest→Desire→Action) para anúncios, "
+        "SBO (Story→Bridge→Offer) para nurturing quente, "
+        "Prova Social quando há UGC disponível. "
+        "Gatilhos neurológicos usados com SUTILEZA: escassez real (não fake), perda, autoridade, identidade, novidade. "
+        "NUNCA usa linguagem de vendedor agressivo. "
+        "A copy da Aura é como uma amiga eloquente que entende de design — não um vendedor de telemarketing. "
+        "Calibra o tom pelo score do lead: frio → educativo/inspiracional, morno → curiosidade/escassez suave, "
+        "quente → pertencimento/identidade, VIP → exclusividade/gratidão. "
+        "Sincroniza com VERA (copy produto), SOL (CRO/conversão) e LENA (atendimento). "
+        "Meta: aumentar CTR de mensagens WhatsApp em 40% e taxa de conversão pós-nutrição em 25%."
+    ),
+)
+
+PROMO = make_agent(
+    "PROMO", "Disparos Promocionais · Lead Nurturing",
+    "Orquestrar sequências de promoção e ofertas para leads, segmentando por temperatura e comportamento.",
+    (
+        "PROMO é o maestro de disparos promocionais da Aura Decore. "
+        "Segmenta leads em frio/morno/quente/VIP e define a sequência de nurturing correta para cada grupo. "
+        "Sequências gerenciadas: "
+        "novo_lead (5 touchpoints: D0→D2→D5→D7→D14), "
+        "pos_compra (3 touchpoints: imediato→D7→D14 com upsell), "
+        "win_back (3 touchpoints: D0→D3→D7 para inativos 60+d). "
+        "Calendário de flash sales: máximo 2/mês para não saturar a base. "
+        "Regras de frequência: máximo 1 mensagem a cada 48h por lead. "
+        "Janela de envio: 09h-21h (horário Brasília). "
+        "Cupons por temperatura: frio=AURA10(10%), morno=AURA10 ou AURAVIP15, quente/VIP=AURAVIP15(15%) ou AURAEMBAIXADORA20(20%). "
+        "Desengajamento: após 3 mensagens sem resposta, pausar lead por 30 dias. "
+        "Integra com NEURO para copy e com SOL para dados de conversão. "
+        "KPIs: open rate WhatsApp >60%, conversão pós-disparo >5%, opt-out <2%."
+    ),
+)
+
+
+def build_neuromarketing_crew(lead_context: dict) -> Crew:
+    """Crew de neuromarketing: NEURO elabora copy estratégico, VERA refina texto, SOL define oferta, PROMO executa disparo."""
+    nome     = lead_context.get("nome", "cliente")
+    produto  = lead_context.get("produto", "")
+    score    = lead_context.get("score", "morno")
+    stage    = lead_context.get("stage", "morno_produto")
+
+    task_neuro = Task(
+        description=(
+            f"Desenvolva a estratégia de copy neuromarketing para este lead:\n"
+            f"- Nome: {nome}\n"
+            f"- Score (temperatura): {score}\n"
+            f"- Produto de interesse: {produto}\n"
+            f"- Estágio do funil: {stage}\n\n"
+            "Entregue:\n"
+            "1. Desejo nuclear primário ativado (dos 6: status/pertencimento/segurança/conforto/beleza/controle)\n"
+            "2. Dor emocional endereçada (dos 5: caos/genérico/estresse/vergonha/paralisia)\n"
+            "3. Framework escolhido (PAS/BAB/AIDA/SBO/Prova Social) e justificativa\n"
+            "4. Gatilho neurológico aplicado (escassez/urgência/perda/autoridade/identidade/reciprocidade)\n"
+            "5. Mensagem WhatsApp final: máximo 4 parágrafos curtos, 100 palavras, tom Ana Clara, "
+            "nunca pressão explícita, cupom embutido naturalmente quando pertinente.\n"
+            "6. Variação A/B: versão alternativa com abordagem diferente (15-20% variação de tom)."
+        ),
+        agent=NEURO,
+        expected_output=(
+            "Estratégia completa: desejo + dor + framework + gatilho + "
+            "mensagem WhatsApp principal + variação A/B."
+        ),
+    )
+    task_vera = Task(
+        description=(
+            "Refine a mensagem criada pelo NEURO. Garanta:\n"
+            "- Voz 100% Aura Decore: calma, elegante, próxima\n"
+            "- Português BR natural, sem anglicismos forçados\n"
+            "- Emoji com moderação (máx 2, só se amplificam emoção)\n"
+            "- Link auradecore.com.br posicionado naturalmente\n"
+            "- Cupom em negrito quando presente\n"
+            "- CTA final como sugestão, não ordem\n"
+            "Retorne a versão refinada da mensagem principal e da variação A/B."
+        ),
+        agent=VERA,
+        expected_output="Versão principal refinada + variação A/B refinada, prontas para disparo.",
+    )
+    task_sol = Task(
+        description=(
+            f"Com base no score '{score}' e stage '{stage}', defina a oferta comercial:\n"
+            "1. Qual cupom usar (AURA10 / AURAVIP15 / AURAEMBAIXADORA20 / nenhum)?\n"
+            "2. Há produto complementar para sugerir (cross-sell/upsell)?\n"
+            "3. Há urgência real (estoque baixo? promoção com prazo)?\n"
+            "4. Próximo touchpoint: quando enviar a próxima mensagem se não houver resposta?\n"
+            "5. Critério de conversão: o que conta como sucesso nesse disparo?\n"
+            "Retorne essas decisões como JSON estruturado."
+        ),
+        agent=SOL,
+        expected_output=(
+            "JSON: {cupom, produto_complementar, urgencia_real, proximo_touchpoint_dias, "
+            "criterio_conversao, score_esperado_conversao}"
+        ),
+    )
+    task_promo = Task(
+        description=(
+            "Monte o pacote final de disparo com os insumos de NEURO, VERA e SOL:\n"
+            "1. Mensagem final (versão A — principal)\n"
+            "2. Mensagem B (variação teste)\n"
+            "3. Sequência completa: quando enviar cada mensagem (D0, D+N)\n"
+            "4. Regras de pausa: se lead responder, pausar sequência automática\n"
+            "5. Métricas para acompanhar: taxa de resposta, cliques no link, conversão\n"
+            "6. Instrução para o n8n: payload JSON pronto para o webhook /whatsapp/send\n\n"
+            "Formato do payload n8n:\n"
+            "{\n"
+            "  \"phone\": \"{phone}\",\n"
+            "  \"message\": \"[mensagem final]\",\n"
+            "  \"variant\": \"A\",\n"
+            "  \"schedule_next\": {\"dias\": N, \"stage\": \"next_stage\"}\n"
+            "}"
+        ),
+        agent=PROMO,
+        expected_output=(
+            "Pacote completo de disparo: msg A + msg B + sequência + regras de pausa + "
+            "payload JSON para n8n."
+        ),
+    )
+    return Crew(
+        agents=[NEURO, VERA, SOL, PROMO],
+        tasks=[task_neuro, task_vera, task_sol, task_promo],
+        process=Process.sequential,
+        verbose=True,
+    )
+
+
+def build_promo_blast_crew(
+    colecao: str = "Japandi Premium",
+    desconto: int = 15,
+    cupom: str = "AURAVIP15",
+    n_produtos: int = 5,
+    hora_fim: str = "23h59",
+) -> Crew:
+    """Crew de flash sale: NEURO cria copy de urgência, VERA refina, PROMO gera payload de massa para n8n."""
+    task_neuro_blast = Task(
+        description=(
+            f"Crie copy de flash sale para disparo em massa (base de clientes Aura Decore).\n"
+            f"Parâmetros:\n"
+            f"- Coleção: {colecao}\n"
+            f"- Desconto: {desconto}% OFF\n"
+            f"- Cupom: {cupom}\n"
+            f"- Produtos na oferta: {n_produtos} itens\n"
+            f"- Válido até: {hora_fim} hoje\n\n"
+            "Entregue:\n"
+            "1. Versão QUENTE (para clientes que já compraram): foco em exclusividade + gratidão\n"
+            "2. Versão MORNA (para quem visitou mas não comprou): foco em escassez + oportunidade\n"
+            "3. Versão FRIA (newsletter/novo cadastro): foco em descoberta + prova social\n"
+            "Regras: máx 80 palavras/versão, sem fake urgency, tom Aura Decore, cupom em destaque."
+        ),
+        agent=NEURO,
+        expected_output="3 versões de copy (quente/morna/fria) para flash sale.",
+    )
+    task_vera_blast = Task(
+        description=(
+            "Refine as 3 versões de copy do NEURO para o flash sale. "
+            "Garanta coerência de voz Aura em todas. "
+            "Adicione emoji estratégico (⚡ para urgência, 🌿 para marca, 🎁 para oferta). "
+            "Versão final deve ter: linha de abertura impactante + corpo + cupom em negrito + link. "
+            "Retorne as 3 versões refinadas prontas para WhatsApp."
+        ),
+        agent=VERA,
+        expected_output="3 versões refinadas: quente, morna, fria — prontas para disparo.",
+    )
+    task_promo_blast = Task(
+        description=(
+            "Prepare o pacote completo de flash sale para execução pelo n8n:\n"
+            "1. Segmentação da base: quente (compraram nos últimos 30d), morna (visitou 7-30d), fria (resto)\n"
+            "2. Payload JSON para cada segmento:\n"
+            "   { \"segment\": \"quente|morna|fria\", \"message\": \"...\", \"cupom\": \"...\", "
+            "     \"validade_horas\": 24 }\n"
+            "3. Janela de disparo: quente às 10h, morna às 12h, fria às 15h (evitar pico de respostas simultâneas)\n"
+            "4. Critério de sucesso: >5% de respostas ou cliques rastreados\n"
+            "5. Regra de opt-out: se cliente responder PARA ou NÃO QUERO, remover da lista\n"
+            "Retorne o JSON final pronto para o webhook n8n /promo/blast."
+        ),
+        agent=PROMO,
+        expected_output=(
+            "JSON de disparo com 3 segmentos, horários escalonados, payloads prontos e critérios de sucesso."
+        ),
+    )
+    return Crew(
+        agents=[NEURO, VERA, PROMO],
+        tasks=[task_neuro_blast, task_vera_blast, task_promo_blast],
+        process=Process.sequential,
+        verbose=True,
+    )
+
+
 def build_automation_crew(workflow_goal: str) -> Crew:
     """Crew de automação: PIPE arquiteta o workflow n8n, THEO valida integrações."""
     task_pipe = Task(

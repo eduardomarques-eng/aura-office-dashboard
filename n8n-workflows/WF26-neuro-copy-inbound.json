@@ -1,0 +1,133 @@
+{
+  "name": "WF26 — Neuro Copy: Mensagem Inbound com Intent Desejo/Dor",
+  "nodes": [
+    {
+      "name": "WPP Webhook (mensagem recebida)",
+      "type": "n8n-nodes-base.webhook",
+      "position": [240, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wppconnect-inbound",
+        "responseMode": "onReceived"
+      },
+      "notes": "Webhook do WPP Connect — MESMO que WF03, mas este faz pré-classificação de neuromarketing"
+    },
+    {
+      "name": "Classificar Intent",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [460, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAILWAY_URL }}/ai/classify",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "message", "value": "={{ $json.body || $json.text?.body || $json.message || '' }}" },
+            { "name": "phone",   "value": "={{ ($json.from || $json.phone || '').replace('@c.us','') }}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Switch por Intent",
+      "type": "n8n-nodes-base.switch",
+      "position": [680, 300],
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.intent }}",
+        "rules": {
+          "rules": [
+            { "value2": "desejo",       "output": 0 },
+            { "value2": "inspiracao",   "output": 0 },
+            { "value2": "dor_decoracao","output": 0 },
+            { "value2": "carrinho",     "output": 1 },
+            { "value2": "reembolso",    "output": 2 },
+            { "value2": "pedido",       "output": 3 }
+          ]
+        },
+        "fallbackOutput": 4
+      }
+    },
+    {
+      "name": "Gerar Copy NEURO",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [900, 160],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAILWAY_URL }}/neuro/copy",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "phone",  "value": "={{ $('Switch por Intent').first().json.phone }}" },
+            { "name": "nome",   "value": "={{ $('WPP Webhook (mensagem recebida)').first().json.pushName || '' }}" },
+            { "name": "intent", "value": "={{ $('Switch por Intent').first().json.intent }}" }
+          ]
+        },
+        "notes": "NEURO gera copy A/B com framework correto por lead score"
+      }
+    },
+    {
+      "name": "Delay Digitação (3s)",
+      "type": "n8n-nodes-base.wait",
+      "position": [1120, 160],
+      "parameters": { "amount": 3, "unit": "seconds" }
+    },
+    {
+      "name": "Enviar Resposta NEURO",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1340, 160],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAILWAY_URL }}/whatsapp/send",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "phone",   "value": "={{ $('Gerar Copy NEURO').first().json.phone }}" },
+            { "name": "message", "value": "={{ $('Gerar Copy NEURO').first().json.message_a }}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "→ WF03 (SOL)",
+      "type": "n8n-nodes-base.noOp",
+      "position": [900, 280],
+      "notes": "Redireciona para WF03 que usa SOL para recuperação de carrinho"
+    },
+    {
+      "name": "→ WF03 (GUARD)",
+      "type": "n8n-nodes-base.noOp",
+      "position": [900, 360],
+      "notes": "Redireciona para WF03 que usa GUARD para reembolso"
+    },
+    {
+      "name": "→ WF03 (LENA Pedido)",
+      "type": "n8n-nodes-base.noOp",
+      "position": [900, 440],
+      "notes": "Redireciona para WF03 que usa LENA com lookup do pedido"
+    },
+    {
+      "name": "→ WF03 (LENA Geral)",
+      "type": "n8n-nodes-base.noOp",
+      "position": [900, 520],
+      "notes": "Intents gerais vão para LENA no WF03"
+    }
+  ],
+  "connections": {
+    "WPP Webhook (mensagem recebida)": { "main": [[ {"node": "Classificar Intent", "type": "main", "index": 0} ]] },
+    "Classificar Intent": { "main": [[ {"node": "Switch por Intent", "type": "main", "index": 0} ]] },
+    "Switch por Intent": { "main": [
+      [ {"node": "Gerar Copy NEURO", "type": "main", "index": 0} ],
+      [ {"node": "→ WF03 (SOL)", "type": "main", "index": 0} ],
+      [ {"node": "→ WF03 (GUARD)", "type": "main", "index": 0} ],
+      [ {"node": "→ WF03 (LENA Pedido)", "type": "main", "index": 0} ],
+      [ {"node": "→ WF03 (LENA Geral)", "type": "main", "index": 0} ]
+    ]},
+    "Gerar Copy NEURO":   { "main": [[ {"node": "Delay Digitação (3s)", "type": "main", "index": 0} ]] },
+    "Delay Digitação (3s)":{ "main": [[ {"node": "Enviar Resposta NEURO", "type": "main", "index": 0} ]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  }
+}

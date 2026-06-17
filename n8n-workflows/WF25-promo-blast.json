@@ -1,0 +1,146 @@
+{
+  "name": "WF25 — Promo Blast: Flash Sale Segmentado",
+  "nodes": [
+    {
+      "name": "Trigger Manual ou Cron",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [240, 300],
+      "parameters": {},
+      "notes": "Para disparos pontuais: ativar manualmente. Para recorrentes: trocar por Cron (máx 2x/mês)"
+    },
+    {
+      "name": "Configurar Flash Sale",
+      "type": "n8n-nodes-base.set",
+      "position": [460, 300],
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "colecao",    "value": "Japandi Premium" },
+            { "name": "cupom",      "value": "AURAVIP15" },
+            { "name": "hora_fim",   "value": "23h59" }
+          ],
+          "number": [
+            { "name": "desconto",   "value": 15 },
+            { "name": "n_produtos", "value": 5 }
+          ]
+        },
+        "notes": "⚙️ EDITAR AQUI antes de cada disparo"
+      }
+    },
+    {
+      "name": "Gerar Copy Segmentado (NEURO)",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [680, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAILWAY_URL }}/promo/blast",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "colecao",    "value": "={{ $json.colecao }}" },
+            { "name": "desconto",   "value": "={{ $json.desconto }}" },
+            { "name": "cupom",      "value": "={{ $json.cupom }}" },
+            { "name": "n_produtos", "value": "={{ $json.n_produtos }}" },
+            { "name": "hora_fim",   "value": "={{ $json.hora_fim }}" }
+          ]
+        },
+        "notes": "Retorna: { segments: [{segment, message, cupom, schedule_hour}] }"
+      }
+    },
+    {
+      "name": "Buscar Clientes Shopify (Quente)",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [900, 180],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://{{ $env.SHOPIFY_DOMAIN }}/admin/api/2024-01/customers.json",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Shopify-Access-Token", "value": "={{ $env.SHOPIFY_ADMIN_TOKEN }}" }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "fields",       "value": "id,first_name,phone,orders_count,total_spent,last_order_id" },
+            { "name": "limit",        "value": "250" },
+            { "name": "updated_at_min","value": "={{ $now.minus({days: 30}).toISO() }}" }
+          ]
+        },
+        "notes": "Clientes ativos nos últimos 30 dias = segmento QUENTE"
+      }
+    },
+    {
+      "name": "Filtrar Com Telefone (Quente)",
+      "type": "n8n-nodes-base.code",
+      "position": [1120, 180],
+      "parameters": {
+        "jsCode": "const customers = $json.customers || [];\nconst msgQuente = $('Gerar Copy Segmentado (NEURO)').first().json.segments\n  .find(s => s.segment === 'quente')?.message || '';\n\nreturn customers\n  .filter(c => c.phone && c.orders_count > 0)\n  .slice(0, 200) // Limite seguro por disparo\n  .map(c => ({\n    json: {\n      phone: c.phone.replace(/[^0-9]/g,'').replace(/^(?!55)/, '55'),\n      nome: c.first_name || '',\n      message: msgQuente.replace('{nome}', c.first_name || 'cliente'),\n      segmento: 'quente',\n      schedule_hour: '10:00',\n    }\n  }));"
+      }
+    },
+    {
+      "name": "Loop Quente: Enviar WA",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [1340, 180],
+      "parameters": {
+        "batchSize": 1,
+        "options": { "reset": false }
+      }
+    },
+    {
+      "name": "Delay 4-8s entre envios",
+      "type": "n8n-nodes-base.wait",
+      "position": [1560, 180],
+      "parameters": {
+        "amount": "={{ Math.floor(Math.random() * 4) + 4 }}",
+        "unit": "seconds"
+      }
+    },
+    {
+      "name": "Enviar WA Quente",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1780, 180],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAILWAY_URL }}/whatsapp/send",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "phone",   "value": "={{ $json.phone }}" },
+            { "name": "message", "value": "={{ $json.message }}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Aguardar Janela Morna (2h)",
+      "type": "n8n-nodes-base.wait",
+      "position": [900, 360],
+      "parameters": {
+        "amount": 2,
+        "unit": "hours"
+      },
+      "notes": "Dispersa os disparos para evitar pico de respostas simultâneas"
+    }
+  ],
+  "connections": {
+    "Trigger Manual ou Cron":             { "main": [[ {"node": "Configurar Flash Sale", "type": "main", "index": 0} ]] },
+    "Configurar Flash Sale":              { "main": [[ {"node": "Gerar Copy Segmentado (NEURO)", "type": "main", "index": 0} ]] },
+    "Gerar Copy Segmentado (NEURO)":      { "main": [[ {"node": "Buscar Clientes Shopify (Quente)", "type": "main", "index": 0} ]] },
+    "Buscar Clientes Shopify (Quente)":   { "main": [[ {"node": "Filtrar Com Telefone (Quente)", "type": "main", "index": 0} ]] },
+    "Filtrar Com Telefone (Quente)":      { "main": [[ {"node": "Loop Quente: Enviar WA", "type": "main", "index": 0} ]] },
+    "Loop Quente: Enviar WA":             { "main": [[ {"node": "Delay 4-8s entre envios", "type": "main", "index": 0} ]] },
+    "Delay 4-8s entre envios":            { "main": [[ {"node": "Enviar WA Quente", "type": "main", "index": 0} ]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  }
+}

@@ -94,17 +94,83 @@ SYSTEM_PROMPTS = {
         "- Peça para enviar portfólio ou perfil do IG/TikTok\n"
         "- Email: auras.de@gmail.com | Instagram: @auras.decore"
     ),
+
+    # ── Novos agentes de neuromarketing (2026-06-16) ───────────────────────────
+
+    "neuro": (
+        "Você é NEURO, estrategista de copy neuromarketing da Aura Decore.\n"
+        "Sua missão: criar copy sutil e poderoso que ative desejo, nomeie dores e construa pontes emocionais.\n\n"
+        "6 DESEJOS NUCLEARES da Ana Clara (ICP): status · pertencimento · segurança · conforto · beleza · controle.\n"
+        "5 DORES EMOCIONAIS: caos doméstico · lar genérico · estresse sem descanso · vergonha de receber visitas · paralisia decorativa.\n\n"
+        "FRAMEWORKS (use o correto para o contexto):\n"
+        "- PAS: lead frio/morno → Problem (nomeie a dor) → Agitate (amplie) → Solve (solução Aura)\n"
+        "- BAB: contraste emocional → Before (situação atual) → After (sonho realizado) → Bridge (como chegar lá)\n"
+        "- AIDA: lançamento/produto → Attention → Interest → Desire → Action\n"
+        "- SBO: lead quente → Story (história real/identificável) → Bridge → Offer (natural, sem pressão)\n"
+        "- Prova Social: quando há UGC/reviews disponíveis\n\n"
+        "GATILHOS NEUROLÓGICOS (use com SUTILEZA — nunca fake):\n"
+        "- Escassez real: 'estoque curado, não trabalhamos com volume'\n"
+        "- Identidade: 'para quem escolhe viver com intenção'\n"
+        "- Perda: 'cada dia a mais em um lar que drena energia'\n"
+        "- Autoridade: 'curado por quem estuda neuroarquitetura'\n"
+        "- Reciprocidade: cupom ou conteúdo de valor ANTES de pedir ação\n\n"
+        "REGRAS ABSOLUTAS:\n"
+        "- NUNCA fake urgency ('últimas horas!!!', 'IMPERDÍVEL!!!')\n"
+        "- NUNCA pressão explícita ('compre agora', 'não perca')\n"
+        "- Máx 4 parágrafos curtos no WhatsApp\n"
+        "- Tom: amiga eloquente que entende de design, não vendedor\n"
+        "- PT-BR natural, fluido, como se fosse uma mensagem pessoal\n"
+        "- Cupom em negrito quando presente, embutido na conversa"
+    ),
+
+    "promo": (
+        "Você é PROMO, especialista em disparos promocionais e lead nurturing da Aura Decore.\n"
+        "Gerencia sequências de mensagens WhatsApp por temperatura de lead.\n\n"
+        "SEGMENTAÇÃO:\n"
+        "- FRIO (0 compras, novo): educativo + boas-vindas + cupom AURA10\n"
+        "- MORNO (visitou produto, não comprou): curiosidade + escassez suave + AURA10\n"
+        "- QUENTE (1-2 compras): pertencimento + upsell + AURAVIP15\n"
+        "- VIP (3+ compras ou R$500+): exclusividade + gratidão + AURAVIP15 ou AURAEMBAIXADORA20\n\n"
+        "SEQUÊNCIAS DE NURTURING:\n"
+        "novo_lead: D0(boas-vindas) → D2(conteúdo dor) → D5(produto interesse) → D7(carrinho+cupom) → D14(flash sale)\n"
+        "pos_compra: imediato(agradecimento) → D7(UGC request+cupom) → D14(upsell suave)\n"
+        "win_back: D0(saudade+cupom) → D3(conteúdo valor) → D7(flash sale final)\n\n"
+        "REGRAS DE FREQUÊNCIA:\n"
+        "- Máximo 1 mensagem por lead a cada 48h\n"
+        "- Janela de envio: 09h-21h (horário Brasília)\n"
+        "- Após 3 mensagens sem resposta → pausar lead 30 dias\n"
+        "- Se responder negativamente → opt-out imediato e definitivo\n\n"
+        "Ao gerar um plano de disparo, retorne sempre:\n"
+        "1. Segmento do lead\n"
+        "2. Mensagem atual\n"
+        "3. Próximo touchpoint (dias + estágio)\n"
+        "4. Critério de sucesso (resposta / clique / compra)"
+    ),
 }
+
+# ── Import engine de neuromarketing ───────────────────────────────────────────
+try:
+    from neuromarketing_engine import build_neuro_prompt, score_lead, get_template
+    _NEURO_OK = True
+except Exception:
+    _NEURO_OK = False
+    def score_lead(c): return "morno"
+    def build_neuro_prompt(c): return ""
+    def get_template(s, d): return ""
 
 # ── Intents (ordem importa: mais específico primeiro) ─────────────────────────
 _INTENT_ORDERED = [
-    ("reembolso",  r"\b(reembolso|devolu[cç][aã]o|devolver|estornar|cancelar pedido|cancelamento|estorno|trocar|troca)\b"),
-    ("reclamacao", r"\b(errado|problema|defeito|quebrado|danificado|n[aã]o chegou|sumiu|atrasado|raiva|decepcionada)\b"),
-    ("parceria",   r"\b(parceria|influencer|embaixadora|divulgar|publi|permuta|colabora[cç][aã]o|ugc)\b"),
-    ("pedido",     r"\b(pedido|rastrear|rastreio|entrega|prazo|chegou|despachou|c[oó]digo|nfe|nota fiscal)\b"),
-    ("carrinho",   r"\b(carrinho|finalizar|comprar|desconto|cupom|frete|gr[aá]tis|oferta|promo[cç][aã]o)\b"),
-    ("produto",    r"\b(produto|pre[cç]o|dispon[ií]vel|vende|quanto custa|valor|estoque|foto|cor|tamanho)\b"),
-    ("saudacao",   r"\b(oi|ol[aá]|bom dia|boa tarde|boa noite|hey|hello|e a[ií]|salve)\b"),
+    ("reembolso",    r"\b(reembolso|devolu[cç][aã]o|devolver|estornar|cancelar pedido|cancelamento|estorno|trocar|troca)\b"),
+    ("reclamacao",   r"\b(errado|problema|defeito|quebrado|danificado|n[aã]o chegou|sumiu|atrasado|raiva|decepcionada)\b"),
+    ("parceria",     r"\b(parceria|influencer|embaixadora|divulgar|publi|permuta|colabora[cç][aã]o|ugc)\b"),
+    ("pedido",       r"\b(pedido|rastrear|rastreio|entrega|prazo|chegou|despachou|c[oó]digo|nfe|nota fiscal)\b"),
+    ("carrinho",     r"\b(carrinho|finalizar|comprar|desconto|cupom|frete|gr[aá]tis|oferta|promo[cç][aã]o)\b"),
+    ("produto",      r"\b(produto|pre[cç]o|dispon[ií]vel|vende|quanto custa|valor|estoque|foto|cor|tamanho)\b"),
+    # Intents de neuromarketing (detectam oportunidade de nurturing)
+    ("desejo",       r"\b(sonho|quero muito|adorei|perfeito|lindo|apaixonada|queria ter|meu lar|minha casa|ambiente)\b"),
+    ("inspiracao",   r"\b(inspira[cç][aã]o|dica|ideia|como decorar|como organizar|combina|ficaria bem|estilo|japandi|minimalista)\b"),
+    ("dor_decoracao",r"\b(bagun[cç]a|sem estilo|feio|n[aã]o gosto|cansa[cç]o|neutro demais|n[aã]o parece meu|n[aã]o sei decorar)\b"),
+    ("saudacao",     r"\b(oi|ol[aá]|bom dia|boa tarde|boa noite|hey|hello|e a[ií]|salve)\b"),
 ]
 _INTENT_PATTERNS = dict(_INTENT_ORDERED)
 
@@ -122,6 +188,8 @@ def route_agent(intent: str) -> str:
         return "guard"
     if intent == "carrinho":
         return "sol"
+    if intent in ("desejo", "inspiracao", "dor_decoracao"):
+        return "neuro"
     if intent == "parceria":
         return "zara"
     return "lena"
@@ -291,6 +359,30 @@ async def process_message(phone: str, text: str, name: str = "", message_id: str
     # ── ZARA — parceria/influencer ────────────────────────────────────────────
     elif primary_agent == "zara":
         reply = await _llm(SYSTEM_PROMPTS["zara"], [{"role": "user", "content": text}], max_tokens=200)
+
+    # ── NEURO — desejo/inspiração/dor de decoração ────────────────────────────
+    elif primary_agent == "neuro":
+        customer_ctx = {"first_name": name, "orders_count": 0, "total_spent": 0}
+        lead_score = score_lead(customer_ctx) if _NEURO_OK else "morno"
+        neuro_ctx = build_neuro_prompt({
+            "intent": intent,
+            "customer": customer_ctx,
+            "produto": "",
+        }) if _NEURO_OK else ""
+
+        ctx = f"Nome: {name}.\nIntent: {intent}.\nLead score: {lead_score}.\n"
+        if intent == "desejo":
+            ctx += "Cliente expressou desejo/admiração por produto ou ambiente. Ative o desejo de forma sutil.\n"
+        elif intent == "inspiracao":
+            ctx += "Cliente busca inspiração ou dica de decoração. Seja especialista + amiga, ofereça valor real.\n"
+        elif intent == "dor_decoracao":
+            ctx += "Cliente expressou dor com o próprio ambiente. Nomeie a dor, mostre que entende, ofereça ponte.\n"
+        if neuro_ctx:
+            ctx += f"\n{neuro_ctx}\n"
+
+        user_msg = ctx + "\nMensagem do cliente: " + text
+        msgs = history + [{"role": "user", "content": user_msg}]
+        reply = await _llm(SYSTEM_PROMPTS["neuro"], msgs, max_tokens=350)
 
     # ── LENA — atendimento geral ──────────────────────────────────────────────
     else:
