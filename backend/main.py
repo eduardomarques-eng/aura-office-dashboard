@@ -4816,4 +4816,102 @@ async def loyalty_leaderboard():
     return JSONResponse({"leaderboard": ranked[:20]})
 
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+# PUBLISHER AUTÔNOMO — publica posts QUEUE via Meta Graph API
+# Chamado pelo n8n 4x/dia nos horários dos posts
+# ══════════════════════════════════════════════════════════════════════════════
+_POSTIZ_DB = "postgresql://postgres:PzjTaROWHIzlntJsCxvMFuLHhgWHlxEE@acela.proxy.rlwy.net:51860/postiz"
+
+async def _ig_publish(client: httpx.AsyncClient, img_url: str, caption: str, token: str, ig_id: str) -> dict:
+    r1 = await client.post(f"https://graph.facebook.com/v19.0/{ig_id}/media",
+                           data={"image_url": img_url, "caption": caption, "access_token": token})
+    d1 = r1.json()
+    if "id" not in d1:
+        return {"ok": False, "error": str(d1)[:200]}
+    container_id = d1["id"]
+    for _ in range(4):
+        await asyncio.sleep(6)
+        st = await client.get(f"https://graph.facebook.com/v19.0/{container_id}",
+                              params={"fields": "status_code", "access_token": token})
+        if st.json().get("status_code") == "FINISHED":
+            break
+    r2 = await client.post(f"https://graph.facebook.com/v19.0/{ig_id}/media_publish",
+                            data={"creation_id": container_id, "access_token": token})
+    d2 = r2.json()
+    if "error" in d2 or "errors" in d2:
+        return {"ok": False, "error": str(d2)[:200]}
+    return {"ok": True, "id": d2.get("id")}
+
+async def _fb_publish(client: httpx.AsyncClient, img_url: str, caption: str, token: str, page_id: str) -> dict:
+    r = await client.post(f"https://graph.facebook.com/v19.0/{page_id}/photos",
+                          data={"url": img_url, "message": caption, "access_token": token})
+    d = r.json()
+    if "error" in d or "errors" in d:
+        return {"ok": False, "error": str(d)[:200]}
+    return {"ok": True, "id": d.get("post_id", d.get("id"))}
+
+@app.post("/social/publish-due")
+async def publish_due_posts(secret: str = ""):
+    """Publisher autônomo: publica posts QUEUE com publishDate em janela de 90min passados.
+    Chamado pelo n8n 4x/dia. secret deve ser 'AuraPublish2026'."""
+    if secret and secret != "AuraPublish2026":
+        return {"status": "unauthorized"}
+    token = _FB_PAGE_TOKEN
+    ig_id = _IG_USER_ID
+    page_id = _FB_PAGE_ID
+    if not token or not ig_id or not page_id:
+        return {"status": "error", "detail": "FB_PAGE_TOKEN / IG_USER_ID / FB_PAGE_ID não configurados"}
+    try:
+        import asyncpg
+        conn = await asyncpg.connect(_POSTIZ_DB, ssl="require")
+    except ImportError:
+        return {"status": "error", "detail": "asyncpg não disponível — usar psycopg2 via subprocess"}
+    except Exception as e:
+        return {"status": "error", "detail": f"DB connect: {e}"}
+
+    now = datetime.utcnow()
+    window_start = datetime(now.year, now.month, now.day, now.hour, now.minute) - __import__("datetime").timedelta(minutes=90)
+    window_end   = datetime(now.year, now.month, now.day, now.hour, now.minute) + __import__("datetime").timedelta(minutes=5)
+
+    posts = await conn.fetch(
+        '''SELECT id, content, image, settings, "integrationId"
+           FROM "Post"
+           WHERE "deletedAt" IS NULL AND state = 'QUEUE'
+             AND "publishDate" >= $1 AND "publishDate" <= $2
+           ORDER BY "publishDate"''',
+        window_start, window_end
+    )
+
+    published, errors, results = 0, 0, []
+    async with httpx.AsyncClient(timeout=30) as hc:
+        for p in posts:
+            is_ig  = str(p["integrationId"]).startswith("4c")
+            img_data = json.loads(p["image"]) if p["image"] else []
+            img_url  = img_data[0]["url"] if img_data else None
+            if not img_url:
+                continue
+            canal = "IG" if is_ig else "FB"
+            try:
+                if is_ig:
+                    result = await _ig_publish(hc, img_url, p["content"], token, ig_id)
+                else:
+                    result = await _fb_publish(hc, img_url, p["content"], token, page_id)
+                if result["ok"]:
+                    await conn.execute("UPDATE \"Post\" SET state='PUBLISHED', \"updatedAt\"=NOW() WHERE id=$1", p["id"])
+                    published += 1
+                    results.append({"canal": canal, "status": "ok", "id": result.get("id")})
+                else:
+                    await conn.execute("UPDATE \"Post\" SET state='ERROR', error=$1, \"updatedAt\"=NOW() WHERE id=$2", result["error"][:255], p["id"])
+                    errors += 1
+                    results.append({"canal": canal, "status": "error", "msg": result["error"][:100]})
+            except Exception as ex:
+                errors += 1
+                results.append({"canal": canal, "status": "exception", "msg": str(ex)[:100]})
+
+    await conn.close()
+    return {"status": "ok", "published": published, "errors": errors, "details": results,
+            "window": f"{window_start.isoformat()} → {window_end.isoformat()}"}
+
+
 app.mount("/", StaticFiles(directory=str(_ROOT), html=True), name="static")
