@@ -1078,6 +1078,382 @@ async def cmd_sys_fullauto() -> AsyncGenerator[str, None]:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# SOCIAL — /social
+# ═══════════════════════════════════════════════════════════════════════════════
+
+BRAND_VOICE = (
+    "Tom: sereno, poético, sofisticado, acolhedor. "
+    "Linguagem calma e minimalista — evite exclamações excessivas, emojis em excesso "
+    "e linguagem de vendas agressiva. "
+    "Exemplos de frases da marca: "
+    "'Um espaço que respira calma.' "
+    "'Menos coisas. Mais presença.' "
+    "'O detalhe que transforma um ambiente em lar.' "
+    "O produto NUNCA é o protagonista — ele é parte do ambiente, da sensação."
+)
+
+async def _generate_with_gemini_async(prompt: str, pro: bool = False, max_tokens: int = 1500) -> str:
+    try:
+        from llm_engine import llm as _llm_engine
+        system = "Você é a equipe criativa e estratégica da Aura Decore."
+        text, provider = await _llm_engine(system, [{"role": "user", "content": prompt}], max_tokens=max_tokens)
+        return text
+    except Exception as e:
+        return f"⚠️ Erro ao chamar motor LLM: {str(e)}"
+
+async def cmd_social_week(args: str = "") -> AsyncGenerator[str, None]:
+    foco = args or "crescimento orgânico e engajamento estético"
+    yield f"\n🌿 MIRA & IVE — Gerando Calendário Editorial Semanal · {_now()}\n{SEP}\n"
+    yield f"⏱️ Foco estratégico: {foco}\n"
+    yield f"⏱️ Conectando ao Gemini Advanced para otimizar as sugestões...\n"
+    
+    prompt = (
+        f"Você é IVE (CEO) e MIRA (Analytics/Estratégia) da Aura Decore. "
+        f"Gere um plano estratégico semanal completo para as redes sociais da marca (Instagram, Facebook Comercial, Facebook Pessoal, TikTok e Pinterest). "
+        f"A Aura Decore é uma marca premium de decoração Japandi, minimalista, neuroarquitetura e biofilia. "
+        f"O foco estratégico para esta semana é: '{foco}'.\n\n"
+        f"Diretrizes da Voz da Marca:\n{BRAND_VOICE}\n\n"
+        f"Por favor, estruture seu plano exatamente em formato Markdown com o seguinte layout:\n"
+        f"# 📅 Planejamento de Redes Sociais — Semana {_week()}\n"
+        f"**Foco:** {foco}\n"
+        f"**Data de Geração:** {_now()}\n\n"
+        f"## 🎯 Metas da Semana\n"
+        f"- [Meta 1]\n"
+        f"- [Meta 2]\n"
+        f"- [Meta 3]\n\n"
+        f"## 📆 Calendário Editorial Diário (Segunda a Domingo)\n"
+        f"Para cada dia da semana, crie um briefing detalhado:\n"
+        f"### [Dia da Semana]\n"
+        f"- **Plataformas:** [Lista de plataformas]\n"
+        f"- **Pilar:** [lifestyle / produto / educacao / bastidores / prova]\n"
+        f"- **Tema:** [Tema principal do dia]\n"
+        f"- **Briefing Visual:** [Diretriz estética para Luna/Vega]\n"
+        f"- **Diretriz de Copy:** [Direção poética para Vera]\n"
+        f"- **Horário Recomendado:** [Ex: 09h00 ou 18h00]\n"
+    )
+    
+    text = await _generate_with_gemini_async(prompt, pro=True)
+    filename = f"Redes Sociais/Semanas/semana-{_week().replace('/', '-')}.md"
+    _write_vault(filename, text)
+    
+    yield f"\n✅ Planejamento semanal salvo em: Vault/{filename}\n\n"
+    async for line in _stream(text.splitlines(keepends=True), delay=0.01):
+        yield line
+
+async def cmd_social_reel(tema: str = "") -> AsyncGenerator[str, None]:
+    t_tema = tema or "Silêncio visual e aconchego Japandi"
+    yield f"\n🎬 NOX & VEGA — Roteiro de Reel · {_now()}\n{SEP}\n"
+    yield f"⏱️ Tema solicitado: {t_tema}\n"
+    yield f"⏱️ Consultando Gemini para produzir copy e roteiro poético...\n"
+    
+    prompt = (
+        f"Você é NOX (diretor de criação/roteirista) e VERA (copywriter) da Aura Decore. "
+        f"Crie um roteiro cinematográfico detalhado para um Reel de 30 segundos (vertical 9:16) sobre o tema: '{t_tema}'. "
+        f"Diretrizes da Voz da Marca:\n{BRAND_VOICE}\n\n"
+        f"Gere o roteiro em formato Markdown estruturado como o seguinte:\n"
+        f"# 🎬 Roteiro de Reel: {t_tema}\n"
+        f"**Criado em:** {_now()} por NOX & VERA\n"
+        f"**Música Sugerida:** [Som ASMR, piano minimalista, lo-fi suave]\n\n"
+        f"## 🎬 Roteiro Técnico (30 segundos)\n"
+        f"| Tempo | Visual / Cena | Áudio / Narração (sem exclamações) |\n"
+        f"|-------|---------------|-------------------------------------|\n"
+        f"| 0–3s  | Hook visual   | [Texto em tela ou narração] |\n"
+        f"| 3–10s | Cena 1        | [Texto em tela ou narração] |\n"
+        f"| 10–18s| Cena 2        | [Texto em tela ou narração] |\n"
+        f"| 18–25s| Cena 3        | [Texto em tela ou narração] |\n"
+        f"| 25–30s| CTA           | [Chamada sutil para bio/site] |\n\n"
+        f"## ✍️ Copy para Redes Sociais\n"
+        f"- **Legenda Instagram:** [Caption poético, minimalista, 80-120 palavras]\n"
+        f"- **Legenda TikTok:** [Caption curto focado em engajamento, 30-50 palavras]\n"
+        f"- **Legenda Facebook Comercial:** [Caption com link para auradecore.com.br]\n"
+        f"- **Legenda Facebook Pessoal (@auras.decore):** [Caption leve e pessoal]\n"
+        f"- **Alt Text (Acessibilidade):** [Descrição para leitores de tela]\n"
+        f"- **Hashtags:** [Mix estratégico de hashtags]\n"
+    )
+    
+    text = await _generate_with_gemini_async(prompt, pro=False)
+    import re
+    slug = re.sub(r'[^a-zA-Z0-9\s-]', '', t_tema).strip().replace(' ', '-').lower()
+    filename = f"Redes Sociais/Reels/reel-{slug or 'default'}.md"
+    _write_vault(filename, text)
+    
+    yield f"\n✅ Roteiro de Reel salvo em: Vault/{filename}\n\n"
+    async for line in _stream(text.splitlines(keepends=True), delay=0.01):
+        yield line
+
+async def cmd_social_carousel(tema: str = "") -> AsyncGenerator[str, None]:
+    t_tema = tema or "5 pilares do design Japandi"
+    yield f"\n🎨 LUNA & VERA — Planejando Carrossel · {_now()}\n{SEP}\n"
+    yield f"⏱️ Tema solicitado: {t_tema}\n"
+    yield f"⏱️ Consultando Gemini para redigir os slides e captions...\n"
+    
+    prompt = (
+        f"Você é LUNA (designer de posts) e VERA (copywriter) da Aura Decore. "
+        f"Crie o planejamento de conteúdo e layout para um Carrossel de 8 slides para o Instagram sobre o tema: '{t_tema}'. "
+        f"Diretrizes da Voz da Marca:\n{BRAND_VOICE}\n\n"
+        f"Gere o planejamento do carrossel em Markdown no seguinte formato:\n"
+        f"# 🎨 Carrossel: {t_tema}\n"
+        f"**Criado em:** {_now()} por LUNA & VERA\n\n"
+        f"## 🎨 Layout e Conteúdo dos Slides\n"
+        f"### Slide 1 (Capa)\n"
+        f"- **Título (máx 6 palavras):** [Título marcante]\n"
+        f"- **Subtítulo:** [Gancho de curiosidade]\n"
+        f"- **Direção Visual:** [Direção de design]\n"
+        f"\n"
+        f"### Slides 2 a 7 (Desenvolvimento)\n"
+        f"- **Slide 2:** [Conteúdo]\n"
+        f"- **Slide 3:** [Conteúdo]\n"
+        f"- **Slide 4:** [Conteúdo]\n"
+        f"- **Slide 5:** [Conteúdo]\n"
+        f"- **Slide 6:** [Conteúdo]\n"
+        f"- **Slide 7:** [Conteúdo]\n"
+        f"\n"
+        f"### Slide 8 (CTA)\n"
+        f"- **Chamada para Ação:** [CTA delicado e site]\n"
+        f"- **Direção Visual:** [Design minimalista final]\n\n"
+        f"## ✍️ Copy para Redes Sociais\n"
+        f"- **Legenda Instagram:** [Caption engajador]\n"
+        f"- **Legenda Facebook Comercial:** [Caption com link]\n"
+        f"- **Hashtags:** [Tags Japandi e minimalistas]\n"
+    )
+    
+    text = await _generate_with_gemini_async(prompt, pro=False)
+    import re
+    slug = re.sub(r'[^a-zA-Z0-9\s-]', '', t_tema).strip().replace(' ', '-').lower()
+    filename = f"Redes Sociais/Carrosseis/carousel-{slug or 'default'}.md"
+    _write_vault(filename, text)
+    
+    yield f"\n✅ Planejamento do Carrossel salvo em: Vault/{filename}\n\n"
+    async for line in _stream(text.splitlines(keepends=True), delay=0.01):
+        yield line
+
+async def cmd_social_static(tema: str = "") -> AsyncGenerator[str, None]:
+    t_tema = tema or "Minimalismo e bem-estar no lar"
+    yield f"\n📸 VERA & ARTE — Criando Post Estático · {_now()}\n{SEP}\n"
+    yield f"⏱️ Tema solicitado: {t_tema}\n"
+    yield f"⏱️ Consultando Gemini para redigir captions e alt text...\n"
+    
+    prompt = (
+        f"Você é VERA (copywriter) e ARTE (curador visual) da Aura Decore. "
+        f"Crie captions e a direção visual para uma publicação de foto estática (lifestyle ou produto em cena) sobre o tema: '{t_tema}'. "
+        f"Diretrizes da Voz da Marca:\n{BRAND_VOICE}\n\n"
+        f"Gere o plano em Markdown no seguinte formato:\n"
+        f"# 📸 Post Estático: {t_tema}\n"
+        f"**Criado em:** {_now()} por VERA & ARTE\n\n"
+        f"## 🖼️ Direção Visual da Imagem\n"
+        f"- **Composição:** [Descrição da cena, iluminação natural]\n"
+        f"- **Prompt sugerido para IA:** [Prompt em inglês para Pollinations/Flux]\n\n"
+        f"## ✍️ Copy por Plataforma\n"
+        f"- **Legenda Instagram:** [Caption poético, sereno, minimalista, 60-90 palavras]\n"
+        f"- **Legenda Facebook Comercial:** [Caption com link da loja]\n"
+        f"- **Legenda Facebook Pessoal (@auras.decore):** [Caption leve e pessoal]\n"
+        f"- **Legenda Pinterest:** [Descrição do Pin]\n"
+        f"- **Texto para Stories:** [Frase curtíssima de impacto, máx 8 palavras]\n"
+        f"- **Alt Text (Acessibilidade):** [Descrição da imagem]\n"
+        f"- **Hashtags:** [Tags ideais]\n"
+    )
+    
+    text = await _generate_with_gemini_async(prompt, pro=False)
+    import re
+    slug = re.sub(r'[^a-zA-Z0-9\s-]', '', t_tema).strip().replace(' ', '-').lower()
+    filename = f"Redes Sociais/Estaticos/static-{slug or 'default'}.md"
+    _write_vault(filename, text)
+    
+    yield f"\n✅ Post Estático salvo em: Vault/{filename}\n\n"
+    async for line in _stream(text.splitlines(keepends=True), delay=0.01):
+        yield line
+
+async def cmd_social_stories(tema: str = "") -> AsyncGenerator[str, None]:
+    t_tema = tema or "Decoração com biofilia"
+    yield f"\n📲 MIA & LUNA — Stories · {_now()}\n{SEP}\n"
+    yield f"⏱️ Tema solicitado: {t_tema}\n"
+    yield f"⏱️ Consultando Gemini para planejar a sequência diária...\n"
+    
+    prompt = (
+        f"Você é MIA (gestora de comunidade/engajamento) e LUNA (designer visual) da Aura Decore. "
+        f"Crie uma sequência estratégica de 5 Stories para o Instagram sobre o tema: '{t_tema}'. "
+        f"Os stories devem ter forte foco em conexão emocional e engajamento. "
+        f"Diretrizes da Voz da Marca:\n{BRAND_VOICE}\n\n"
+        f"Gere o plano em Markdown no seguinte formato:\n"
+        f"# 📲 Sequência de Stories: {t_tema}\n"
+        f"**Criado em:** {_now()} por MIA & LUNA\n\n"
+        f"## 📲 Planejamento da Sequência (5 Stories)\n"
+        f"### Story 1: O Gancho\n"
+        f"- **Visual:** [Visual]\n"
+        f"- **Texto em Tela:** [Frase]\n"
+        f"- **Elemento de Engajamento:** [Enquete]\n"
+        f"\n"
+        f"### Story 2: O Contexto\n"
+        f"- **Visual:** [Visual]\n"
+        f"- **Texto em Tela:** [Texto]\n"
+        f"\n"
+        f"### Story 3: A Solução / Dica\n"
+        f"- **Visual:** [Visual]\n"
+        f"- **Texto em Tela:** [Dica]\n"
+        f"- **Elemento de Engajamento:** [Caixa de perguntas]\n"
+        f"\n"
+        f"### Story 4: O Detalhe\n"
+        f"- **Visual:** [Foco macro]\n"
+        f"- **Texto em Tela:** [Sensação]\n"
+        f"\n"
+        f"### Story 5: A Chamada (CTA)\n"
+        f"- **Visual:** [Cena final]\n"
+        f"- **Texto em Tela:** [CTA]\n"
+        f"- **Link:** [Link bio/site]\n"
+    )
+    
+    text = await _generate_with_gemini_async(prompt, pro=False)
+    import re
+    slug = re.sub(r'[^a-zA-Z0-9\s-]', '', t_tema).strip().replace(' ', '-').lower()
+    filename = f"Redes Sociais/Stories/stories-{slug or 'default'}.md"
+    _write_vault(filename, text)
+    
+    yield f"\n✅ Sequência de Stories salva em: Vault/{filename}\n\n"
+    async for line in _stream(text.splitlines(keepends=True), delay=0.01):
+        yield line
+
+async def cmd_social_tiktok(tema: str = "") -> AsyncGenerator[str, None]:
+    t_tema = tema or "ASMR rotina matinal minimalista"
+    yield f"\n🎵 VEGA & NOX — Conteúdo TikTok · {_now()}\n{SEP}\n"
+    yield f"⏱️ Tema solicitado: {t_tema}\n"
+    yield f"⏱️ Consultando Gemini para produzir roteiro focado em engajamento no TikTok...\n"
+    
+    prompt = (
+        f"Você é VEGA (videomaker/editor) e VERA (copywriter) da Aura Decore. "
+        f"Crie um briefing e roteiro de post para o TikTok sobre o tema: '{t_tema}'. "
+        f"Foque em ASMR, relaxamento e slow living. "
+        f"Diretrizes da Voz da Marca:\n{BRAND_VOICE}\n\n"
+        f"Gere o plano em Markdown no seguinte formato:\n"
+        f"# 🎵 TikTok Post Brief: {t_tema}\n"
+        f"**Criado em:** {_now()} por VEGA & VERA\n"
+        f"**Duração Sugerida:** 15-30s\n"
+        f"**Áudio Recomendado:** [Som ASMR ou lo-fi]\n\n"
+        f"## 🎬 Roteiro do Vídeo (Cena a Cena)\n"
+        f"- **0-3s Hook:** [Hook]\n"
+        f"- **3-12s Desenvolvimento:** [Cenas]\n"
+        f"- **12-25s Diferencial/Sensação:** [Sensação]\n"
+        f"- **25-30s CTA:** [CTA sutil]\n\n"
+        f"## ✍️ Caption & Hashtags\n"
+        f"- **Legenda TikTok:** [Caption curta, 30-50 palavras]\n"
+        f"- **Hashtags Recomendadas:** [Tags do TikTok]\n"
+    )
+    
+    text = await _generate_with_gemini_async(prompt, pro=False)
+    import re
+    slug = re.sub(r'[^a-zA-Z0-9\s-]', '', t_tema).strip().replace(' ', '-').lower()
+    filename = f"Redes Sociais/TikTok/tiktok-{slug or 'default'}.md"
+    _write_vault(filename, text)
+    
+    yield f"\n✅ Briefing TikTok salvo em: Vault/{filename}\n\n"
+    async for line in _stream(text.splitlines(keepends=True), delay=0.01):
+        yield line
+
+async def cmd_social_status() -> AsyncGenerator[str, None]:
+    yield f"\n🌿 AURA DECORE — Status do Ecossistema de Redes Sociais · {_now()}\n{SEP}\n"
+    
+    db_path = pathlib.Path(__file__).parent / "canva_designs.db"
+    total_designs = 0
+    total_agendados = 0
+    total_publicados = 0
+    proximos = []
+    
+    if db_path.exists():
+        try:
+            import sqlite3
+            conn = sqlite3.connect(str(db_path))
+            c = conn.cursor()
+            total_designs = c.execute("SELECT COUNT(*) FROM designs").fetchone()[0]
+            total_agendados = c.execute("SELECT COUNT(*) FROM publicacoes WHERE publicado=0").fetchone()[0]
+            total_publicados = c.execute("SELECT COUNT(*) FROM publicacoes WHERE publicado=1").fetchone()[0]
+            
+            hoje = datetime.now().strftime("%Y-%m-%d")
+            rows = c.execute("""
+                SELECT p.data_agendada, p.hora, p.canal, d.titulo
+                FROM publicacoes p JOIN designs d ON p.design_id = d.id
+                WHERE p.publicado=0 AND p.data_agendada >= ?
+                ORDER BY p.data_agendada, p.hora
+                LIMIT 5
+            """, (hoje,)).fetchall()
+            for r in rows:
+                proximos.append(f"   📅 {r[0]} {r[1]} | [{r[2].upper()}] {r[3][:45]}")
+            conn.close()
+        except Exception as e:
+            yield f"⚠️ Erro ao consultar banco Canva: {e}\n"
+    else:
+        yield f"⚠️ Banco canva_designs.db não encontrado.\n"
+
+    google_ai_key = os.getenv("GOOGLE_AI_KEY", "")
+    fb_page_id = os.getenv("FB_PAGE_ID", "")
+    ig_user_id = os.getenv("IG_USER_ID", "")
+    fb_page_token = os.getenv("FB_PAGE_TOKEN", "")
+    
+    tiktok_enabled = os.getenv("TIKTOK_CHROME_ENABLED", "true").lower() == "true"
+    fb_pessoal_enabled = os.getenv("FB_PESSOAL_CHROME_ENABLED", "true").lower() == "true"
+    pinterest_ready = os.getenv("PINTEREST_API_READY", "false").lower() == "true"
+    
+    def status_key(k: str) -> str:
+        return "Configurada ✓" if k else "Ausente ✗"
+
+    yield f"📊 BANCO DE DESIGNS CANVA\n"
+    yield f"   Designs Cadastrados : {total_designs}\n"
+    yield f"   Agendamentos Ativos : {total_agendados} pendentes\n"
+    yield f"   Posts Publicados    : {total_publicados} total\n"
+    yield f"\n{SEP}\n"
+    
+    yield f"📡 INTEGRAÇÕES & CREDENCIAIS\n"
+    yield f"   Gemini API Key      : {status_key(google_ai_key)}\n"
+    yield f"   FB Page Token       : {status_key(fb_page_token)}\n"
+    yield f"   FB Page ID          : {status_key(fb_page_id)}\n"
+    yield f"   Instagram User ID   : {status_key(ig_user_id)}\n"
+    yield f"   TikTok Automation   : {'Ativa (Chrome)' if tiktok_enabled else 'Desativada ✗'}\n"
+    yield f"   FB Pessoal Automação: {'Ativa (Chrome)' if fb_pessoal_enabled else 'Desativada ✗'}\n"
+    yield f"   Pinterest API v5    : {'Pronta (Ativa)' if pinterest_ready else 'Inativa (Manual)'}\n"
+    yield f"\n{SEP}\n"
+    
+    if proximos:
+        yield f"📅 PRÓXIMOS AGENDAMENTOS (CANVA)\n"
+        for p in proximos:
+            yield f"{p}\n"
+    else:
+        yield f"📅 PRÓXIMOS AGENDAMENTOS\n   Nenhum agendamento pendente encontrado.\n"
+        
+    yield f"\n{SEP}\n"
+    yield f"💡 Use /social week para criar o planejamento da semana.\n"
+
+async def cmd_social_optimize() -> AsyncGenerator[str, None]:
+    yield f"\n📈 MIRA — Relatório de Otimização de Performance · {_now()}\n{SEP}\n"
+    yield f"⏱️ Analisando dados das redes sociais e consistência da marca...\n"
+    yield f"⏱️ Consultando o Gemini para estruturar as recomendações estratégicas...\n"
+    
+    prompt = (
+        f"Você é MIRA (especialista em SEO e Analytics) e ECHO (auditor de qualidade) da Aura Decore. "
+        f"Realize uma auditoria detalhada de otimização de performance para o ecossistema de redes sociais da marca (Instagram, Facebook, TikTok e Pinterest). "
+        f"Foque em otimização de hashtags, horários ideais de postagem (como 09h, 10h, 18h e 19h BRT), títulos de designs Canva, alinhamento estético ao estilo Japandi e wabi-sabi, e conformidade com a voz de tom calmo e sem exclamações.\n\n"
+        f"Diretrizes da Voz da Marca:\n{BRAND_VOICE}\n\n"
+        f"Gere as recomendações em Markdown no seguinte formato:\n"
+        f"# 📈 Relatório de Otimização de Redes Sociais\n"
+        f"**Gerado em:** {_now()} por MIRA & ECHO\n\n"
+        f"## 📊 Diagnóstico Geral de Consistência\n"
+        f"- **Identidade Visual:** [Status]\n"
+        f"- **Tom de Voz:** [Status]\n"
+        f"- **SEO e Hashtags:** [Status]\n\n"
+        f"## 🎯 Recomendações de Ação\n"
+        f"1. **Ajustes de Copy (Vera):** [Copy]\n"
+        f"2. **Ajustes de Vídeo/Imagem (Luna/Vega):** [Imagem]\n"
+        f"3. **Grade de Horários & Agendamento:** [Agendamento]\n"
+        f"4. **Palavras-chave e Tags:** [SEO]\n"
+    )
+    
+    text = await _generate_with_gemini_async(prompt, pro=True)
+    filename = f"Redes Sociais/Otimizacoes/otimizacao-{_today()}.md"
+    _write_vault(filename, text)
+    
+    yield f"\n✅ Relatório de Otimização salvo em: Vault/{filename}\n\n"
+    async for line in _stream(text.splitlines(keepends=True), delay=0.01):
+        yield line
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # DISPATCHER PRINCIPAL
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1095,8 +1471,29 @@ async def execute(raw_cmd: str) -> AsyncGenerator[str, None]:
     action = parts[1].lower() if len(parts) > 1 else ""
     args   = parts[2] if len(parts) > 2 else ""
 
+    # ── SOCIAL /social ──────────────────────────────────────────────────────
+    if prefix in ("/social", "/soc"):
+        if action == "week":
+            async for line in cmd_social_week(args): yield line
+        elif action == "reel":
+            async for line in cmd_social_reel(args): yield line
+        elif action == "carousel":
+            async for line in cmd_social_carousel(args): yield line
+        elif action == "static":
+            async for line in cmd_social_static(args): yield line
+        elif action == "stories":
+            async for line in cmd_social_stories(args): yield line
+        elif action == "tiktok":
+            async for line in cmd_social_tiktok(args): yield line
+        elif action == "status":
+            async for line in cmd_social_status(): yield line
+        elif action == "optimize":
+            async for line in cmd_social_optimize(): yield line
+        else:
+            yield f"\n🌿 SOCIAL · Comandos: /social week [foco] · /social reel [tema] · /social carousel [tema] · /social static [tema] · /social stories [tema] · /social tiktok [tema] · /social status · /social optimize\n"
+
     # ── IVE /i ─────────────────────────────────────────────────────────────
-    if prefix == "/i":
+    elif prefix == "/i":
         if action == "week":
             async for line in cmd_i_week(args): yield line
         elif action == "month":
@@ -1249,6 +1646,7 @@ async def execute(raw_cmd: str) -> AsyncGenerator[str, None]:
     elif prefix in ("/help", "/?", "/commands", "/cmd"):
         yield f"\n📋 COMANDOS AURA DECORE\n{SEP}\n"
         cmds = [
+            ("SOCIAL",       ["/social week", "/social reel", "/social carousel", "/social static", "/social stories", "/social tiktok", "/social status", "/social optimize"]),
             ("IVE (CEO)",    ["/i week", "/i month", "/i report", "/i status", "/i evolve"]),
             ("ECHO",         ["/echo now", "/echo weekly", "/echo kaizen", "/echo [agente]"]),
             ("VEGA",         ["/v reel [tema]", "/v stories [tema]", "/v ads [produto]", "/v auto"]),

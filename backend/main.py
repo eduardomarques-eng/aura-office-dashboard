@@ -802,6 +802,32 @@ async def _run_crew_background(crew_type: str, context: str, agent_notify: str =
             "message": str(result)[:400],
             "timestamp": datetime.now().strftime("%H:%M"),
         })
+
+        # Envia notificação WhatsApp para Eduardo se for publicação de redes sociais via Crew
+        if crew_type == "social_post":
+            try:
+                from whatsapp_agent import send_whatsapp_message
+                phone_raw = os.getenv("EDUARDO_PHONE", "")
+                if phone_raw:
+                    phones = [p.strip() for p in phone_raw.split(",") if p.strip()]
+                    if phones:
+                        target_phone = phones[0]
+                        data_hora = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                        resumo_result = str(result)
+                        resumo_result = re.sub(r'\n+', '\n', resumo_result).strip()
+
+                        report_msg = (
+                            f"🌿 *Relatório de Publicação (Crew) — Aura Decore* 🌿\n\n"
+                            f"Status: ✅ Concluído por FEED\n"
+                            f"📅 Horário: {data_hora}\n\n"
+                            f"📝 *Resultado da Publicação:*\n{resumo_result}\n\n"
+                            f"💡 *Sugestão de Ação:* Revisar no feed do Instagram @auras.decore e Facebook Comercial. 🌿"
+                        )
+                        asyncio.create_task(send_whatsapp_message(target_phone, report_msg))
+                        print(f"[CREW] Notificação WhatsApp enviada para Eduardo ({target_phone})")
+            except Exception as e_notif:
+                print(f"[WARN] Erro ao enviar notificação de post por crew: {e_notif}")
+
     except Exception as e:
         await manager.broadcast({
             "type": "agent_message",
@@ -809,6 +835,26 @@ async def _run_crew_background(crew_type: str, context: str, agent_notify: str =
             "message": f"Crew {crew_type} finalizado.",
             "timestamp": datetime.now().strftime("%H:%M"),
         })
+        # Envia notificação WhatsApp de falha para Eduardo se for publicação de redes sociais
+        if crew_type == "social_post":
+            try:
+                from whatsapp_agent import send_whatsapp_message
+                phone_raw = os.getenv("EDUARDO_PHONE", "")
+                if phone_raw:
+                    phones = [p.strip() for p in phone_raw.split(",") if p.strip()]
+                    if phones:
+                        target_phone = phones[0]
+                        data_hora = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                        report_msg = (
+                            f"🌿 *Relatório de Publicação (Crew) — Aura Decore* 🌿\n\n"
+                            f"Status: ❌ Erro na Execução\n"
+                            f"📅 Horário: {data_hora}\n\n"
+                            f"⚠️ *Erro detectado:*\n{str(e)[:400]}\n\n"
+                            f"💡 *Sugestão de Ação:* Revisar logs no Railway para entender a falha na publicação automática."
+                        )
+                        asyncio.create_task(send_whatsapp_message(target_phone, report_msg))
+            except Exception as e_notif:
+                print(f"[WARN] Erro ao enviar notificação de falha: {e_notif}")
 
 
 async def social_post_scheduler():
@@ -1622,6 +1668,7 @@ async def execute_eduardo_order_background(phone: str, text: str, name: str):
                 "Você é IVE, a CEO da Aura Decore.\n"
                 "Seu papel é traduzir a mensagem de ordem enviada pelo Diretor Eduardo Marques em um comando de sistema reconhecido pelo painel de controle dos agentes.\n"
                 "Comandos disponíveis:\n"
+                "- SOCIAL (Redes Sociais): /social week [foco], /social reel [tema], /social carousel [tema], /social static [tema], /social stories [tema], /social tiktok [tema], /social status, /social optimize\n"
                 "- IVE (CEO): /i week [args], /i month [args], /i report, /i status, /i evolve\n"
                 "- ECHO (Auditoria): /echo now, /echo weekly, /echo kaizen, /echo [agente]\n"
                 "- VEGA (Vídeos): /v reel [tema], /v stories [tema], /v ads [produto], /v auto\n"
@@ -1695,10 +1742,17 @@ async def whatsapp_webhook(request: Request):
     """
     try:
         data = await request.json()
+        print(f"[WEBHOOK] Payload recebido: {json.dumps(data)}")
+
+        # Ignora eventos que não sejam de novas mensagens (como onack, onpresencechanged, etc)
+        event = data.get("event")
+        if event and event not in ("onmessage", "message", "messages.upsert", "on-message-received"):
+            return {"status": "ignored", "reason": f"ignored_event_{event}"}
 
         # Ignora mensagens enviadas pelo próprio bot
         if data.get("fromMe") or data.get("isGroupMsg"):
             return {"status": "ignored", "reason": "fromMe or group"}
+
 
         # ── Normaliza payload: suporta Z-API, WPPConnect e Evolution API ──
         # WPPConnect: { from, sender, body, type, id, ... }
@@ -1717,7 +1771,14 @@ async def whatsapp_webhook(request: Request):
             # WPPConnect / Z-API (campos comuns)
             phone      = data.get("phone", "") or data.get("from", "").replace("@c.us", "")
             name       = data.get("senderName", "") or data.get("sender", {}).get("pushname", "") or data.get("pushName", "")
-            message_id = data.get("messageId", "") or data.get("id", "") or data.get("id", {}).get("id", "") if not isinstance(data.get("id"), str) else data.get("id", "")
+            
+            # Extract message ID safely as a string
+            msg_id_raw = data.get("messageId", "") or data.get("id", "")
+            if isinstance(msg_id_raw, dict):
+                message_id = msg_id_raw.get("_serialized", "") or msg_id_raw.get("id", "") or str(msg_id_raw)
+            else:
+                message_id = str(msg_id_raw)
+
             text = (
                 data.get("text", {}).get("message", "")
                 or data.get("message", "")
@@ -1816,6 +1877,8 @@ async def whatsapp_webhook(request: Request):
             "reply":     reply,
         }
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return {"status": "error", "detail": str(e)}
 
 @app.get("/whatsapp/sessions")
@@ -4098,6 +4161,7 @@ async def cmd_list():
     """Lista todos os comandos disponíveis."""
     return {
         "commands": {
+            "/social": ["week <foco>", "reel <tema>", "carousel <tema>", "static <tema>", "stories <tema>", "tiktok <video>", "status", "optimize"],
             "/i": ["week", "month", "report", "status", "evolve"],
             "/echo": ["now", "weekly", "kaizen", "<agente>"],
             "/v": ["reel <tema>", "stories <tema>", "ads <produto>", "auto"],
