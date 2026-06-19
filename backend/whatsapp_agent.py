@@ -342,6 +342,8 @@ atualizado: {ts}
 
 # ── WPPConnect (substitui Z-API) ───────────────────────────────────────────────
 WPP_URL     = os.getenv("WPPCONNECT_URL", "http://localhost:21465")
+if "localtunnel.me" in WPP_URL:
+    WPP_URL = WPP_URL.replace("localtunnel.me", "loca.lt")
 WPP_SESSION = os.getenv("WPPCONNECT_SESSION", "aura-decore")
 WPP_TOKEN   = os.getenv("WPPCONNECT_TOKEN", "$2b$10$rZ2qdn2TTSZ7UmtCz1_e9eLgmCaoZyWAn_u9RSOGm4cEtit3r.ajy")
 
