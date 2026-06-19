@@ -340,15 +340,10 @@ atualizado: {ts}
     except Exception as e:
         print(f"[WARN] Falha ao salvar lead no Obsidian: {e}")
 
-# ── WPPConnect & Z-API (Híbrido) ───────────────────────────────────────────────
+# ── WPPConnect (substitui Z-API) ───────────────────────────────────────────────
 WPP_URL     = os.getenv("WPPCONNECT_URL", "http://localhost:21465")
 WPP_SESSION = os.getenv("WPPCONNECT_SESSION", "aura-decore")
-WPP_TOKEN   = os.getenv("WPPCONNECT_TOKEN", "")
-
-ZAPI_INSTANCE_ID   = os.getenv("ZAPI_INSTANCE_ID", "")
-ZAPI_TOKEN         = os.getenv("ZAPI_TOKEN", "")
-ZAPI_CLIENT_TOKEN  = os.getenv("ZAPI_CLIENT_TOKEN", "")
-ZAPI_BASE_URL      = f"https://api.z-api.io/instances/{ZAPI_INSTANCE_ID}/token/{ZAPI_TOKEN}" if ZAPI_INSTANCE_ID and ZAPI_TOKEN else ""
+WPP_TOKEN   = os.getenv("WPPCONNECT_TOKEN", "$2b$10$rZ2qdn2TTSZ7UmtCz1_e9eLgmCaoZyWAn_u9RSOGm4cEtit3r.ajy")
 
 # ── Shopify (lookup de pedidos) ─────────────────────────────────────────────────
 SHOPIFY_DOMAIN = os.getenv("SHOPIFY_DOMAIN", "")
@@ -583,139 +578,69 @@ async def _llm(system: str, messages: list, max_tokens: int = 350) -> str:
     text, _ = await _llm_engine(system, messages, max_tokens=max_tokens)
     return text
 
-# ── Envio Híbrido (WPPConnect / Z-API) ──────────────────────────────────────────
+# ── Envio WPPConnect ───────────────────────────────────────────────────────────
 def _wpp_headers() -> dict:
     return {"Authorization": f"Bearer {WPP_TOKEN}", "Content-Type": "application/json"}
 
 async def _wpp_send(phone: str, message: str):
-    """Envia mensagem usando o canal disponível (prioriza WPPConnect se token existir)."""
-    # 1. WPPConnect
-    if WPP_TOKEN:
-        url = f"{WPP_URL}/api/{WPP_SESSION}/send-message"
-        print(f"[WPPConnect] Enviando para {phone} via {url}...")
-        try:
-            async with httpx.AsyncClient(timeout=10) as hc:
-                r = await hc.post(url, json={"phone": phone, "message": message, "isGroup": False}, headers=_wpp_headers())
-                if r.status_code in (200, 201):
-                    print(f"[WPPConnect] Mensagem enviada com sucesso para {phone}")
-                    return
-                else:
-                    print(f"[WPPConnect] Falha ao enviar para {phone}: {r.status_code} - {r.text}")
-        except Exception as e:
-            print(f"[WPPConnect] Erro excepcional ao enviar para {phone}: {e}")
-
-    # 2. Z-API (Nuvem fallback/principal se sem WPP local)
-    if ZAPI_INSTANCE_ID and ZAPI_TOKEN:
-        url = f"{ZAPI_BASE_URL}/send-text"
-        headers = {"Content-Type": "application/json"}
-        if ZAPI_CLIENT_TOKEN:
-            headers["Client-Token"] = ZAPI_CLIENT_TOKEN
-        print(f"[Z-API] Enviando para {phone} via {url}...")
-        try:
-            async with httpx.AsyncClient(timeout=10) as hc:
-                r = await hc.post(url, json={"phone": phone, "message": message}, headers=headers)
-                if r.status_code in (200, 201):
-                    print(f"[Z-API] Mensagem enviada com sucesso para {phone}")
-                    return
-                else:
-                    print(f"[Z-API] Falha ao enviar para {phone}: {r.status_code} - {r.text}")
-        except Exception as e:
-            print(f"[Z-API] Erro excepcional ao enviar para {phone}: {e}")
-
-    print("[WhatsApp] Nenhum canal de envio (WPPConnect ou Z-API) configurado ou disponível!")
+    """Envia mensagem via WPPConnect."""
+    if not WPP_TOKEN:
+        print("[WPPConnect] WPP_TOKEN não configurado!")
+        return
+    url = f"{WPP_URL}/api/{WPP_SESSION}/send-message"
+    print(f"[WPPConnect] Enviando para {phone} via {url}...")
+    try:
+        async with httpx.AsyncClient(timeout=10) as hc:
+            r = await hc.post(url, json={"phone": phone, "message": message, "isGroup": False}, headers=_wpp_headers())
+            if r.status_code in (200, 201):
+                print(f"[WPPConnect] Mensagem enviada com sucesso para {phone}")
+            else:
+                print(f"[WPPConnect] Falha ao enviar para {phone}: {r.status_code} - {r.text}")
+    except Exception as e:
+        print(f"[WPPConnect] Erro excepcional ao enviar para {phone}: {e}")
 
 async def send_whatsapp_message(phone: str, message: str):
-    """Função pública para enviar mensagens de WhatsApp."""
+    """Função pública para enviar mensagens de WhatsApp pelo WPPConnect."""
     await _wpp_send(phone, message)
 
 async def send_whatsapp_image_base64(phone: str, file_path: str, caption: str = ""):
-    """Envia imagem local via canal disponível (WPPConnect ou Z-API)."""
-    if not os.path.exists(file_path):
+    """Envia imagem local via WPPConnect codificada em base64."""
+    if not WPP_TOKEN or not os.path.exists(file_path):
         return
-
-    # 1. WPPConnect
-    if WPP_TOKEN:
-        import base64
-        try:
-            with open(file_path, "rb") as f:
-                img_data = f.read()
-            b64_data = base64.b64encode(img_data).decode("utf-8")
-            filename = os.path.basename(file_path)
-            mime_type = "image/png" if file_path.endswith(".png") else "image/jpeg"
-            base64_str = f"data:{mime_type};base64,{b64_data}"
-            
-            url = f"{WPP_URL}/api/{WPP_SESSION}/send-file-base64"
-            payload = {
-                "phone": phone,
-                "base64": base64_str,
-                "filename": filename,
-                "caption": caption
-            }
-            async with httpx.AsyncClient(timeout=30) as hc:
-                await hc.post(url, json=payload, headers=_wpp_headers())
-            print(f"[WPPConnect] Imagem {filename} enviada com sucesso para {phone}")
-            return
-        except Exception as e:
-            print(f"[WARN] Erro ao enviar imagem via WPPConnect: {e}")
-
-    # 2. Z-API
-    if ZAPI_INSTANCE_ID and ZAPI_TOKEN:
-        url = f"{ZAPI_BASE_URL}/send-image"
-        headers = {"Content-Type": "application/json"}
-        if ZAPI_CLIENT_TOKEN:
-            headers["Client-Token"] = ZAPI_CLIENT_TOKEN
+    import base64
+    try:
+        with open(file_path, "rb") as f:
+            img_data = f.read()
+        b64_data = base64.b64encode(img_data).decode("utf-8")
+        filename = os.path.basename(file_path)
+        mime_type = "image/png" if file_path.endswith(".png") else "image/jpeg"
+        base64_str = f"data:{mime_type};base64,{b64_data}"
         
-        import base64
-        try:
-            with open(file_path, "rb") as f:
-                img_data = f.read()
-            b64_data = base64.b64encode(img_data).decode("utf-8")
-            mime_type = "image/png" if file_path.endswith(".png") else "image/jpeg"
-            base64_str = f"data:{mime_type};base64,{b64_data}"
-            
-            payload = {
-                "phone": phone,
-                "image": base64_str,
-                "caption": caption
-            }
-            async with httpx.AsyncClient(timeout=30) as hc:
-                r = await hc.post(url, json=payload, headers=headers)
-                if r.status_code in (200, 201):
-                    print(f"[Z-API] Imagem enviada com sucesso para {phone}")
-                    return
-                else:
-                    print(f"[Z-API] Falha ao enviar imagem para {phone}: {r.status_code} - {r.text}")
-        except Exception as e:
-            print(f"[WARN] Erro ao enviar imagem via Z-API: {e}")
+        url = f"{WPP_URL}/api/{WPP_SESSION}/send-file-base64"
+        payload = {
+            "phone": phone,
+            "base64": base64_str,
+            "filename": filename,
+            "caption": caption
+        }
+        async with httpx.AsyncClient(timeout=30) as hc:
+            await hc.post(url, json=payload, headers=_wpp_headers())
+        print(f"[WPPConnect] Imagem {filename} enviada com sucesso para {phone}")
+    except Exception as e:
+        print(f"[WARN] Erro ao enviar imagem via WPPConnect: {e}")
 
 async def _wpp_typing(phone: str):
-    """Envia indicador de digitação via canal disponível (WPPConnect ou Z-API)."""
-    # 1. WPPConnect
-    if WPP_TOKEN:
-        try:
-            async with httpx.AsyncClient(timeout=5) as hc:
-                await hc.post(f"{WPP_URL}/api/{WPP_SESSION}/chat-state", json={"phone": phone, "chatstate": "typing"}, headers=_wpp_headers())
-            await asyncio.sleep(2)
-            async with httpx.AsyncClient(timeout=5) as hc:
-                await hc.post(f"{WPP_URL}/api/{WPP_SESSION}/chat-state", json={"phone": phone, "chatstate": "stopped"}, headers=_wpp_headers())
-            return
-        except Exception:
-            pass
-
-    # 2. Z-API
-    if ZAPI_INSTANCE_ID and ZAPI_TOKEN:
-        url = f"{ZAPI_BASE_URL}/send-presence"
-        headers = {"Content-Type": "application/json"}
-        if ZAPI_CLIENT_TOKEN:
-            headers["Client-Token"] = ZAPI_CLIENT_TOKEN
-        try:
-            async with httpx.AsyncClient(timeout=5) as hc:
-                await hc.post(url, json={"phone": phone, "presence": "composing"}, headers=headers)
-            await asyncio.sleep(2)
-            async with httpx.AsyncClient(timeout=5) as hc:
-                await hc.post(url, json={"phone": phone, "presence": "paused"}, headers=headers)
-        except Exception:
-            pass
+    """Envia indicador de digitação via WPPConnect."""
+    if not WPP_TOKEN:
+        return
+    try:
+        async with httpx.AsyncClient(timeout=5) as hc:
+            await hc.post(f"{WPP_URL}/api/{WPP_SESSION}/chat-state", json={"phone": phone, "chatstate": "typing"}, headers=_wpp_headers())
+        await asyncio.sleep(2)
+        async with httpx.AsyncClient(timeout=5) as hc:
+            await hc.post(f"{WPP_URL}/api/{WPP_SESSION}/chat-state", json={"phone": phone, "chatstate": "stopped"}, headers=_wpp_headers())
+    except Exception:
+        pass
 
 # ── Processador principal ──────────────────────────────────────────────────────
 async def process_message(phone: str, text: str, name: str = "", message_id: str = "") -> dict:
