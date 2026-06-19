@@ -1,5 +1,8 @@
 import asyncio
 import os
+# Desabilita telemetria indesejada do CrewAI e OpenTelemetry
+os.environ["OTEL_SDK_DISABLED"] = "true"
+os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
 import re
 import random
 import httpx
@@ -33,6 +36,9 @@ try:
     from daily_report import (
         generate_daily_report, quick_status,
         get_latest_report, get_all_reports,
+    )
+    from weekly_report import (
+        generate_weekly_report, dispatch_weekly_report,
     )
     from autonomous_tasks import AUTONOMOUS_TASKS, SCHEDULE_MAP
     from agent_memory import (
@@ -374,7 +380,7 @@ AGENT_WORKING = {
     ],
     "pipe": [
         "Recebendo missão de automação da IVE...",
-        "Mapeando integrações: Shopify, Z-API, AppMax, Pinterest, vault Obsidian.",
+        "Mapeando integrações: Shopify, WPPConnect, AppMax, Pinterest, vault Obsidian.",
         "Construindo workflow n8n: trigger Shopify → notifica IVE → atualiza vault.",
         "Validando webhooks: testando endpoints e configurando retry policy.",
         "Deploy no n8n cloud. Logs em tempo real ativos.",
@@ -517,7 +523,7 @@ AGENT_ACTIVITY = {
         "FAQ da loja revisado e atualizado.",
         "Processo de troca e reembolso documentado.",
         "Nenhum ticket aberto. Operação aguardando lançamento.",
-        "Integração WhatsApp (Z-API) sendo configurada com PIPE.",
+        "Integração WhatsApp (WPPConnect) sendo configurada com PIPE.",
     ],
     "nexus": [
         "Pinterest Trends BR: rastreando categorias Japandi e wabi-sabi.",
@@ -561,7 +567,7 @@ AGENT_ACTIVITY = {
     ],
     "pipe": [
         "Workflows n8n sendo configurados para o lançamento.",
-        "Z-API webhook: integração com LENA para atendimento via WhatsApp.",
+        "WPPConnect webhook: integração com LENA para atendimento via WhatsApp.",
         "Cron auditoria ECHO domingo 20h: agendado e validado.",
         "AppMax → GUARD: alerta de chargeback configurado.",
         "n8n cloud: workflows de base prontos. Testando triggers.",
@@ -1079,6 +1085,48 @@ async def daily_report_scheduler():
         await asyncio.sleep(60)
 
 
+async def weekly_report_scheduler():
+    """Gera e envia relatório semanal todo domingo às 21h BRT (segunda-feira 00h UTC)."""
+    await asyncio.sleep(240)  # aguarda 4min após startup
+    while True:
+        now_utc = datetime.utcnow()
+        # Segunda-feira 00h UTC = Domingo 21h BRT
+        if now_utc.weekday() == 0 and now_utc.hour == 0 and now_utc.minute < 5:
+            try:
+                if _MODULES_OK:
+                    tasks_dict = {}
+                    TASKS_DIR.mkdir(parents=True, exist_ok=True)
+                    for f in TASKS_DIR.glob("task-*.md"):
+                        t = _parse_task(f)
+                        tasks_dict[t["id"]] = t
+                    commands_list = list(_CMD_STORE.values()) if _MODULES_OK else []
+                    report = await generate_weekly_report(
+                        tasks_db=tasks_dict,
+                        commands_db=commands_list,
+                        llm_call=llm_call_cascade,
+                        vault_base=OBSIDIAN_VAULT
+                    )
+                    dispatch_res = dispatch_weekly_report(
+                        to_email="eduardo.marques.arq@gmail.com",
+                        report_data=report,
+                        vault_base=OBSIDIAN_VAULT
+                    )
+                    await manager.broadcast({
+                        "type": "weekly_report",
+                        "week": report["week"],
+                        "year": report["year"],
+                        "summary": report["report_text"][:300],
+                        "provider": report["provider"],
+                        "timestamp": report["generated_at"],
+                        "email_status": dispatch_res.get("status", "error")
+                    })
+                    print(f"[WEEKLY REPORT] Gerado e enviado para Eduardo. Status e-mail: {dispatch_res.get('status')}")
+            except Exception as e:
+                print(f"[WEEKLY REPORT] Erro no scheduler: {e}")
+            await asyncio.sleep(300)  # evita disparar 2x
+        await asyncio.sleep(60)
+
+
 async def autonomous_task_scheduler():
     """Dispara tarefas autônomas dos agentes nos horários programados (UTC)."""
     await asyncio.sleep(240)  # aguarda 4min após startup
@@ -1292,6 +1340,7 @@ async def startup():
     asyncio.create_task(shopify_dev_scheduler())
     asyncio.create_task(seasonal_update_scheduler())
     asyncio.create_task(daily_report_scheduler())
+    asyncio.create_task(weekly_report_scheduler())
     asyncio.create_task(autonomous_task_scheduler())
     asyncio.create_task(full_throttle_scheduler())
     asyncio.create_task(shopify_live_updater_scheduler())
@@ -1509,7 +1558,7 @@ async def chat_with_ive(body: ChatBody):
         "choices": [{"key": k, "label": v} for k, v in choices],
     }
 
-# ── WhatsApp Z-API ────────────────────────────────────────────────────────────
+# ── WhatsApp WPPConnect ────────────────────────────────────────────────────────
 
 try:
     from whatsapp_agent import handle_incoming as _wa_handle, _SESSIONS as _WA_SESSIONS
@@ -1548,10 +1597,100 @@ async def whatsapp_send(body: WhatsAppBody):
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 
+async def execute_eduardo_order_background(phone: str, text: str, name: str):
+    """
+    Interpreta a ordem de Eduardo Marques, executa via Command Router
+    e responde os resultados de volta para ele.
+    """
+    try:
+        from whatsapp_agent import send_whatsapp_message
+        import command_router
+        from llm_engine import llm as _llm_engine
+
+        # 1. Envia confirmação imediata
+        await send_whatsapp_message(
+            phone,
+            f"Ordem recebida, Diretor Eduardo! 🌿\n"
+            f"Vou analisar e processar agora com a equipe de agentes... ⏳"
+        )
+
+        # 2. Se a mensagem já começar com "/", assumimos que é um comando direto
+        cmd_to_run = text.strip()
+        if not cmd_to_run.startswith("/"):
+            # Traduz a linguagem natural de Eduardo em um comando de sistema usando LLM
+            prompt_sistema = (
+                "Você é IVE, a CEO da Aura Decore.\n"
+                "Seu papel é traduzir a mensagem de ordem enviada pelo Diretor Eduardo Marques em um comando de sistema reconhecido pelo painel de controle dos agentes.\n"
+                "Comandos disponíveis:\n"
+                "- IVE (CEO): /i week [args], /i month [args], /i report, /i status, /i evolve\n"
+                "- ECHO (Auditoria): /echo now, /echo weekly, /echo kaizen, /echo [agente]\n"
+                "- VEGA (Vídeos): /v reel [tema], /v stories [tema], /v ads [produto], /v auto\n"
+                "- LUNA (Imagens): /l image [desc], /l feed [qtd], /l banner, /l product [nome]\n"
+                "- VERA (Copy/Texto): /vera product [nome], /vera caption [tema], /vera ad [produto], /vera auto\n"
+                "- REX (Meta Ads): /r report, /r optimize, /r scale [produto]\n"
+                "- MIA (Social): /m week, /m month, /m auto\n"
+                "- LENA (Atendimento): /len script [situação], /len auto\n"
+                "- KAI (Curadoria): /k research [categoria], /k portfolio, /k auto\n"
+                "- THEO (Dev/Shopify): /t check, /t optimize, /t status\n"
+                "- GUARD (Financeiro): /g report, /g alert, /g mei\n"
+                "- SYS (Master): /sys status, /sys weekly, /sys monthly, /sys evolve, /sys fullauto\n\n"
+                "Regras:\n"
+                "1. Identifique o agente correto e o comando adequado.\n"
+                "2. Retorne APENAS a linha do comando (ex: /sys status). NADA mais. Sem explicações."
+            )
+            try:
+                translated, _ = await _llm_engine(prompt_sistema, [{"role": "user", "content": text}], max_tokens=100)
+                cmd_to_run = translated.strip()
+                # Garante que começa com barra
+                if not cmd_to_run.startswith("/"):
+                    cmd_to_run = "/" + cmd_to_run
+            except Exception as e_llm:
+                cmd_to_run = "/help"
+                print(f"[ERROR] Erro ao traduzir comando do Eduardo: {e_llm}")
+
+        # 3. Notifica o comando interpretado
+        await send_whatsapp_message(
+            phone,
+            f"🤖 *Ordem Interpretada:* `{cmd_to_run}`\n"
+            f"Iniciando a execução..."
+        )
+
+        # 4. Executa o comando via Command Router
+        output_chunks = []
+        async for line in command_router.execute(cmd_to_run):
+            output_chunks.append(line)
+
+        resultado = "".join(output_chunks)
+
+        # Envia o resultado. Se for muito longo, divide em mensagens
+        limite = 4000
+        msg_header = f"🟢 *Ordem Executada!*\nComando: `{cmd_to_run}`\n\n*Resultado:*\n"
+
+        if len(resultado) + len(msg_header) <= limite:
+            await send_whatsapp_message(phone, msg_header + resultado)
+        else:
+            # Envia em partes
+            await send_whatsapp_message(phone, msg_header)
+            for i in range(0, len(resultado), limite):
+                await send_whatsapp_message(phone, resultado[i:i+limite])
+                await asyncio.sleep(1.0)
+
+    except Exception as e_run:
+        try:
+            from whatsapp_agent import send_whatsapp_message
+            await send_whatsapp_message(
+                phone,
+                f"❌ *Erro na Execução:*\nNão consegui completar o comando `{text}`.\n"
+                f"Detalhe: {str(e_run)}"
+            )
+        except Exception:
+            pass
+
+
 @app.post("/whatsapp/webhook")
 async def whatsapp_webhook(request: Request):
     """
-    Recebe eventos Z-API do WhatsApp Business.
+    Recebe eventos WPPConnect do WhatsApp Business.
     Roteamento: LENA (padrão) → GUARD (reembolso) / SOL (carrinho) / ZARA (parceria)
     """
     try:
@@ -1597,6 +1736,43 @@ async def whatsapp_webhook(request: Request):
 
         if not phone:
             return {"status": "ignored", "reason": "no_phone"}
+
+        # ── INTERCEPTOR DE ORDENS DO EDUARDO MARQUES ──
+        phone_digits = "".join(c for c in phone if c.isdigit())
+        eduardo_phone_raw = os.getenv("EDUARDO_PHONE", "")
+        eduardo_phones = [
+            "".join(c for c in p if c.isdigit()).strip()
+            for p in eduardo_phone_raw.split(",") if p.strip()
+        ]
+
+        if phone_digits in eduardo_phones:
+            # Dispara tarefa em background para processar a ordem executiva de Eduardo
+            asyncio.create_task(execute_eduardo_order_background(phone, text, name))
+
+            # Broadcast no dashboard WebSocket
+            await manager.broadcast({
+                "type":      "agent_message",
+                "agent_id":  "ive",
+                "message":   f"👑 ORDEM DE EDUARDO [{name or phone}]: {text[:80]}",
+                "timestamp": datetime.now().strftime("%H:%M"),
+            })
+
+            # Registra na memória/logs do Obsidian
+            if _MODULES_OK:
+                try:
+                    log_agent_activity(
+                        "ive",
+                        f"Ordem recebida do Diretor Eduardo: {text[:60]}",
+                        f"Processando em background...",
+                    )
+                except Exception:
+                    pass
+
+            return {
+                "status": "processed",
+                "reason": "eduardo_executive_order_background",
+                "detail": "Ordem interceptada e enviada para processamento em background"
+            }
 
         # Processa com whatsapp_agent (LENA/GUARD/SOL/ZARA)
         if _WA_OK:
@@ -1805,6 +1981,165 @@ async def promo_nurture(request: Request):
             } if next_step else None,
         }
 
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+
+@app.post("/promo/trigger-followups")
+async def trigger_followups():
+    """
+    Cron endpoint triggered daily to find leads due for follow-up (D+1, D+3, D+7, D+14)
+    and send them personalized neuromarketing messages via WhatsApp.
+    """
+    try:
+        import erp_db
+        import pathlib as _pl
+        from datetime import datetime
+        import asyncio
+        from neuromarketing_engine import get_template, score_lead
+        from whatsapp_agent import send_whatsapp_message
+        
+        # Query leads in cold/warm/hot stages
+        leads = erp_db.query(
+            "SELECT id, nome, telefone, estagio, atualizado_em, interesse, dores, produtos_visualizados, objecoes, nivel_engajamento FROM clientes WHERE estagio IN ('frio', 'morno', 'quente')"
+        )
+        
+        sent_count = 0
+        skipped_count = 0
+        details = []
+        
+        now = datetime.now()
+        for lead in leads:
+            phone = lead.get("telefone", "")
+            if not phone:
+                continue
+                
+            updated_str = lead.get("atualizado_em", "")
+            if not updated_str:
+                continue
+                
+            try:
+                # Format is datetime('now', 'localtime') -> 'YYYY-MM-DD HH:MM:SS' or ISO
+                # Replace space with T to make fromisoformat happy
+                updated_dt = datetime.fromisoformat(updated_str.replace(" ", "T"))
+                delta = now - updated_dt
+                days = delta.days
+                
+                stage = None
+                if days == 1:
+                    stage = "D+1"
+                elif days == 3:
+                    stage = "D+3"
+                elif days == 7:
+                    stage = "D+7"
+                elif days == 14:
+                    stage = "D+14"
+                    
+                if not stage:
+                    skipped_count += 1
+                    continue
+                
+                lead_temp = lead.get("estagio", "frio")
+                
+                template_key = "frio_interesse"
+                if stage == "D+1":
+                    template_key = "morno_produto" if lead_temp in ("morno", "quente") else "frio_interesse"
+                elif stage == "D+3":
+                    template_key = "morno_carrinho" if lead_temp in ("morno", "quente") else "conteudo_dor"
+                elif stage == "D+7":
+                    template_key = "conteudo_dor"
+                elif stage == "D+14":
+                    template_key = "win_back"
+                
+                nome = lead.get("nome", "cliente")
+                produto = lead.get("produtos_visualizados", "") or lead.get("interesse", "") or "vaso Japandi"
+                if produto and "," in produto:
+                    produto = produto.split(",")[0]
+                
+                tpl_data = {
+                    "nome": nome,
+                    "produto": produto or "vaso Japandi",
+                    "produto_complementar": "Luminária Halo",
+                    "n_produtos": 3,
+                    "colecao": "Japandi",
+                    "desconto": 10,
+                    "cupom": "AURA10" if lead_temp == "frio" else "AURAVIP15",
+                    "hora_fim": "23h59"
+                }
+                
+                message = get_template(template_key, tpl_data)
+                
+                # Send WhatsApp message
+                await send_whatsapp_message(phone, message)
+                sent_count += 1
+                details.append({
+                    "id": lead["id"],
+                    "phone": phone,
+                    "stage": stage,
+                    "estagio_crm": lead_temp,
+                    "template": template_key,
+                    "status": "sent"
+                })
+                
+                # Save interaction in CRM
+                summary = f"Remarketing {stage} ({template_key}): {message[:100]}..."
+                erp_db.execute(
+                    "INSERT INTO interacoes (cliente_id, tipo, canal, resumo, agente, criado_em) VALUES (?, 'whatsapp', 'whatsapp', ?, 'promo', datetime('now','localtime'))",
+                    (lead["id"], summary)
+                )
+                
+                # Save in Obsidian
+                try:
+                    import platform as _platform
+                    _default_vault = r"C:\Users\erick\AURA-decor-vault" if _platform.system() == "Windows" else "/app/vault"
+                    vault_path = _pl.Path(os.getenv("OBSIDIAN_VAULT", _default_vault))
+                    lead_file = vault_path / "Atendimento" / "Leads" / f"{phone}.md"
+                    if lead_file.exists():
+                        content = lead_file.read_text(encoding="utf-8")
+                        ts = datetime.now().strftime("%Y-%m-%d %H:%M")
+                        new_entry = f"\n- **[{ts}] REMARKETING ({stage}):** {message}\n"
+                        lead_file.write_text(content + new_entry, encoding="utf-8")
+                except Exception as obs_err:
+                    print(f"[WARN] Error updating Obsidian lead file during remarketing: {obs_err}")
+                
+                # Small anti-spam delay
+                await asyncio.sleep(4.0)
+            except Exception as item_err:
+                print(f"[ERROR] Error processing follow-up for lead {lead.get('id')}: {item_err}")
+                
+        return {
+            "status": "success",
+            "triggered_at": now.isoformat(),
+            "leads_scanned": len(leads),
+            "sent": sent_count,
+            "skipped": skipped_count,
+            "details": details
+        }
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
+
+
+@app.post("/agent/send-creative")
+async def agent_send_creative(request: Request):
+    """
+    Roteia o envio de criativos do Canva por e-mail (Gmail) e/ou WhatsApp para o lead,
+    atualizando Obsidian, CRM SQLite e Notion.
+    Body: { phone, email, design_id, lead_name?, caption? }
+    """
+    try:
+        body = await request.json()
+        phone = body.get("phone", "")
+        email = body.get("email", "")
+        design_id = body.get("design_id", "")
+        lead_name = body.get("lead_name", "")
+        caption = body.get("caption", "")
+        
+        if not design_id:
+            return {"status": "error", "detail": "design_id is required"}
+            
+        from creative_sender import send_creative_to_lead
+        res = await send_creative_to_lead(phone, email, design_id, lead_name, caption)
+        return res
     except Exception as e:
         return {"status": "error", "detail": str(e)}
 
@@ -2202,7 +2537,7 @@ async def store_status():
             "appmax":     {"status": "configured" if os.getenv("APPMAX_TOKEN") else "not_configured"},
             "yampi":      {"status": "configured" if os.getenv("YAMPI_TOKEN") else "not_configured"},
             "dropi":      {"status": "configured" if os.getenv("DROPI_TOKEN") else "not_configured"},
-            "whatsapp":   {"status": "configured" if _zapi_instance else "pending", "instance": _zapi_instance or None},
+            "whatsapp":   {"status": "configured" if _wppconnect_token else "pending", "provider": "WPPConnect", "session": _wppconnect_sess},
         },
         "llm_cascade": ["groq/70b", "groq/8b", "together-ai", "openrouter", "google-gemini", "anthropic", "ollama"],
         "crew_agents": ["IVE","GUARD","NEXUS","THEO","KAI","VERA","LUNA","NOX","REX","ECHO","LENA","SOL","ZARA","MIRA","PIPE","ARTE","FEED","DEV"],
@@ -2257,8 +2592,10 @@ async def automation_status():
             },
         },
         "whatsapp": {
-            "status": "configured" if _zapi_instance else "pending — configure ZAPI_INSTANCE_ID no .env",
-            "instance": _zapi_instance or None,
+            "status": "configured" if _wppconnect_token else "pending — configure WPPCONNECT_TOKEN no .env",
+            "provider": "WPPConnect",
+            "session": _wppconnect_sess,
+            "url": _wppconnect_url,
             "active_sessions": wa_sessions,
             "agents": ["LENA (padrão)", "GUARD (reembolso)", "SOL (carrinho)", "ZARA (parceria)"],
             "webhook_url": f"{os.getenv('RAILWAY_URL', 'http://localhost:8000')}/whatsapp/webhook",
@@ -2360,7 +2697,7 @@ class MetaEventBody(BaseModel):
     custom_data: dict = {}
     test_event_code: str = ""  # código de teste do Gerenciador de Eventos
 
-@app.post("/meta/event")
+@app.post("/meta/event", operation_id="meta_send_event_capi")
 async def meta_send_event(body: MetaEventBody):
     """Envia evento server-side via Meta Conversions API (CAPI).
     Complementa o Pixel do browser para melhorar atribuição e contornar bloqueadores.
@@ -2815,7 +3152,7 @@ AGENT_SYSTEMS = {
         "Tom: acolhedor, inspirador, nunca robótico. Responde em português fluente e humano."
     ),
     "mira":  "Você é MIRA, especialista em SEO da Aura Decore. Domina Google Search Console, Pinterest SEO, Shopify SEO (meta tags, alt text, schema). Pesquisa cauda longa: 'decoração japandi quarto', 'vaso cerâmica wabi-sabi'. Entrega: keywords + volume + dificuldade + concorrentes + recomendação.",
-    "pipe":  "Você é PIPE, engenheiro de automação da Aura Decore. Cria workflows n8n integrando Shopify/Z-API/AppMax/Pinterest/agentes via API. Entrega: trigger + nodes + integrações + tratamento de erro + JSON resumido. Foco em zero-friction.",
+    "pipe":  "Você é PIPE, engenheiro de automação da Aura Decore. Cria workflows n8n integrando Shopify/WPPConnect/AppMax/Pinterest/agentes via API. Entrega: trigger + nodes + integrações + tratamento de erro + JSON resumido. Foco em zero-friction.",
     # Equipe de design e publicação
     "arte":  (
         "Você é ARTE, diretor criativo visual da Aura Decore. "
@@ -4172,6 +4509,67 @@ async def get_report_history(limit: int = 7):
     return {"reports": get_all_reports(limit)}
 
 
+# ── Weekly Report ─────────────────────────────────────────────────────────────
+
+@app.post("/report/weekly")
+async def trigger_weekly_report():
+    """Gera e envia o relatório semanal geral para Eduardo Marques por e-mail."""
+    if not _MODULES_OK:
+        return {"error": "Módulo weekly_report não carregado"}
+    try:
+        tasks_dict = {}
+        TASKS_DIR.mkdir(parents=True, exist_ok=True)
+        for f in TASKS_DIR.glob("task-*.md"):
+            t = _parse_task(f)
+            tasks_dict[t["id"]] = t
+        commands_list = list(_CMD_STORE.values())
+        
+        # Gera o relatório semanal (salva no vault)
+        report = await generate_weekly_report(
+            tasks_db=tasks_dict,
+            commands_db=commands_list,
+            llm_call=llm_call_cascade,
+            vault_base=OBSIDIAN_VAULT
+        )
+        
+        # Dispara envio de e-mail para Eduardo Marques
+        dispatch_res = dispatch_weekly_report(
+            to_email="eduardo.marques.arq@gmail.com",
+            report_data=report,
+            vault_base=OBSIDIAN_VAULT
+        )
+        
+        return {
+            "message": "Relatório semanal gerado e processado com sucesso",
+            "report": report,
+            "email_dispatch": dispatch_res
+        }
+    except Exception as e:
+        return {"error": f"Falha ao gerar ou enviar relatório semanal: {str(e)}"}
+
+@app.get("/report/weekly")
+async def get_weekly_report_api():
+    """Retorna o relatório semanal mais recente salvo no vault."""
+    try:
+        weekly_dir = pathlib.Path(OBSIDIAN_VAULT) / "Relatorios" / "Semanais"
+        if not weekly_dir.exists():
+            return {"message": "Nenhum relatório semanal gerado ainda."}
+        
+        files = sorted(weekly_dir.glob("semana-*.md"), key=lambda p: p.name, reverse=True)
+        if not files:
+            return {"message": "Nenhum relatório semanal encontrado."}
+        
+        latest_file = files[0]
+        content = latest_file.read_text(encoding="utf-8")
+        return {
+            "filename": latest_file.name,
+            "last_modified": datetime.fromtimestamp(latest_file.stat().st_mtime).strftime("%Y-%m-%d %H:%M BRT"),
+            "content": content
+        }
+    except Exception as e:
+        return {"error": f"Erro ao recuperar relatório semanal: {str(e)}"}
+
+
 # ── Autonomous Tasks: status e controle ──────────────────────────────────────
 
 @app.get("/autonomous/tasks")
@@ -4571,6 +4969,10 @@ async def mobile_dashboard():
     return HTMLResponse("<h2>aura-mobile.html não encontrado</h2>", status_code=404)
 
 @app.get("/erp-ui", response_class=HTMLResponse, operation_id="erp_ui_dash")
+async def erp_ui_dash():
+    """Interface visual do ERP/CRM Aura Decore (Dashboard)."""
+    return await erp_ui()
+
 @app.get("/erp/ui", response_class=HTMLResponse, operation_id="erp_ui_path")
 async def erp_ui():
     """Interface visual do ERP/CRM Aura Decore."""

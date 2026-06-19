@@ -28,7 +28,12 @@ if not n8n_key:
     print("Error: N8N_API_KEY not found in .env file.")
     sys.exit(1)
 
-base_url = "http://localhost:5678/api/v1"
+n8n_base = env_vars.get("N8N_BASE_URL")
+if n8n_base:
+    base_url = f"{n8n_base.rstrip('/')}/api/v1"
+else:
+    base_url = "http://localhost:5678/api/v1"
+
 headers = {"X-N8N-API-KEY": n8n_key}
 
 print("Fetching workflows...")

@@ -7,6 +7,7 @@ Substitui http://localhost:8000 pela RAILWAY_URL real.
 Os workflows que usam $env.RAILWAY_URL ficam intactos (n8n resolve).
 """
 import json, pathlib, sys
+sys.stdout.reconfigure(encoding='utf-8')
 
 RAILWAY_URL = "https://web-production-f1cb5.up.railway.app"
 HERE = pathlib.Path(__file__).parent
