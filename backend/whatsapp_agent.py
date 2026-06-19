@@ -20,11 +20,335 @@ load_dotenv(dotenv_path=_ENV_PATH, override=True)
 # Motor LLM compartilhado
 from llm_engine import llm as _llm_engine
 
-# ── Credenciais Z-API ──────────────────────────────────────────────────────────
-ZAPI_INSTANCE  = os.getenv("ZAPI_INSTANCE_ID", "")
-ZAPI_TOKEN     = os.getenv("ZAPI_TOKEN", "")
-ZAPI_CLIENT    = os.getenv("ZAPI_CLIENT_TOKEN", "")
-ZAPI_BASE      = f"https://api.z-api.io/instances/{ZAPI_INSTANCE}/token/{ZAPI_TOKEN}"
+# ── Leitura de Memória Consolidada do Obsidian ────────────────────────────────
+def load_obsidian_context() -> str:
+    """Lê dinamicamente o arquivo central de operações, o contexto de empresa e o perfil da LENA do Obsidian."""
+    import platform as _platform
+    _default_vault = (
+        r"C:\Users\erick\AURA-decor-vault"
+        if _platform.system() == "Windows"
+        else "/app/vault"
+    )
+    vault_path = _pl.Path(os.getenv("OBSIDIAN_VAULT", _default_vault))
+    
+    parts = []
+    
+    # 1. Central de Operações
+    central_file = vault_path / "🏠 Aura Decore — Central.md"
+    if central_file.exists():
+        try:
+            content = central_file.read_text(encoding="utf-8")
+            parts.append(f"### MEMÓRIA: CENTRAL DE OPERAÇÕES\n{content[:2000]}")
+        except Exception as e:
+            print(f"[WARN] Erro ao ler Central.md: {e}")
+            
+    # 2. Contexto de Empresa
+    emp_file = vault_path / "Memoria" / "Compartilhada" / "contexto_empresa.md"
+    if emp_file.exists():
+        try:
+            content = emp_file.read_text(encoding="utf-8")
+            parts.append(f"### MEMÓRIA: CONTEXTO DA EMPRESA\n{content[:2000]}")
+        except Exception as e:
+            print(f"[WARN] Erro ao ler contexto_empresa.md: {e}")
+            
+    # 3. Perfil de LENA
+    lena_file = vault_path / "Agentes" / "LENA.md"
+    if lena_file.exists():
+        try:
+            content = lena_file.read_text(encoding="utf-8")
+            parts.append(f"### MEMÓRIA: REGRAS DE ATENDIMENTO DE LENA\n{content[:2000]}")
+        except Exception as e:
+            print(f"[WARN] Erro ao ler LENA.md: {e}")
+            
+    if not parts:
+        return "Nenhuma memória consolidada encontrada no Obsidian."
+    return "\n\n".join(parts)
+
+def build_lena_system_prompt(intent_guidelines: str, name: str, phone: str, order_context: str, is_start: bool) -> str:
+    obsidian_context = load_obsidian_context()
+    
+    greeting_instruction = ""
+    if is_start:
+        if name and name.strip():
+            greeting_instruction = (
+                f"--- DIRETRIZ CRÍTICA DE CUMPRIMENTO INICIAL ---\n"
+                f"Como esta é a primeira mensagem da conversa nesta sessão, você DEVE iniciar OBRIGATORIAMENTE com o cumprimento inicial humanizado.\n"
+                f"Use exatamente o padrão: 'Olá {name.strip()}! Seja bem-vinda à Aura Decore 🌿'\n\n"
+            )
+        else:
+            greeting_instruction = (
+                f"--- DIRETRIZ CRÍTICA DE CUMPRIMENTO INICIAL ---\n"
+                f"Como esta é a primeira mensagem da conversa nesta sessão, você DEVE iniciar OBRIGATORIAMENTE com o cumprimento inicial humanizado.\n"
+                f"Use exatamente o padrão: 'Olá! Seja bem-vinda à Aura Decore 🌿'\n\n"
+            )
+    
+    client_name = name if name else "Não informado"
+    order_info = order_context if order_context else "Nenhum pedido detectado no texto."
+    
+    prompt = f"""Você é LENA, a voz humana e atendente virtual de alta performance da Aura Decore — marca premium de design Japandi e Wabi-Sabi.
+Sua missão é encantar, criar relacionamentos genuínos e conduzir os leads estrategicamente pelo funil de vendas, atuando com empatia, calor humano e inteligência comercial.
+
+=== REGRAS DE TOM, ESTILO E COMUNICAÇÃO ===
+- Use Português do Brasil com fluidez, calor humano e naturalidade de uma amiga que entende de design. NUNCA pareça um assistente de IA, robô ou chatbot.
+- Evite termos frios ou burocráticos. Em vez de usar palavras como "infelizmente", fale de forma positiva e focada na solução (por exemplo: "Para te ajudar com isso..." ou "Como nossa curadoria é artesanal, o prazo..."). NUNCA use "nosso protocolo", "conforme sistema" ou "atendente virtual".
+- Emojis elegantes e sutis são muito bem-vindos para trazer leveza (ex: 🌿, 🤍, 🏺, ✨, 🌸).
+- Mantenha respostas curtas e escaneáveis: no máximo 3 parágrafos pequenos, separados por espaço duplo para leitura fácil em telas de celular.
+- Termine sempre com uma pergunta aberta e acolhedora, estimulando a continuação natural do diálogo.
+
+=== DIRETRIZES DE NEUROMARKETING SUTIL E RECONEXÃO ===
+- Ative o subconsciente do cliente focando no bem-estar, calma visual e na sensação de que o lar deve ser um refúgio acolhedor (o "santuário pessoal" da ICP Ana Clara).
+- Use copy emocional que cura dores de decoração (lar genérico, caos doméstico drenando energia, paralisia decorativa, vergonha de receber visitas).
+- Prefira palavras de alto impacto sensorial e subconsciente: "respirar fundo", "desacelerar", "calma visual", "lar acolhedor", "peças que abraçam", "curadoria intencional".
+- Faça remarketing e ofertas de forma natural e consultiva:
+  * Identifique dores e sugira soluções do nosso catálogo (ex: vasos Japandi para trazer biofilia e relaxamento, luminárias com luz Halo aconchegante para acalmar o estresse do dia a dia).
+  * Ofereça de forma elegante e personalizada o cupom de boas-vindas **AURA10** (10% OFF) para leads novos/indecisos, frete grátis em compras acima de R$199, ou o cupom VIP **AURAVIP15** (15% OFF) para clientes frequentes.
+  * Nunca exerça pressão agressiva de venda ("compre agora", "últimas chances"); use gatilhos sutis de identidade ("para quem escolhe viver com intenção") e escassez elegante ("estoque limitado pela nossa curadoria artesanal").
+
+=== MEMÓRIA CONSOLIDADA DA AURA DECORE (LIDA DO OBSIDIAN) ===
+{obsidian_context}
+
+{greeting_instruction}
+
+=== DADOS DO CRM & JORNADA DO CLIENTE ===
+- Nome do Cliente: {client_name}
+- Telefone: {phone}
+- Pedido Shopify Associado: {order_info}
+
+=== INSTRUÇÕES ESPECÍFICAS DE CONTEXTO (INTENT DO CLIENTE) ===
+{intent_guidelines}
+"""
+    return prompt
+
+async def analyze_lead_interaction(name: str, text: str, reply: str) -> dict:
+    """Classifica e extrai dados do lead via LLM (groq/together/gemini cascade)."""
+    prompt = f"""Você é um analista de CRM inteligente para a Aura Decore.
+Sua tarefa é analisar a última interação (mensagem do cliente e resposta da atendente Lena) para extrair e atualizar dados estruturados sobre o lead.
+
+Retorne APENAS um objeto JSON válido, sem blocos de código markdown ou texto extra, com a seguinte estrutura:
+{{
+  "estagio": "quente" | "morno" | "frio" | "cliente_ativo",
+  "interesse": "descreva o interesse do cliente",
+  "dores": "dores mencionadas ou implícitas",
+  "produtos_visualizados": "produtos mencionados ou visualizados",
+  "objecoes": "objeções apresentadas (ex: preço, prazo, frete, nenhuma)",
+  "nivel_engajamento": "alto" | "medio" | "baixo"
+}}
+
+Diretrizes para Estágio:
+- "quente": Alta intenção de compra (perguntou preço, prazo de entrega, pediu link do carrinho, falou em adicionar cupom, comprou/vai comprar agora).
+- "morno": Demonstrou interesse em produtos específicos, fez perguntas de dúvida mas ainda está indeciso ou não demonstrou urgência imediata.
+- "frio": Apenas saudação, curiosidade genérica ou sem intenção clara de compra.
+- "cliente_ativo": Se já comprou anteriormente ou está confirmando que comprou.
+
+Analise o texto a seguir:
+Nome do Cliente: {name or 'Não informado'}
+Mensagem do Cliente: {text}
+Resposta de Lena: {reply}
+"""
+    try:
+        res = await _llm("", [{"role": "user", "content": prompt}], max_tokens=250)
+        # Extrai primeiro bloco JSON da resposta
+        cleaned = res.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("```")[1]
+            if cleaned.startswith("json"):
+                cleaned = cleaned[4:]
+        cleaned = cleaned.strip()
+        m = re.search(r'\{[\s\S]*\}', cleaned)
+        return json.loads(m.group(0)) if m else json.loads(cleaned)
+    except Exception as e:
+        print(f"[WARN] Erro ao analisar lead: {e}")
+        return {
+            "estagio": "morno",
+            "interesse": "desconhecido",
+            "dores": "nenhuma",
+            "produtos_visualizados": "nenhum",
+            "objecoes": "nenhuma",
+            "nivel_engajamento": "medio"
+        }
+
+def save_lead_and_interaction(phone: str, name: str, text: str, reply: str, agent_used: str, analysis: dict):
+    """Salva o lead (se novo) e a interação no banco de dados SQLite erp."""
+    try:
+        import erp_db
+        # Normaliza o telefone para dígitos
+        phone_digits = "".join(c for c in phone if c.isdigit())
+        if not phone_digits:
+            return
+        
+        # 1. Verifica se o cliente/lead já existe pelo telefone
+        client = erp_db.query_one(
+            "SELECT id, nome, estagio, qtd_pedidos FROM clientes WHERE telefone LIKE ? OR ? LIKE '%' || telefone",
+            (f"%{phone_digits[-9:]}", phone_digits)
+        )
+        
+        client_id = None
+        estagio_atual = analysis.get("estagio", "frio")
+        
+        # Se o cliente já fez alguma compra, mantém o estágio como cliente_ativo
+        if client and client.get("qtd_pedidos", 0) > 0:
+            estagio_atual = "cliente_ativo"
+            
+        if client:
+            client_id = client["id"]
+            # Atualiza os dados
+            nome_cli = name if name and (not client["nome"] or client["nome"].lower() in ("amiga", "cliente", "não informado", "desconhecido")) else client["nome"]
+            erp_db.execute(
+                "UPDATE clientes SET nome = ?, estagio = ?, interesse = ?, dores = ?, produtos_visualizados = ?, objecoes = ?, nivel_engajamento = ?, atualizado_em = datetime('now','localtime') WHERE id = ?",
+                (
+                    nome_cli, 
+                    estagio_atual, 
+                    analysis.get("interesse", "desconhecido"), 
+                    analysis.get("dores", "nenhuma"), 
+                    analysis.get("produtos_visualizados", "nenhum"), 
+                    analysis.get("objecoes", "nenhuma"), 
+                    analysis.get("nivel_engajamento", "baixo"), 
+                    client_id
+                )
+            )
+        else:
+            # Cria novo lead
+            client_name = name if name else f"Lead WhatsApp {phone_digits[-4:]}"
+            client_id = erp_db.execute(
+                "INSERT INTO clientes (nome, telefone, estagio, origem, interesse, dores, produtos_visualizados, objecoes, nivel_engajamento, criado_em, atualizado_em) VALUES (?, ?, ?, 'whatsapp', ?, ?, ?, ?, ?, datetime('now','localtime'), datetime('now','localtime'))",
+                (
+                    client_name, 
+                    phone_digits, 
+                    estagio_atual, 
+                    analysis.get("interesse", "desconhecido"), 
+                    analysis.get("dores", "nenhuma"), 
+                    analysis.get("produtos_visualizados", "nenhum"), 
+                    analysis.get("objecoes", "nenhuma"), 
+                    analysis.get("nivel_engajamento", "baixo")
+                )
+            )
+            
+        # 2. Salva a interação (mensagem do cliente + resposta do bot)
+        summary = f"Cliente: {text}\nBot ({agent_used.upper()}): {reply}"
+        erp_db.execute(
+            "INSERT INTO interacoes (cliente_id, tipo, canal, resumo, agente, criado_em) VALUES (?, 'whatsapp', 'whatsapp', ?, ?, datetime('now','localtime'))",
+            (client_id, summary, agent_used)
+        )
+        print(f"[CRM] Lead/Interação salvos com sucesso para id {client_id}")
+        
+        # 3. Sincroniza com o Notion em background
+        try:
+            import notion_tools
+            import asyncio
+            nome_notion = name if name else (nome_cli if 'nome_cli' in locals() else f"Lead WhatsApp {phone_digits[-4:]}")
+            asyncio.create_task(notion_tools.sync_lead_to_notion({
+                "nome": nome_notion,
+                "telefone": phone_digits,
+                "estagio": estagio_atual,
+                "interesse": analysis.get("interesse", "desconhecido"),
+                "dores": analysis.get("dores", "nenhuma"),
+                "objecoes": analysis.get("objecoes", "nenhuma"),
+                "nivel_engajamento": analysis.get("nivel_engajamento", "baixo")
+            }))
+        except Exception as notion_err:
+            print(f"[WARN] Falha ao disparar sincronização com o Notion: {notion_err}")
+            
+    except Exception as e:
+        print(f"[WARN] Falha ao salvar no CRM erp: {e}")
+
+def save_lead_to_obsidian(phone: str, name: str, text: str, reply: str, analysis: dict):
+    """Salva o perfil do lead e o histórico de conversa em markdown no Obsidian com frontmatter YAML consolidado."""
+    try:
+        import platform as _platform
+        _default_vault = (
+            r"C:\Users\erick\AURA-decor-vault"
+            if _platform.system() == "Windows"
+            else "/app/vault"
+        )
+        vault_path = _pl.Path(os.getenv("OBSIDIAN_VAULT", _default_vault))
+        leads_dir = vault_path / "Atendimento" / "Leads"
+        leads_dir.mkdir(parents=True, exist_ok=True)
+        
+        phone_digits = "".join(c for c in phone if c.isdigit())
+        if not phone_digits:
+            return
+            
+        lead_file = leads_dir / f"{phone_digits}.md"
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M")
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        client_name = name if name else f"Lead WhatsApp {phone_digits[-4:]}"
+        
+        estagio = analysis.get("estagio", "frio")
+        interesse = analysis.get("interesse", "desconhecido")
+        dores = analysis.get("dores", "nenhuma")
+        produtos = analysis.get("produtos_visualizados", "nenhum")
+        objecoes = analysis.get("objecoes", "nenhuma")
+        engajamento = analysis.get("nivel_engajamento", "baixo")
+        
+        history_entry = f"\n- **[{ts}] Cliente:** {text}\n- **[{ts}] LENA:** {reply}\n"
+        
+        if lead_file.exists():
+            content = lead_file.read_text(encoding="utf-8")
+            
+            # Regex para extrair/atualizar o frontmatter YAML
+            frontmatter_match = re.match(r"^---\s*\n(.*?)\n---\s*\n(.*)$", content, re.DOTALL)
+            if frontmatter_match:
+                fm_text, body_text = frontmatter_match.groups()
+                fm_data = {}
+                for line in fm_text.split("\n"):
+                    if ":" in line:
+                        k, v = line.split(":", 1)
+                        fm_data[k.strip()] = v.strip()
+                
+                fm_data["nome"] = client_name
+                fm_data["estagio"] = estagio
+                fm_data["interesse"] = fm_data.get("interesse", "") or interesse
+                fm_data["dores"] = fm_data.get("dores", "") or dores
+                fm_data["produtos_visualizados"] = fm_data.get("produtos_visualizados", "") or produtos
+                fm_data["objecoes"] = fm_data.get("objecoes", "") or objecoes
+                fm_data["nivel_engajamento"] = engajamento
+                fm_data["atualizado"] = ts
+                
+                new_fm = "---\n" + "\n".join(f"{k}: {v}" for k, v in fm_data.items()) + "\n---"
+                new_content = new_fm + "\n" + body_text + history_entry
+                lead_file.write_text(new_content, encoding="utf-8")
+            else:
+                lead_file.write_text(content + history_entry, encoding="utf-8")
+        else:
+            header = f"""---
+telefone: {phone_digits}
+nome: {client_name}
+origem: whatsapp
+estagio: {estagio}
+interesse: {interesse}
+dores: {dores}
+produtos_visualizados: {produtos}
+objecoes: {objecoes}
+nivel_engajamento: {engajamento}
+criado: {today}
+atualizado: {ts}
+---
+
+# 👤 Lead: {client_name}
+- **Telefone:** {phone_digits}
+- **Estágio:** {estagio}
+- **Origem:** WhatsApp
+- **Criado em:** {ts}
+
+## 💬 Histórico de Conversa
+- **[{ts}] Cliente:** {text}
+- **[{ts}] LENA:** {reply}
+"""
+            lead_file.write_text(header, encoding="utf-8")
+        print(f"[Obsidian] Lead/Interação salvos em {lead_file.name}")
+    except Exception as e:
+        print(f"[WARN] Falha ao salvar lead no Obsidian: {e}")
+
+# ── WPPConnect & Z-API (Híbrido) ───────────────────────────────────────────────
+WPP_URL     = os.getenv("WPPCONNECT_URL", "http://localhost:21465")
+WPP_SESSION = os.getenv("WPPCONNECT_SESSION", "aura-decore")
+WPP_TOKEN   = os.getenv("WPPCONNECT_TOKEN", "")
+
+ZAPI_INSTANCE_ID   = os.getenv("ZAPI_INSTANCE_ID", "")
+ZAPI_TOKEN         = os.getenv("ZAPI_TOKEN", "")
+ZAPI_CLIENT_TOKEN  = os.getenv("ZAPI_CLIENT_TOKEN", "")
+ZAPI_BASE_URL      = f"https://api.z-api.io/instances/{ZAPI_INSTANCE_ID}/token/{ZAPI_TOKEN}" if ZAPI_INSTANCE_ID and ZAPI_TOKEN else ""
 
 # ── Shopify (lookup de pedidos) ─────────────────────────────────────────────────
 SHOPIFY_DOMAIN = os.getenv("SHOPIFY_DOMAIN", "")
@@ -52,10 +376,13 @@ CUPONS = {
 # ── System prompts por agente ──────────────────────────────────────────────────
 SYSTEM_PROMPTS = {
     "lena": (
-        "Você é LENA, atendente da Aura Decore — loja de decoração Japandi/Wabi-sabi.\n"
+        "Você é LENA, atendente e assistente virtual da Aura Decore — marca premium de design Japandi e Wabi-Sabi.\n"
+        "Sua missão é encantar e atender com empatia, calor humano e excelência.\n"
         "Framework HERO: Help (acolha), Empathize (sinta junto), Resolve (solucione), Offer (ofereça próximo passo).\n"
         "Regras:\n"
-        "- Português BR caloroso e natural. Máximo 3 parágrafos curtos. Nunca use 'infelizmente' nem 'protocolo'.\n"
+        "- Português BR caloroso e natural. Máximo 3 parágrafos curtos. Evite palavras negativas como 'infelizmente' (prefira explicar positivamente, ex: 'Como importamos diretamente do Japão...') e nunca use 'protocolo' ou linguajar de chatbot.\n"
+        "- Eduardo Marques é o Diretor e Fundador da Aura Decore. Caso ele envie qualquer ordem ou comando de negócio (ex: 'auditar loja', 'gerar reel', 'relatório financeiro' ou mensagens com prefixo '/'), responda de forma profissional e corporativa: 'Entendido, Diretor Eduardo! Ordem recebida. Vou acionar a IVE e o Command Router para processar e executar agora mesmo. 🌿'\n"
+        "- Conduza uma Sondagem Consultiva natural: ao longo da conversa, tente descobrir de forma amigável o nome do cliente, o produto de interesse, as dores de decoração dele (ex: casa sem graça, falta de aconchego, caos visual) e objeções (preço, frete, prazo), permitindo que o CRM registre esses dados automaticamente.\n"
         "- Cupons disponíveis: AURA10 (10% OFF), AURAVIP15 (VIP 15% OFF), AURAEMBAIXADORA20 (embaixadora 20% OFF).\n"
         "- Frete grátis em compras acima de R$199.\n"
         "- Prazo de entrega padrão: 15–25 dias úteis (dropshipping internacional).\n"
@@ -163,8 +490,8 @@ _INTENT_ORDERED = [
     ("reembolso",    r"\b(reembolso|devolu[cç][aã]o|devolver|estornar|cancelar pedido|cancelamento|estorno|trocar|troca)\b"),
     ("reclamacao",   r"\b(errado|problema|defeito|quebrado|danificado|n[aã]o chegou|sumiu|atrasado|raiva|decepcionada)\b"),
     ("parceria",     r"\b(parceria|influencer|embaixadora|divulgar|publi|permuta|colabora[cç][aã]o|ugc)\b"),
-    ("pedido",       r"\b(pedido|rastrear|rastreio|entrega|prazo|chegou|despachou|c[oó]digo|nfe|nota fiscal)\b"),
     ("carrinho",     r"\b(carrinho|finalizar|comprar|desconto|cupom|frete|gr[aá]tis|oferta|promo[cç][aã]o)\b"),
+    ("pedido",       r"\b(pedido|rastrear|rastreio|entrega|prazo|chegou|despachou|c[oó]digo|nfe|nota fiscal)\b"),
     ("produto",      r"\b(produto|pre[cç]o|dispon[ií]vel|vende|quanto custa|valor|estoque|foto|cor|tamanho)\b"),
     # Intents de neuromarketing (detectam oportunidade de nurturing)
     ("desejo",       r"\b(sonho|quero muito|adorei|perfeito|lindo|apaixonada|queria ter|meu lar|minha casa|ambiente)\b"),
@@ -256,32 +583,139 @@ async def _llm(system: str, messages: list, max_tokens: int = 350) -> str:
     text, _ = await _llm_engine(system, messages, max_tokens=max_tokens)
     return text
 
-# ── Envio Z-API ────────────────────────────────────────────────────────────────
-async def _zapi_send(phone: str, message: str):
-    if not ZAPI_INSTANCE or not ZAPI_TOKEN:
-        return
-    url     = f"{ZAPI_BASE}/send-text"
-    headers = {"Content-Type": "application/json", "Client-Token": ZAPI_CLIENT}
-    try:
-        async with httpx.AsyncClient(timeout=10) as hc:
-            await hc.post(url, json={"phone": phone, "message": message}, headers=headers)
-    except Exception:
-        pass
+# ── Envio Híbrido (WPPConnect / Z-API) ──────────────────────────────────────────
+def _wpp_headers() -> dict:
+    return {"Authorization": f"Bearer {WPP_TOKEN}", "Content-Type": "application/json"}
 
-async def _zapi_typing(phone: str):
-    """Envia indicador de digitação por 2 segundos."""
-    if not ZAPI_INSTANCE or not ZAPI_TOKEN:
+async def _wpp_send(phone: str, message: str):
+    """Envia mensagem usando o canal disponível (prioriza WPPConnect se token existir)."""
+    # 1. WPPConnect
+    if WPP_TOKEN:
+        url = f"{WPP_URL}/api/{WPP_SESSION}/send-message"
+        print(f"[WPPConnect] Enviando para {phone} via {url}...")
+        try:
+            async with httpx.AsyncClient(timeout=10) as hc:
+                r = await hc.post(url, json={"phone": phone, "message": message, "isGroup": False}, headers=_wpp_headers())
+                if r.status_code in (200, 201):
+                    print(f"[WPPConnect] Mensagem enviada com sucesso para {phone}")
+                    return
+                else:
+                    print(f"[WPPConnect] Falha ao enviar para {phone}: {r.status_code} - {r.text}")
+        except Exception as e:
+            print(f"[WPPConnect] Erro excepcional ao enviar para {phone}: {e}")
+
+    # 2. Z-API (Nuvem fallback/principal se sem WPP local)
+    if ZAPI_INSTANCE_ID and ZAPI_TOKEN:
+        url = f"{ZAPI_BASE_URL}/send-text"
+        headers = {"Content-Type": "application/json"}
+        if ZAPI_CLIENT_TOKEN:
+            headers["Client-Token"] = ZAPI_CLIENT_TOKEN
+        print(f"[Z-API] Enviando para {phone} via {url}...")
+        try:
+            async with httpx.AsyncClient(timeout=10) as hc:
+                r = await hc.post(url, json={"phone": phone, "message": message}, headers=headers)
+                if r.status_code in (200, 201):
+                    print(f"[Z-API] Mensagem enviada com sucesso para {phone}")
+                    return
+                else:
+                    print(f"[Z-API] Falha ao enviar para {phone}: {r.status_code} - {r.text}")
+        except Exception as e:
+            print(f"[Z-API] Erro excepcional ao enviar para {phone}: {e}")
+
+    print("[WhatsApp] Nenhum canal de envio (WPPConnect ou Z-API) configurado ou disponível!")
+
+async def send_whatsapp_message(phone: str, message: str):
+    """Função pública para enviar mensagens de WhatsApp."""
+    await _wpp_send(phone, message)
+
+async def send_whatsapp_image_base64(phone: str, file_path: str, caption: str = ""):
+    """Envia imagem local via canal disponível (WPPConnect ou Z-API)."""
+    if not os.path.exists(file_path):
         return
-    url     = f"{ZAPI_BASE}/send-presence"
-    headers = {"Content-Type": "application/json", "Client-Token": ZAPI_CLIENT}
-    try:
-        async with httpx.AsyncClient(timeout=5) as hc:
-            await hc.post(url, json={"phone": phone, "presence": "composing"}, headers=headers)
-        await asyncio.sleep(2)
-        async with httpx.AsyncClient(timeout=5) as hc:
-            await hc.post(url, json={"phone": phone, "presence": "paused"}, headers=headers)
-    except Exception:
-        pass
+
+    # 1. WPPConnect
+    if WPP_TOKEN:
+        import base64
+        try:
+            with open(file_path, "rb") as f:
+                img_data = f.read()
+            b64_data = base64.b64encode(img_data).decode("utf-8")
+            filename = os.path.basename(file_path)
+            mime_type = "image/png" if file_path.endswith(".png") else "image/jpeg"
+            base64_str = f"data:{mime_type};base64,{b64_data}"
+            
+            url = f"{WPP_URL}/api/{WPP_SESSION}/send-file-base64"
+            payload = {
+                "phone": phone,
+                "base64": base64_str,
+                "filename": filename,
+                "caption": caption
+            }
+            async with httpx.AsyncClient(timeout=30) as hc:
+                await hc.post(url, json=payload, headers=_wpp_headers())
+            print(f"[WPPConnect] Imagem {filename} enviada com sucesso para {phone}")
+            return
+        except Exception as e:
+            print(f"[WARN] Erro ao enviar imagem via WPPConnect: {e}")
+
+    # 2. Z-API
+    if ZAPI_INSTANCE_ID and ZAPI_TOKEN:
+        url = f"{ZAPI_BASE_URL}/send-image"
+        headers = {"Content-Type": "application/json"}
+        if ZAPI_CLIENT_TOKEN:
+            headers["Client-Token"] = ZAPI_CLIENT_TOKEN
+        
+        import base64
+        try:
+            with open(file_path, "rb") as f:
+                img_data = f.read()
+            b64_data = base64.b64encode(img_data).decode("utf-8")
+            mime_type = "image/png" if file_path.endswith(".png") else "image/jpeg"
+            base64_str = f"data:{mime_type};base64,{b64_data}"
+            
+            payload = {
+                "phone": phone,
+                "image": base64_str,
+                "caption": caption
+            }
+            async with httpx.AsyncClient(timeout=30) as hc:
+                r = await hc.post(url, json=payload, headers=headers)
+                if r.status_code in (200, 201):
+                    print(f"[Z-API] Imagem enviada com sucesso para {phone}")
+                    return
+                else:
+                    print(f"[Z-API] Falha ao enviar imagem para {phone}: {r.status_code} - {r.text}")
+        except Exception as e:
+            print(f"[WARN] Erro ao enviar imagem via Z-API: {e}")
+
+async def _wpp_typing(phone: str):
+    """Envia indicador de digitação via canal disponível (WPPConnect ou Z-API)."""
+    # 1. WPPConnect
+    if WPP_TOKEN:
+        try:
+            async with httpx.AsyncClient(timeout=5) as hc:
+                await hc.post(f"{WPP_URL}/api/{WPP_SESSION}/chat-state", json={"phone": phone, "chatstate": "typing"}, headers=_wpp_headers())
+            await asyncio.sleep(2)
+            async with httpx.AsyncClient(timeout=5) as hc:
+                await hc.post(f"{WPP_URL}/api/{WPP_SESSION}/chat-state", json={"phone": phone, "chatstate": "stopped"}, headers=_wpp_headers())
+            return
+        except Exception:
+            pass
+
+    # 2. Z-API
+    if ZAPI_INSTANCE_ID and ZAPI_TOKEN:
+        url = f"{ZAPI_BASE_URL}/send-presence"
+        headers = {"Content-Type": "application/json"}
+        if ZAPI_CLIENT_TOKEN:
+            headers["Client-Token"] = ZAPI_CLIENT_TOKEN
+        try:
+            async with httpx.AsyncClient(timeout=5) as hc:
+                await hc.post(url, json={"phone": phone, "presence": "composing"}, headers=headers)
+            await asyncio.sleep(2)
+            async with httpx.AsyncClient(timeout=5) as hc:
+                await hc.post(url, json={"phone": phone, "presence": "paused"}, headers=headers)
+        except Exception:
+            pass
 
 # ── Processador principal ──────────────────────────────────────────────────────
 async def process_message(phone: str, text: str, name: str = "", message_id: str = "") -> dict:
@@ -306,18 +740,11 @@ async def process_message(phone: str, text: str, name: str = "", message_id: str
     primary_agent = route_agent(intent)
     escalated = False
 
-    # Fora do horário comercial
-    if not is_business_hours():
-        reply = (
-            f"Olá{', ' + name if name else ''}! 🌿 Recebemos sua mensagem.\n"
-            "Nosso atendimento é das 8h às 22h. Quando abrirmos, "
-            "a LENA vai te responder pessoalmente! 💚\n"
-            "Enquanto isso, visite: auradecore.com.br"
-        )
-        return {"agent": "lena", "reply": reply, "intent": intent, "escalated": False}
-
     # Histórico de conversa (últimas 6 mensagens)
     history = sess["history"][-6:]
+
+    # Identifica se é o início da conversa na sessão (sem respostas do assistente)
+    is_start = not any(msg["role"] == "assistant" for msg in history)
 
     # ── Lookup de pedido Shopify ──────────────────────────────────────────────
     order_context = ""
@@ -327,8 +754,10 @@ async def process_message(phone: str, text: str, name: str = "", message_id: str
         if info:
             order_context = f"\n[DADOS DO PEDIDO NA LOJA]: {info}\n"
 
-    # ── GUARD — reembolso/cancelamento ────────────────────────────────────────
     guard_context = ""
+    intent_guidelines = ""
+
+    # ── GUARD — reembolso/cancelamento ────────────────────────────────────────
     if primary_agent == "guard":
         escalated = True
         guard_result = await _llm(
@@ -344,21 +773,33 @@ async def process_message(phone: str, text: str, name: str = "", message_id: str
             base_reply = guard_result
             guard_context = ""
 
-        lena_prompt = (
-            f"O cliente ({name or phone}) pediu reembolso/devolução: '{text}'.\n"
-            f"{order_context}"
-            f"GUARD preparou esta resposta: '{base_reply}'.\n"
-            "Reescreva com seu tom HERO — caloroso, empático, sem burocracia."
+        intent_guidelines = (
+            f"O cliente solicitou reembolso/devolução ou cancelamento do pedido.\n"
+            f"O assistente financeiro GUARD analisou a solicitação e gerou o seguinte parecer:\n"
+            f"'{base_reply}'\n\n"
+            f"Com base nesse parecer, formule a resposta final ao cliente usando o seu tom LENA (caloroso, empático, resolutivo, sem burocracia).\n"
+            f"Se foi aprovado ou se foi escalado, explique com clareza o prazo e o próximo passo."
         )
-        reply = await _llm(SYSTEM_PROMPTS["lena"], [{"role": "user", "content": lena_prompt}], max_tokens=300)
 
     # ── SOL — recuperação de carrinho ─────────────────────────────────────────
     elif primary_agent == "sol":
-        reply = await _llm(SYSTEM_PROMPTS["sol"], [{"role": "user", "content": text}], max_tokens=250)
+        intent_guidelines = (
+            "O cliente abandonou o carrinho ou está indeciso quanto à compra.\n"
+            "Sua missão é atuar como especialista de vendas (SOL), gerando uma mensagem de recuperação irresistível e inspiradora:\n"
+            "- Ofereça urgência suave, sem pressão agressiva.\n"
+            "- Apresente o cupom AURA10 (10% OFF) ou frete grátis para compras acima de R$199.\n"
+            "- Indique o site: auradecore.com.br"
+        )
 
     # ── ZARA — parceria/influencer ────────────────────────────────────────────
     elif primary_agent == "zara":
-        reply = await _llm(SYSTEM_PROMPTS["zara"], [{"role": "user", "content": text}], max_tokens=200)
+        intent_guidelines = (
+            "O cliente tem interesse em parcerias, divulgação, ser embaixador ou publis.\n"
+            "Atue como community manager (ZARA) para responder com entusiasmo:\n"
+            "- Agradeça pelo interesse em fazer parte da comunidade Aura Decore.\n"
+            "- Solicite o portfólio ou os perfis das redes sociais (IG/TikTok).\n"
+            "- Canal de contato: e-mail auras.de@gmail.com ou direct do Instagram @auras.decore."
+        )
 
     # ── NEURO — desejo/inspiração/dor de decoração ────────────────────────────
     elif primary_agent == "neuro":
@@ -370,38 +811,39 @@ async def process_message(phone: str, text: str, name: str = "", message_id: str
             "produto": "",
         }) if _NEURO_OK else ""
 
-        ctx = f"Nome: {name}.\nIntent: {intent}.\nLead score: {lead_score}.\n"
-        if intent == "desejo":
-            ctx += "Cliente expressou desejo/admiração por produto ou ambiente. Ative o desejo de forma sutil.\n"
-        elif intent == "inspiracao":
-            ctx += "Cliente busca inspiração ou dica de decoração. Seja especialista + amiga, ofereça valor real.\n"
-        elif intent == "dor_decoracao":
-            ctx += "Cliente expressou dor com o próprio ambiente. Nomeie a dor, mostre que entende, ofereça ponte.\n"
-        if neuro_ctx:
-            ctx += f"\n{neuro_ctx}\n"
-
-        user_msg = ctx + "\nMensagem do cliente: " + text
-        msgs = history + [{"role": "user", "content": user_msg}]
-        reply = await _llm(SYSTEM_PROMPTS["neuro"], msgs, max_tokens=350)
+        intent_guidelines = (
+            f"O cliente está buscando inspiração, expressando desejos para o lar, ou compartilhando dores de decoração.\n"
+            f"Atue como estrategista de copy neuromarketing (NEURO):\n"
+            f"- Use os frameworks PAS (Problem-Agitate-Solve) ou BAB (Before-After-Bridge) dependendo do contexto.\n"
+            f"- Ative desejos nucleares da ICP Ana Clara (conforto, pertencimento, beleza, controle).\n"
+            f"- Trate das dores comuns de decoração (lar genérico, caos doméstico, paralisia decorativa).\n"
+            f"- Diretrizes neuromarketing extras: {neuro_ctx}"
+        )
 
     # ── LENA — atendimento geral ──────────────────────────────────────────────
     else:
-        ctx = ""
-        if name:
-            ctx += f"Nome do cliente: {name}.\n"
-        ctx += f"Intent detectado: {intent}.\n"
-        if order_context:
-            ctx += order_context
-        if intent == "pedido":
-            ctx += "O cliente pergunta sobre status/entrega. Prazo padrão: 15–25 dias úteis.\n"
-        elif intent == "reclamacao":
-            ctx += "Cliente com problema. Seja extremamente empático. Peça número do pedido se não tiver.\n"
-        elif intent == "saudacao" and not history:
-            ctx += "Primeira mensagem desta sessão. Cumprimente com entusiasmo e pergunte como pode ajudar.\n"
+        intent_guidelines = (
+            f"O cliente está fazendo perguntas gerais, tirando dúvidas de produtos ou saudando (intent={intent}).\n"
+            f"Responda à dúvida de forma extremamente atenciosa, clara e simpática.\n"
+            f"- Prazos de entrega padrão: 15-25 dias úteis (dropshipping internacional).\n"
+            f"- Frete grátis em compras acima de R$199.\n"
+            f"- Se for uma dúvida de produto, responda com precisão a partir da memória de produtos do Obsidian."
+        )
 
-        user_msg = ctx + text if ctx else text
-        msgs = history + [{"role": "user", "content": user_msg}]
-        reply = await _llm(SYSTEM_PROMPTS["lena"], msgs, max_tokens=320)
+    # Constrói o system prompt final e unificado da LENA
+    system_prompt = build_lena_system_prompt(intent_guidelines, name, phone, order_context, is_start)
+
+    # Executa a chamada do LLM usando o prompt unificado de LENA
+    user_msg = f"Mensagem do cliente: {text}"
+    msgs = history + [{"role": "user", "content": user_msg}]
+    reply = await _llm(system_prompt, msgs, max_tokens=350)
+
+    # Analisa e segmenta o lead
+    analysis = await analyze_lead_interaction(name, text, reply)
+
+    # Salva o lead e a interação no banco de dados SQLite (CRM) e no Obsidian (memória em markdown)
+    save_lead_and_interaction(phone, name, text, reply, primary_agent, analysis)
+    save_lead_to_obsidian(phone, name, text, reply, analysis)
 
     add_to_history(phone, "user", text)
     add_to_history(phone, "assistant", reply)
@@ -416,13 +858,13 @@ async def process_message(phone: str, text: str, name: str = "", message_id: str
 
 
 async def handle_incoming(phone: str, text: str, name: str = "", message_id: str = "") -> dict:
-    """Função pública: processa + envia resposta via Z-API."""
-    asyncio.create_task(_zapi_typing(phone))
+    """Função pública: processa + envia resposta via WPPConnect."""
+    asyncio.create_task(_wpp_typing(phone))
     await asyncio.sleep(1.5)
 
     result = await process_message(phone, text, name, message_id)
 
     if result["reply"]:
-        asyncio.create_task(_zapi_send(phone, result["reply"]))
+        asyncio.create_task(_wpp_send(phone, result["reply"]))
 
     return result
