@@ -24,3 +24,17 @@ shopify-theme/assets/*.gif
 shopify-theme/assets/*.webp
 shopify-theme/assets/*.svg
 shopify-theme/assets/*.ico
+
+# Instagram session/scripts (sensitive)
+backend/ig_session.json
+ig_*.py
+update_ig_*.py
+
+# Chrome profiles and databases
+backend/*chrome-profile/
+backend/*edge-profile/
+backend/*.db
+backend/*.db-journal
+backend/copy_results/
+backend/theme-backups/
+

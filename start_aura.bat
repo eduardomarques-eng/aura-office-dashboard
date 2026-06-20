@@ -1,45 +1,83 @@
 @echo off
-chcp 65001 > nul
+chcp 65001 >nul
+title Aura Decore HQ - Sistema Completo
+
 echo.
-echo ===================================================
-echo   Aura Decore — Sistema de Agentes
-echo   Dashboard de Comandos Executivos
-echo ===================================================
+echo ========================================================
+echo   AURA DECORE HQ - INICIANDO SISTEMA COMPLETO
+echo ========================================================
 echo.
 
-cd /d "C:\Users\erick\aura-office-dashboard\backend"
+set BASE=C:\Users\erick\aura-office-dashboard
+set WPP_DIR=C:\Users\erick\wppconnect-server
+set PYTHON_VENV=%BASE%\.venv\Scripts\python.exe
+set PYTHON_SYS=C:\Users\erick\AppData\Local\Programs\Python\Python312\python.exe
 
-echo [1/4] Iniciando backend IVE (porta 8000)...
-start "Aura Decore — Backend IVE" cmd /k "chcp 65001 > nul && ..\.venv\Scripts\python.exe -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+if exist "%PYTHON_VENV%" ( set PYTHON=%PYTHON_VENV% ) else ( set PYTHON=%PYTHON_SYS% )
 
-ping 127.0.0.1 -n 5 > nul
+rem ── Variáveis de ambiente ─────────────────────────────────────────────────────
+set OTEL_SDK_DISABLED=true
+set CREWAI_TELEMETRY_OPT_OUT=true
+set LITELLM_TELEMETRY=false
+set PYTHONDONTWRITEBYTECODE=1
 
-echo [2/4] Verificando token Meta...
-..\.venv\Scripts\python -c "import pathlib; env = {line.split('=', 1)[0].strip(): line.split('=', 1)[1].strip() for line in pathlib.Path('.env').read_text(encoding='utf-8').splitlines() if line.strip() and not line.strip().startswith('#') and '=' in line}; token = env.get('FB_PAGE_TOKEN', ''); print('  [OK] FB_PAGE_TOKEN configurado' if token else '  [!] FB_PAGE_TOKEN vazio - iniciando servidor de autorizacao...')" 2>nul
+rem ── 1. WPPConnect ─────────────────────────────────────────────────────────────
+echo [1/3] WPPConnect (WhatsApp Server, porta 21465)...
+netstat -ano | findstr :21465 >nul 2>&1
+if %errorlevel% neq 0 (
+    echo   Iniciando WPPConnect...
+    start "WPPConnect Server" /min cmd /c "chcp 65001 >nul && cd /d %WPP_DIR% && npm run start"
+    timeout /t 8 /nobreak >nul
+    netstat -ano | findstr :21465 >nul 2>&1
+    if %errorlevel% equ 0 ( echo   [OK] WPPConnect subiu! ) else ( echo   [AGUARDANDO] WPPConnect iniciando... )
+) else (
+    echo   [OK] WPPConnect ja esta rodando.
+)
 
-..\.venv\Scripts\python -c "import pathlib, subprocess; env = {line.split('=', 1)[0].strip(): line.split('=', 1)[1].strip() for line in pathlib.Path('.env').read_text(encoding='utf-8').splitlines() if line.strip() and not line.strip().startswith('#') and '=' in line}; not env.get('FB_PAGE_TOKEN', '') and (subprocess.Popen(['..\\.venv\\Scripts\\python.exe', 'get_fb_token.py'], creationflags=0x10) or True) and print('  Servidor de token iniciado em http://localhost:8765')" 2>nul
+rem ── 2. Backend FastAPI ────────────────────────────────────────────────────────
+echo [2/3] Backend FastAPI LENA (porta 8000)...
+netstat -ano | findstr :8000 >nul 2>&1
+if %errorlevel% neq 0 (
+    echo   Iniciando Backend...
+    start "Backend IVE/LENA" /min cmd /c "chcp 65001 >nul && cd /d %BASE%\backend && set OTEL_SDK_DISABLED=true && set CREWAI_TELEMETRY_OPT_OUT=true && %PYTHON% -m uvicorn main:app --host 0.0.0.0 --port 8000 --workers 1 --log-level warning"
+    timeout /t 12 /nobreak >nul
+    netstat -ano | findstr :8000 >nul 2>&1
+    if %errorlevel% equ 0 ( echo   [OK] Backend subiu! ) else ( echo   [AGUARDANDO] Backend iniciando... )
+) else (
+    echo   [OK] Backend ja esta rodando.
+)
 
-ping 127.0.0.1 -n 3 > nul
+rem ── 3. Watchdog ────────────────────────────────────────────────────────────────
+echo [3/3] Watchdog 24/7 (monitor de saude)...
+tasklist /FI "IMAGENAME eq python.exe" /FO CSV 2>nul | findstr /I "watchdog" >nul 2>&1
+if %errorlevel% neq 0 (
+    echo   Iniciando Watchdog...
+    start "Watchdog Aura 24h" /min "%PYTHON%" "%BASE%\watchdog_aura.py"
+    echo   [OK] Watchdog iniciado em background.
+) else (
+    echo   [OK] Watchdog ja esta rodando.
+)
 
-echo [3/4] Abrindo dashboard principal...
-start "" "C:\Users\erick\aura-office-dashboard\index.html"
-
-ping 127.0.0.1 -n 3 > nul
-
-echo [4/4] Status do sistema:
+rem ── Status Final ──────────────────────────────────────────────────────────────
 echo.
-echo   Backend IVE:      http://localhost:8000
-echo   Health:           http://localhost:8000/health
-echo   Meta^/Social:      http://localhost:8000/meta/social
-echo   Windsor:          http://localhost:8000/windsor/status
-echo   Token Meta:       http://localhost:8765  (se necessario)
+echo ========================================================
+timeout /t 5 /nobreak >nul
+
+echo   VERIFICANDO PORTAS:
+netstat -ano | findstr :8000 >nul 2>&1
+if %errorlevel% equ 0 ( echo   [UP] Backend IVE/LENA:   http://localhost:8000 ) else ( echo   [DOWN] Backend OFFLINE - verifique logs )
+netstat -ano | findstr :21465 >nul 2>&1
+if %errorlevel% equ 0 ( echo   [UP] WPPConnect:          http://localhost:21465 ) else ( echo   [DOWN] WPPConnect OFFLINE )
+netstat -ano | findstr :5678 >nul 2>&1
+if %errorlevel% equ 0 ( echo   [UP] n8n:                http://localhost:5678 ) else ( echo   [INFO] n8n: offline (opcional) )
+
 echo.
-echo ===================================================
-echo   Para ativar Facebook^/Instagram:
-echo   1. Acesse http://localhost:8765
-echo   2. Siga as instrucoes do Graph Explorer
-echo   3. Cole o token e salve
-echo   Guia completo: AURA-decor-vault\Setup\meta-facebook-instagram-setup.md
-echo ===================================================
+echo   Health Check:    http://localhost:8000/health
+echo   Webhook LENA:    http://localhost:8000/whatsapp/webhook
+echo   Logs Watchdog:   %BASE%\backend\watchdog.log
+echo ========================================================
+echo.
+echo   Sistema pronto! Para testar a LENA, envie uma mensagem
+echo   WhatsApp ou execute: python diagnostico_aura.py
 echo.
 pause
