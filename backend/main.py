@@ -1556,7 +1556,7 @@ async def chat_with_ive(body: ChatBody):
         try:
             if client:
                 response = client.messages.create(
-                    model="claude-opus-4-7",
+                    model="claude-3-opus-20240229",
                     max_tokens=400,
                     system=IVE_SYSTEM,
                     messages=messages,
@@ -3384,7 +3384,7 @@ async def llm_call_cascade(system: str, user_msg: str, max_tokens: int = 600) ->
                 loop = asyncio.get_event_loop()
                 response = await asyncio.wait_for(
                     loop.run_in_executor(None, lambda: client.messages.create(
-                        model="claude-sonnet-4-6",
+                        model="claude-3-5-sonnet-20240620",
                         max_tokens=max_tokens,
                         system=system,
                         messages=messages,
@@ -3716,6 +3716,8 @@ AGENT_DISPLAY = {
     "pipe": ("Pipe",  "🔌"),
     # Design + publicação + dev
     "arte": ("Arte",  "🖼️"),  "feed":  ("Feed",  "📲"), "dev":   ("Dev",   "💻"),
+    # Neuromarketing
+    "neuro": ("Neuro", "🧠"), "promo": ("Promo", "🏷️"),
 }
 
 @app.get("/terminal/stream")
@@ -3968,8 +3970,8 @@ async def list_agents_compat():
     """Lista os agentes ativos com score Kaizen quando disponível."""
     agents_info = {
         aid: {
-            "name": AGENT_DISPLAY[aid][0],
-            "emoji": AGENT_DISPLAY[aid][1],
+            "name": AGENT_DISPLAY.get(aid, (aid.title(), "🤖"))[0],
+            "emoji": AGENT_DISPLAY.get(aid, (aid.title(), "🤖"))[1],
             "system": AGENT_SYSTEMS[aid][:120] + "...",
         } for aid in AGENT_SYSTEMS
     }
@@ -3977,7 +3979,8 @@ async def list_agents_compat():
         from agent_kaizen import get_kaizen_summary
         kaizen = get_kaizen_summary()
         for aid, info in agents_info.items():
-            nome = AGENT_DISPLAY[aid][0].split(" — ")[0] if " — " in AGENT_DISPLAY[aid][0] else AGENT_DISPLAY[aid][0]
+            disp_name = AGENT_DISPLAY.get(aid, (aid.title(), "🤖"))[0]
+            nome = disp_name.split(" — ")[0] if " — " in disp_name else disp_name
             agent_kaizen = kaizen["agentes"].get(nome, {})
             info["kaizen_score"] = agent_kaizen.get("score", None)
             info["kaizen_execucoes"] = agent_kaizen.get("execucoes", 0)

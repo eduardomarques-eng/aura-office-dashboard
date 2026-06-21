@@ -91,36 +91,99 @@ async def check_env_vars():
 
 # ── 2. Portas e serviços ───────────────────────────────────────────────────────
 async def check_services():
-    title("2. Serviços Locais (Portas)")
-    services = [
-        (8000,  "Backend FastAPI (LENA/Webhook)"),
-        (21465, "WPPConnect Server"),
-        (5678,  "n8n (opcional, local)"),
-        (11434, "Ollama (fallback LLM local)"),
-    ]
-    for port, name in services:
-        if check_port(port):
-            ok(f"Porta {port}: {name} — UP")
+    title("2. Serviços e Conectividade")
+    wpp_url = os.getenv("WPPCONNECT_URL", "http://localhost:21465")
+    n8n_url = os.getenv("N8N_BASE_URL", "http://localhost:5678")
+    
+    # 1. Backend FastAPI (local)
+    if check_port(8000):
+        ok("FastAPI Backend local (porta 8000) — UP")
+    else:
+        warn("FastAPI Backend local (porta 8000) — DOWN (Não crítico se rodando no Railway)")
+
+    # 2. WPPConnect Server (local ou remoto)
+    import urllib.parse
+    wpp_parsed = urllib.parse.urlparse(wpp_url)
+    wpp_host = wpp_parsed.hostname or "127.0.0.1"
+    is_wpp_local = wpp_host in ("localhost", "127.0.0.1")
+    
+    if is_wpp_local:
+        if check_port(21465):
+            ok("WPPConnect Server local (porta 21465) — UP")
         else:
-            if port in (8000, 21465):
-                fail(f"Porta {port}: {name} — DOWN ⚠️ CRÍTICO")
-            else:
-                warn(f"Porta {port}: {name} — offline (opcional)")
+            fail("WPPConnect Server local (porta 21465) — DOWN ⚠️ CRÍTICO")
+    else:
+        # Check remote connectivity
+        try:
+            async with httpx.AsyncClient(timeout=5) as hc:
+                r = await hc.get(f"{wpp_url}/api-docs/")
+                if r.status_code == 200:
+                    ok(f"WPPConnect Server remoto ({wpp_host}) — UP (HTTP 200)")
+                else:
+                    fail(f"WPPConnect Server remoto ({wpp_host}) — DOWN (HTTP {r.status_code})")
+        except Exception as e:
+            fail(f"WPPConnect Server remoto ({wpp_host}) — INACESSÍVEL: {e}")
+
+    # 3. n8n (local ou remoto)
+    n8n_parsed = urllib.parse.urlparse(n8n_url)
+    n8n_host = n8n_parsed.hostname or "127.0.0.1"
+    is_n8n_local = n8n_host in ("localhost", "127.0.0.1")
+    
+    if is_n8n_local:
+        if check_port(5678):
+            ok("n8n local (porta 5678) — UP")
+        else:
+            warn("n8n local (porta 5678) — offline (opcional)")
+    else:
+        # Check remote connectivity
+        try:
+            async with httpx.AsyncClient(timeout=5) as hc:
+                r = await hc.get(f"{n8n_url}/healthz")
+                if r.status_code == 200:
+                    ok(f"n8n remoto ({n8n_host}) — UP (HTTP 200)")
+                else:
+                    warn(f"n8n remoto ({n8n_host}) — DOWN (HTTP {r.status_code})")
+        except Exception as e:
+            warn(f"n8n remoto ({n8n_host}) — INACESSÍVEL: {e}")
+
+    # 4. Ollama (local)
+    if check_port(11434):
+        ok("Ollama local (porta 11434) — UP")
+    else:
+        warn("Ollama local (porta 11434) — offline (opcional)")
 
 # ── 3. Health check do backend ────────────────────────────────────────────────
 async def check_backend_health():
     title("3. Backend FastAPI — Health Check")
+    # Tenta local
     try:
-        async with httpx.AsyncClient(timeout=10) as hc:
+        async with httpx.AsyncClient(timeout=5) as hc:
             r = await hc.get("http://localhost:8000/health")
             if r.status_code == 200:
                 data = r.json()
-                ok(f"Backend: {r.status_code} OK")
-                info(f"Resposta: {json.dumps(data, ensure_ascii=False)[:200]}")
+                ok(f"Backend Local: {r.status_code} OK")
+                info(f"Resposta Local: {json.dumps(data, ensure_ascii=False)[:200]}")
+                return
+    except Exception:
+        pass
+
+    # Tenta remoto
+    prod_url = os.getenv("RAILWAY_URL", "https://backend.auradecore.com.br")
+    if "localhost" in prod_url or "127.0.0.1" in prod_url:
+        prod_url = "https://backend.auradecore.com.br"
+    
+    info(f"Local offline. Testando Backend Remoto em: {prod_url}/health")
+    try:
+        async with httpx.AsyncClient(timeout=10) as hc:
+            r = await hc.get(f"{prod_url}/health")
+            if r.status_code == 200:
+                data = r.json()
+                ok(f"Backend Remoto: {r.status_code} OK")
+                info(f"Resposta Remota: {json.dumps(data, ensure_ascii=False)[:200]}")
             else:
-                fail(f"Backend retornou {r.status_code}: {r.text[:100]}")
+                fail(f"Backend Remoto retornou {r.status_code}: {r.text[:100]}")
     except Exception as e:
-        fail(f"Backend inacessível: {e}")
+        fail(f"Backend Remoto inacessível: {e}")
 
 # ── 4. Teste do motor LLM ─────────────────────────────────────────────────────
 async def check_llm_engine():
@@ -158,12 +221,15 @@ async def check_wppconnect():
     wpp_sess = os.getenv("WPPCONNECT_SESSION", "aura-decore")
     wpp_tok  = os.getenv("WPPCONNECT_TOKEN", "")
     
-    if not check_port(21465):
-        fail("WPPConnect offline (porta 21465 fechada)")
+    import urllib.parse
+    wpp_parsed = urllib.parse.urlparse(wpp_url)
+    wpp_host = wpp_parsed.hostname or "127.0.0.1"
+    is_wpp_local = wpp_host in ("localhost", "127.0.0.1")
+    
+    if is_wpp_local and not check_port(21465):
+        fail("WPPConnect local offline (porta 21465 fechada)")
         info("Para iniciar: cd C:\\Users\\erick\\wppconnect-server && npm run start")
         return
-    
-    ok("WPPConnect porta 21465 está aberta")
     
     if not wpp_tok:
         warn("WPPCONNECT_TOKEN não configurado")
@@ -172,23 +238,43 @@ async def check_wppconnect():
     headers = {"Authorization": f"Bearer {wpp_tok}"}
     try:
         async with httpx.AsyncClient(timeout=10) as hc:
+            # Primeiro tenta check-connection-session que é mais estável quando já logado
+            try:
+                r_conn = await hc.get(f"{wpp_url}/api/{wpp_sess}/check-connection-session", headers=headers)
+                if r_conn.status_code == 200:
+                    conn_data = r_conn.json()
+                    if conn_data.get("status") is True or conn_data.get("message") == "Connected":
+                        ok(f"Sessão '{wpp_sess}': CONECTADA ao WhatsApp ✅")
+                        return
+            except Exception:
+                pass
+
+            # Se não retornar sucesso, tenta status-session
             r = await hc.get(f"{wpp_url}/api/{wpp_sess}/status-session", headers=headers)
             data = r.json()
             status = data.get("status", "unknown")
-            if status in ("CONNECTED", "isLogged"):
-                ok(f"Sessão '{wpp_sess}': CONECTADA ao WhatsApp ✅")
+            if status in ("CONNECTED", "isLogged", "PAIRED", "NORMAL", "MAIN"):
+                ok(f"Sessão '{wpp_sess}': CONECTADA ao WhatsApp ({status}) ✅")
             else:
                 warn(f"Sessão '{wpp_sess}': {status} — QR Code pode ser necessário")
-                info(f"Abra: http://localhost:21465 para escanear o QR")
+                if is_wpp_local:
+                    info(f"Abra: http://localhost:21465 para escanear o QR")
+                else:
+                    info(f"Abra: https://wpp.auradecore.com.br/ para escanear o QR")
     except Exception as e:
         warn(f"Não foi possível verificar status da sessão: {e}")
 
 # ── 6. Teste do webhook LENA ──────────────────────────────────────────────────
 async def test_lena_webhook():
     title("6. Simulação: Webhook WhatsApp → LENA")
-    if not check_port(8000):
-        fail("Backend offline — impossível testar webhook")
-        return
+    
+    # Check if we should call local backend or Remote backend
+    prod_url = os.getenv("RAILWAY_URL", "https://backend.auradecore.com.br")
+    if "localhost" in prod_url or "127.0.0.1" in prod_url:
+        prod_url = "https://backend.auradecore.com.br"
+    target_url = "http://localhost:8000" if check_port(8000) else prod_url
+    
+    info(f"Usando target backend: {target_url}")
     
     payload = {
         "from":       "5511999999999@c.us",
@@ -204,7 +290,7 @@ async def test_lena_webhook():
     try:
         async with httpx.AsyncClient(timeout=40) as hc:
             start = time.time()
-            r = await hc.post("http://localhost:8000/whatsapp/webhook", json=payload)
+            r = await hc.post(f"{target_url}/whatsapp/webhook", json=payload)
             elapsed = time.time() - start
             
             if r.status_code == 200:

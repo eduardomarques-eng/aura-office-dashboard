@@ -28,6 +28,20 @@ except Exception:
     CANVA_TOOLS = []
     _CANVA_TOOLS_OK = False
 
+# Ferramentas de Google Calendar, Notion e Gmail
+try:
+    from google_calendar_tools import CALENDAR_TOOLS
+except Exception:
+    CALENDAR_TOOLS = []
+try:
+    from notion_tools import NOTION_TOOLS
+except Exception:
+    NOTION_TOOLS = []
+try:
+    from gmail_tools import GMAIL_TOOLS
+except Exception:
+    GMAIL_TOOLS = []
+
 # Ferramentas Figma (design tokens → CSS Shopify, export assets)
 try:
     from figma_tools import FIGMA_TOOLS
@@ -56,13 +70,16 @@ os.environ.setdefault("OLLAMA_API_BASE", os.getenv("OLLAMA_URL", "http://localho
 _FORCE_GROQ   = False  # False = usa cascade completo
 _FORCE_OLLAMA = False  # False = não força Ollama
 
+_ANTHROPIC_OUT_OF_CREDITS = False
+_GROQ_RATE_LIMITED = False
+
 # Groq (primário — 8b tem quota separada do 70b)
 GROQ_FAST   = "groq/llama-3.1-8b-instant"       # quota separada — 800k TPD
 GROQ_REASON = "groq/llama-3.3-70b-versatile"    # 70b como opção rich
 
 # Anthropic (fallback principal quando Groq rate-limitar)
-OPUS   = "claude-opus-4-7"
-SONNET = "claude-sonnet-4-6"
+OPUS   = "anthropic/claude-3-opus-20240229"
+SONNET = "anthropic/claude-3-5-sonnet-20240620"
 
 # Ollama (fallback final — local, sem custo)
 OLLAMA_URL   = os.getenv("OLLAMA_URL", "http://localhost:11434")
@@ -86,12 +103,28 @@ _HAS_OLLAMA = _ollama_available()
 
 def _resolve_llm(preferred_anthropic: str, allow_groq: bool = True) -> str:
     """Cascade: Groq/8b (rápido/barato) → Anthropic (qualidade) → Ollama (local)."""
-    if allow_groq and _HAS_GROQ and not _FORCE_OLLAMA:
+    # 1. Groq (se permitido e online)
+    if allow_groq and _HAS_GROQ and not _FORCE_OLLAMA and not _GROQ_RATE_LIMITED:
         return GROQ_FAST
-    if _HAS_ANTHROPIC:
+    # 2. Anthropic (se online e com créditos)
+    if _HAS_ANTHROPIC and not _ANTHROPIC_OUT_OF_CREDITS:
         return preferred_anthropic
+    # 3. Fallbacks
+    # Se Groq está disponível (e não limitado), tenta Groq 70B para tarefas estratégicas
+    if _HAS_GROQ and not _GROQ_RATE_LIMITED:
+        return GROQ_REASON
+    # Google Gemini
+    if os.getenv("GOOGLE_AI_KEY"):
+        os.environ["GEMINI_API_KEY"] = os.getenv("GOOGLE_AI_KEY")
+        return "gemini/gemini-2.5-flash"
+    # OpenRouter
+    if os.getenv("OPENROUTER_API_KEY"):
+        return "openrouter/meta-llama/llama-3.3-70b-instruct:free"
+    # Ollama
     if _HAS_OLLAMA:
+        os.environ.setdefault("OLLAMA_API_BASE", OLLAMA_URL)
         return OLLAMA_LLM
+    # Último recurso
     return GROQ_FAST
 
 
@@ -99,21 +132,45 @@ import threading
 import re as _re
 _CREW_LOCK = threading.Semaphore(1)  # máx 1 crew rodando ao mesmo tempo
 
-def _patch_crew_to_ollama(crew: Crew) -> None:
-    """Troca todos os agentes da crew para Ollama quando Groq está rate-limited."""
-    if not _HAS_OLLAMA:
-        print("[CREW] Ollama não disponível — não é possível fazer fallback")
-        return
-    # Garante que litellm sabe onde está o Ollama
-    os.environ.setdefault("OLLAMA_API_BASE", OLLAMA_URL)
+def _patch_crew_fallback(crew: Crew, error_msg: str) -> None:
+    """Inteligência de Fallback Dinâmico para a Crew.
+    Se um provedor falhar, marca como inativo e migra os agentes para o próximo melhor provedor ativo.
+    """
+    global _ANTHROPIC_OUT_OF_CREDITS, _GROQ_RATE_LIMITED
+    err_lower = error_msg.lower()
+    
+    failed_provider = None
+    if "anthropic" in err_lower or "claude" in err_lower or "credit balance" in err_lower or "balance too low" in err_lower:
+        print("[CREW] Anthropic detectado com falha de créditos. Marcando Anthropic como inativo.")
+        _ANTHROPIC_OUT_OF_CREDITS = True
+        failed_provider = "anthropic"
+    elif "groq" in err_lower or "llama-3" in err_lower or "429" in err_lower or "rate_limit" in err_lower:
+        print("[CREW] Groq detectado com rate limit/falha. Marcando Groq como inativo.")
+        _GROQ_RATE_LIMITED = True
+        failed_provider = "groq"
+
+    # Selecionar o melhor substituto
+    fallback_llm = None
+    if failed_provider != "groq" and bool(os.getenv("GROQ_API_KEY")) and not _GROQ_RATE_LIMITED:
+        fallback_llm = GROQ_REASON
+    elif os.getenv("GOOGLE_AI_KEY"):
+        os.environ["GEMINI_API_KEY"] = os.getenv("GOOGLE_AI_KEY")
+        fallback_llm = "gemini/gemini-2.5-flash"
+    elif os.getenv("OPENROUTER_API_KEY"):
+        fallback_llm = "openrouter/meta-llama/llama-3.3-70b-instruct:free"
+    elif _ollama_available():
+        os.environ.setdefault("OLLAMA_API_BASE", OLLAMA_URL)
+        fallback_llm = OLLAMA_LLM
+    else:
+        fallback_llm = GROQ_FAST
+
     for agent in crew.agents:
-        agent.llm = OLLAMA_LLM
-    print(f"[CREW] Crew migrada para Ollama ({OLLAMA_LLM} @ {OLLAMA_URL})")
+        agent.llm = fallback_llm
+    print(f"[CREW] Crew migrada dinamicamente para {fallback_llm} devido a erro no {failed_provider or 'LLM'}")
 
 def _kickoff_with_retry(crew: Crew, max_retries: int = 3) -> object:
     """Executa crew.kickoff() com semáforo (1 crew por vez).
-    Em rate limit de tokens/min: aguarda e retry.
-    Em rate limit de tokens/dia: migra crew para Ollama imediatamente.
+    Trata erros de rate limit, cotas esgotadas e credenciais migrando para provedores alternativos.
     """
     with _CREW_LOCK:
         for attempt in range(max_retries):
@@ -121,25 +178,41 @@ def _kickoff_with_retry(crew: Crew, max_retries: int = 3) -> object:
                 return crew.kickoff()
             except Exception as e:
                 err = str(e)
-                is_rate_limit = "rate_limit" in err.lower() or "RateLimitError" in err or "429" in err
-                if not is_rate_limit:
-                    raise
-                # Rate limit por dia → migra para Ollama (Anthropic sem créditos)
-                if "tokens per day" in err or "TPD" in err or "tokens_per_day" in err or "credit balance" in err:
-                    print("[CREW] Rate limit/crédito esgotado — migrando para Ollama")
-                    _patch_crew_to_ollama(crew)
-                    continue
-                # Rate limit por minuto → espera e retry
-                wait = 60
-                m = _re.search(r'try again in (\d+\.?\d*)s', err)
-                if m:
-                    wait = int(float(m.group(1))) + 5
-                wait = max(wait, 20 * (attempt + 1))
-                print(f"[CREW] Rate limit TPM — aguardando {wait}s (tentativa {attempt+1}/{max_retries})")
-                time.sleep(wait)
+                # Identifica se é erro de cota, créditos, rate limit ou credenciais
+                is_fallback_error = (
+                    "rate_limit" in err.lower()
+                    or "RateLimitError" in err
+                    or "429" in err
+                    or "credit balance" in err.lower()
+                    or "balance too low" in err.lower()
+                    or "invalid_request_error" in err.lower()
+                    or "insufficient_quota" in err.lower()
+                    or "api key" in err.lower()
+                    or "api_key" in err.lower()
+                    or "openai_api_key" in err.lower()
+                )
+                
+                if not is_fallback_error:
+                    # Se for qualquer outro erro e tivermos alternativa, tentamos fallback para evitar crash
+                    if attempt == max_retries - 1:
+                        raise
+                    print(f"[CREW] Erro desconhecido durante execução: {err} — tentando fallback...")
+                
+                # Aplica o patch de fallback na crew
+                _patch_crew_fallback(crew, err)
+                
+                # Aguarda um pequeno tempo de cooldown se for rate limit de minutos
+                if "try again in" in err.lower():
+                    m = _re.search(r'try again in (\d+\.?\d*)s', err)
+                    wait = int(float(m.group(1))) + 5 if m else 15
+                    print(f"[CREW] Cooldown rate limit: aguardando {wait}s...")
+                    time.sleep(wait)
+                else:
+                    time.sleep(2)
+                continue
         return crew.kickoff()
 
-def make_agent(name, role, goal, backstory, model=SONNET, strategic=False):
+def make_agent(name, role, goal, backstory, model=SONNET, strategic=False, tools=None):
     """
     strategic=True → não usa Groq; usa Anthropic Opus (IVE, GUARD).
     strategic=False → usa Groq por padrão (mais barato, suficiente para operação).
@@ -151,14 +224,16 @@ def make_agent(name, role, goal, backstory, model=SONNET, strategic=False):
         llm=_resolve_llm(model, allow_groq=not strategic),
         verbose=True,
         allow_delegation=False,
+        tools=tools or [],
     )
 
 IVE = make_agent(
     "IVE", "CEO · Estratégia",
     "Coordenar os agentes da Aura Decore, analisar métricas e tomar decisões estratégicas.",
     "IVE é a CEO inteligente da Aura Decore. Monitora ROAS, CAC, conversão e delega tarefas "
-    "para a equipe com precisão. Fala em português, de forma direta e objetiva.",
+    "para a equipe com precisão, gerenciando integrações com WPPConnect, Gmail, Notion, Canva e Google Calendar. Fala em português, de forma direta e objetiva.",
     model=OPUS, strategic=True,
+    tools=CALENDAR_TOOLS + NOTION_TOOLS + GMAIL_TOOLS + CANVA_TOOLS,
 )
 
 THEO = make_agent(
@@ -269,6 +344,7 @@ GUARD = make_agent(
     "Emite alertas VERDE/AMARELO/VERMELHO/PRETO sem piedade. "
     "DAS MEI R$70,60 até dia 20 de cada mês. Fala em português, direto e severo.",
     model=OPUS, strategic=True,
+    tools=NOTION_TOOLS + GMAIL_TOOLS,
 )
 
 LENA = make_agent(
@@ -278,6 +354,7 @@ LENA = make_agent(
     "Responde em até 2h, resolve antes de explicar, nunca usa 'infelizmente' ou 'protocolo'. "
     "Fideliza com cupons AURA10/AURAVIP15/AURAEMBAIXADORA20. Alerta GUARD se reembolso > R$200. "
     "Meta: CSAT > 90%, taxa de recompra > 20%.",
+    tools=CALENDAR_TOOLS + NOTION_TOOLS + GMAIL_TOOLS + CANVA_TOOLS,
 )
 
 NEXUS = Agent(
@@ -307,6 +384,7 @@ SOL = make_agent(
     "Recupera carrinhos abandonados (cupom AURA10 → AURAVIP15), cria bundles inteligentes, "
     "monta upsell em checkout (frete grátis acima R$199), sequência de e-mail D+1/D+3/D+7. "
     "Meta: aumentar conversão e ticket médio a cada sprint. Sincroniza com REX (ads) e VERA (copy).",
+    tools=CALENDAR_TOOLS + NOTION_TOOLS + GMAIL_TOOLS,
 )
 
 ZARA = make_agent(
@@ -316,6 +394,7 @@ ZARA = make_agent(
     "engaja com micro-influencers, monitora menções de #auradecore e #japandi. "
     "Recompensa UGC com cupons (FOTO15, VIDEO20). Identifica embaixadoras (3+ compras). "
     "Trabalha junto com NOX (conteúdo) e LENA (atendimento). Meta: 1.000 seguidores → 5.000 em 90 dias.",
+    tools=CALENDAR_TOOLS + NOTION_TOOLS + GMAIL_TOOLS,
 )
 
 MIRA = make_agent(
@@ -329,13 +408,15 @@ MIRA = make_agent(
 
 PIPE = make_agent(
     "PIPE", "Automação · n8n",
-    "Orquestrar workflows n8n: integrar Shopify, Z-API, AppMax, Pinterest, Meta Ads e os outros agentes.",
+    "Orquestrar workflows n8n: integrar Shopify, WPPConnect, AppMax, Pinterest, Meta Ads e os outros agentes.",
     "PIPE é o engenheiro de automação da Aura Decore. Cria e mantém workflows no n8n cloud: "
-    "Shopify webhooks (novo pedido → notifica IVE), Z-API (mensagem WhatsApp → LENA responde), "
+    "Shopify webhooks (novo pedido → notifica IVE), WPPConnect (mensagem WhatsApp → LENA responde), "
     "AppMax (chargeback → alerta GUARD), Pinterest (post automático via NOX), "
     "cron diário/semanal (auditoria ECHO, mineração NEXUS). "
     "Lê estados do vault Obsidian e dispara agentes via API. Foco em zero-friction operacional.",
+    tools=CALENDAR_TOOLS + NOTION_TOOLS + GMAIL_TOOLS + CANVA_TOOLS,
 )
+
 
 # ── Equipe de Design & Publicação (adicionada 2026-05-27) ──────────────────────
 

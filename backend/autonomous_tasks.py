@@ -536,6 +536,31 @@ AUTONOMOUS_TASKS = [
             "   (texto da mensagem de follow-up pós-compra)"
         ),
     },
+
+    # ── IVE — Relatório semanal geral ─────────────────────────────────────────
+    {
+        "agent": "IVE",
+        "id": "ive_weekly_report",
+        "title": "IVE · Compilação e envio do relatório semanal",
+        "schedule": "weekly_sunday_21h",
+        "max_tokens": 2000,
+        "system": (
+            "Você é IVE — CEO da Aura Decore. "
+            "Sua missão é consolidar os relatórios diários, as tarefas da semana e as métricas da operação "
+            "e elaborar o relatório geral para Eduardo Marques (Diretor), com foco em estratégias de crescimento e decisões urgentes."
+        ),
+        "user": (
+            f"Fim de semana iniciando {_today()}.\n"
+            "Compile e consolide o Relatório Semanal Executivo Geral da Aura Decore contendo:\n"
+            "1. Resumo Geral da Semana da CEO\n"
+            "2. Métricas Consolidadas de Operação (tarefas concluídas, falhas e pendentes)\n"
+            "3. Análise por Área de Ação dos Agentes\n"
+            "4. Problemas e Gargalos da Semana\n"
+            "5. Decisões Estratégicas para o Diretor Eduardo Marques\n"
+            "6. Plano de Ação e Prioridades da Próxima Semana\n"
+            "Salve o relatório no vault e envie para o e-mail eduardo.marques.arq@gmail.com."
+        ),
+    },
 ]
 
 
@@ -556,6 +581,7 @@ SCHEDULE_MAP = {
     "weekly_wednesday_14h":  {"hour": 17, "minute": 0,  "day_of_week": "wed"},
     "weekly_thursday_9h":    {"hour": 12, "minute": 0,  "day_of_week": "thu"},
     "weekly_friday_17h":     {"hour": 20, "minute": 0,  "day_of_week": "fri"},
+    "weekly_sunday_21h":     {"hour": 0,  "minute": 0,  "day_of_week": "mon"},  # Domingo 21h BRT = Segunda 0h UTC
 }
 
 

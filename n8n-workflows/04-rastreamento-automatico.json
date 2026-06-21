@@ -1,0 +1,161 @@
+{
+  "name": "Aura Decore · 04 · Rastreamento Automático Shopify → WPP LENA",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "shopify-fulfillment-update",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "wh-fulfillment",
+      "name": "Fulfillment Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\n// Extrai dados do pedido e da entrega\nconst order = data.order || {};\nconst customer = data.customer || order.customer || {};\nconst fulfillments = data.fulfillments || order.fulfillments || [];\nconst fulfillment = fulfillments[0] || {};\n\n// Extrai telefone\nlet phone = customer.phone || order.shipping_address?.phone || order.billing_address?.phone || '';\nphone = phone.replace(/[^0-9]/g, '');\nif (phone && !phone.startsWith('55')) {\n  phone = '55' + phone;\n}\n\n// Dados de rastreio\nconst tracking_number = fulfillment.tracking_number || '';\nconst tracking_company = fulfillment.tracking_company || 'Transportadora';\nconst tracking_url = fulfillment.tracking_url || 'https://www.correios.com.br';\nconst order_number = order.order_number || order.name || '';\nconst nome = customer.first_name || 'cliente';\n\nreturn [{\n  json: {\n    phone,\n    nome,\n    order_number,\n    tracking_number,\n    tracking_company,\n    tracking_url,\n    has_tracking: tracking_number !== ''\n  }\n}];"
+      },
+      "id": "parse-fulfillment",
+      "name": "Parse Fulfillment",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.has_tracking }}",
+              "value2": true
+            },
+            {
+              "value1": "={{ $json.phone }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "check-valid",
+      "name": "Válido?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/whatsapp/send",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phone\": \"{{ $json.phone }}\",\n  \"message\": \"Olá {{ $json.nome }}! Trago excelentes notícias sobre o seu pedido #{{ $json.order_number }} da Aura Decore 🌿.\\n\\nEle foi despachado e já está a caminho! 🚚\\n\\nVocê pode rastrear a entrega com o código *{{ $json.tracking_number }}* da transportadora {{ $json.tracking_company }} usando o link abaixo:\\n{{ $json.tracking_url }}\\n\\nQualquer dúvida sobre a entrega, é só falar comigo! 🤍\"\n}"
+      },
+      "id": "send-wpp",
+      "name": "Enviar WhatsApp Lena",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [820, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/obsidian/update-agent",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"agent_id\": \"LENA\",\n  \"task\": \"Rastreio pedido #{{ $node['Parse Fulfillment'].json.order_number }}: {{ $node['Parse Fulfillment'].json.tracking_number }}\",\n  \"status\": \"despachado\"\n}"
+      },
+      "id": "log-vault",
+      "name": "Registrar no Vault",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1040, 200]
+    },
+    {
+      "parameters": {},
+      "id": "skip-tracking",
+      "name": "Ignorar",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [820, 400]
+    }
+  ],
+  "connections": {
+    "Fulfillment Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Fulfillment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Fulfillment": {
+      "main": [
+        [
+          {
+            "node": "Válido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Válido?": {
+      "main": [
+        [
+          {
+            "node": "Enviar WhatsApp Lena",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ignorar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar WhatsApp Lena": {
+      "main": [
+        [
+          {
+            "node": "Registrar no Vault",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "auradecore"
+    },
+    {
+      "name": "shipping"
+    },
+    {
+      "name": "lena"
+    }
+  ]
+}

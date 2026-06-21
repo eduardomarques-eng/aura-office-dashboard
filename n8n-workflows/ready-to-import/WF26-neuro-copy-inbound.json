@@ -32,7 +32,6 @@
       "parameters": {
         "dataType": "string",
         "value1": "={{ $json.intent }}",
-        "fallbackOutput": "output4",
         "rules": {
           "rules": [
             { "value2": "desejo",       "operation": "equal", "output": 0 },
@@ -40,7 +39,8 @@
             { "value2": "dor_decoracao","operation": "equal", "output": 0 },
             { "value2": "carrinho",     "operation": "equal", "output": 1 },
             { "value2": "reembolso",    "operation": "equal", "output": 2 },
-            { "value2": "pedido",       "operation": "equal", "output": 3 }
+            { "value2": "pedido",       "operation": "equal", "output": 3 },
+            { "value2": ".*",           "operation": "regex", "output": 4 }
           ]
         }
       }

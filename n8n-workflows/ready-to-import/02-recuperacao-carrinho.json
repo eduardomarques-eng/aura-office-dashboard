@@ -1,25 +1,17 @@
-{
+﻿{
   "name": "Aura Decore · 02 · Recuperação carrinho abandonado D+1/D+3/D+7",
   "nodes": [
     {
       "parameters": {
         "rule": {
-          "interval": [
-            {
-              "field": "cronExpression",
-              "expression": "0 10 * * *"
-            }
-          ]
+          "interval": [{ "field": "cronExpression", "expression": "0 10 * * *" }]
         }
       },
       "id": "cron-daily",
       "name": "Cron 10h diário",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [
-        200,
-        300
-      ]
+      "position": [200, 300]
     },
     {
       "parameters": {
@@ -33,10 +25,7 @@
       "name": "Fetch carrinhos abandonados",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        400,
-        300
-      ]
+      "position": [400, 300]
     },
     {
       "parameters": {
@@ -46,10 +35,7 @@
       "name": "Filtrar por estágio D+N",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        600,
-        300
-      ]
+      "position": [600, 300]
     },
     {
       "parameters": {
@@ -63,50 +49,14 @@
       "name": "Despacha SOL",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        800,
-        300
-      ]
+      "position": [800, 300]
     }
   ],
   "connections": {
-    "Cron 10h diário": {
-      "main": [
-        [
-          {
-            "node": "Fetch carrinhos abandonados",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Fetch carrinhos abandonados": {
-      "main": [
-        [
-          {
-            "node": "Filtrar por estágio D+N",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Filtrar por estágio D+N": {
-      "main": [
-        [
-          {
-            "node": "Despacha SOL",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
+    "Cron 10h diário":              { "main": [[{ "node": "Fetch carrinhos abandonados", "type": "main", "index": 0 }]] },
+    "Fetch carrinhos abandonados":  { "main": [[{ "node": "Filtrar por estágio D+N",    "type": "main", "index": 0 }]] },
+    "Filtrar por estágio D+N":      { "main": [[{ "node": "Despacha SOL",               "type": "main", "index": 0 }]] }
   },
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "tags": [],
-  "id": 2
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "auradecore" }, { "name": "cro" }, { "name": "sol" }]
 }

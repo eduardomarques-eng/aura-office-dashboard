@@ -24,10 +24,16 @@ except Exception:
 
 UPLOAD_URL      = "https://www.tiktok.com/tiktokstudio/upload"
 POSTS_DIR       = pathlib.Path(__file__).parent / "social_posts"
-CHROME_PROFILE  = os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\User Data")
-# Perfil separado para automação (criado por setup_tiktok_profile.bat — funciona com Chrome aberto)
-TIKTOK_PROFILE  = str(pathlib.Path(__file__).parent / "tiktok-chrome-profile")
+CHROME_PROFILE  = str(pathlib.Path(__file__).parent / "tiktok-chrome-profile")
 EDGE_PROFILE    = str(pathlib.Path(__file__).parent / "tiktok-edge-profile")
+
+BROWSER_ARGS = [
+    "--no-sandbox",
+    "--no-first-run",
+    "--disable-session-crashed-bubble",
+    "--disable-restore-session-state",
+    "--disable-blink-features=AutomationControlled",
+]
 
 # Seletores TikTok Studio (testados em jun/2026)
 SEL_FILE_INPUT  = 'input[type=file][accept*="video"]'
@@ -46,8 +52,12 @@ def carregar_caption_do_json(post_date: str) -> str:
     return data.get("tiktok", data.get("instagram", ""))
 
 
-def postar_tiktok(video_path: str, caption: str, dry_run: bool = False) -> dict:
-    """Abre Chrome com perfil existente e posta o vídeo no TikTok Studio."""
+def postar_tiktok(video_path: str, caption: str, dry_run: bool = False, no_publish: bool = False) -> dict:
+    """Abre Chrome com perfil existente e posta o vídeo no TikTok Studio.
+
+    no_publish=True: faz upload e preenche caption, mas NÃO clica em Publicar
+    (deixa o browser aberto para revisão manual). Útil para o primeiro teste.
+    """
     from playwright.sync_api import sync_playwright, TimeoutError as PwTimeout
 
     video_path = str(pathlib.Path(video_path).resolve())
@@ -63,53 +73,56 @@ def postar_tiktok(video_path: str, caption: str, dry_run: bool = False) -> dict:
     print(f"\n  🎵 TikTok Studio — iniciando Chrome...")
 
     with sync_playwright() as p:
-        ctx = None
-        browser = None
+        ctx_obj = None
         using_cdp = False
 
-        # 1ª tentativa: conectar ao Chrome já aberto via CDP (se --remote-debugging-port=9222 ativo)
-        try:
-            browser = p.chromium.connect_over_cdp("http://localhost:9222")
-            ctx_list = browser.contexts
-            ctx_obj = ctx_list[0] if ctx_list else browser.new_context()
-            using_cdp = True
-            print(f"  ✅ Conectado ao Chrome via CDP (porta 9222)")
-        except Exception as cdp_err:
-            print(f"  → CDP não disponível.")
+        # Perfil Chrome dedicado (criado por setup_chrome_tiktok.py — já logado no TikTok)
+        chrome_ok = pathlib.Path(CHROME_PROFILE).exists()
+        edge_ok   = pathlib.Path(EDGE_PROFILE).exists()
 
-            # 2ª tentativa: Edge com perfil TikTok dedicado (criado por setup_edge_tiktok.py)
-            # Edge é um processo SEPARADO do Chrome — funciona mesmo com Chrome aberto
-            edge_profile_ok = pathlib.Path(EDGE_PROFILE).exists()
-            if edge_profile_ok:
-                print(f"  → Usando Microsoft Edge + perfil TikTok dedicado...")
-                try:
-                    ctx_obj = p.chromium.launch_persistent_context(
-                        user_data_dir=EDGE_PROFILE,
-                        channel="msedge",
-                        headless=False,
-                        args=["--no-sandbox"],
-                        timeout=30000,
-                    )
-                except Exception as edge_err:
-                    print(f"  ⚠️  Edge falhou: {edge_err}")
-                    edge_profile_ok = False
-
-            if not edge_profile_ok:
-                msg = (
-                    f"Perfil Edge TikTok não encontrado. Execute o setup uma vez:\n\n"
-                    f"  python setup_edge_tiktok.py\n\n"
-                    f"Isso abre o Edge para você fazer login no TikTok. Depois, todos os posts são automáticos.\n"
-                    f"(Edge funciona com Chrome aberto — executáveis separados)"
+        # 1ª opção: Chrome com perfil TikTok dedicado
+        if chrome_ok:
+            print(f"  → Usando Chrome + perfil TikTok dedicado...")
+            try:
+                ctx_obj = p.chromium.launch_persistent_context(
+                    user_data_dir=CHROME_PROFILE,
+                    channel="chrome",
+                    headless=False,
+                    args=BROWSER_ARGS,
+                    timeout=30000,
                 )
-                return {"ok": False, "msg": msg}
+            except Exception as e:
+                print(f"  ⚠️  Chrome falhou: {e}")
+                ctx_obj = None
 
-        page = ctx_obj.new_page()
+        # 2ª opção: Edge com perfil TikTok dedicado
+        if ctx_obj is None and edge_ok:
+            print(f"  → Usando Microsoft Edge + perfil TikTok dedicado...")
+            try:
+                ctx_obj = p.chromium.launch_persistent_context(
+                    user_data_dir=EDGE_PROFILE,
+                    channel="msedge",
+                    headless=False,
+                    args=BROWSER_ARGS,
+                    timeout=30000,
+                )
+            except Exception as e:
+                print(f"  ⚠️  Edge falhou: {e}")
+                ctx_obj = None
+
+        if ctx_obj is None:
+            return {"ok": False, "msg": (
+                "Perfil TikTok não encontrado. Execute o setup uma vez:\n\n"
+                "  python setup_chrome_tiktok.py\n\n"
+                "Isso abre o Chrome para você fazer login no TikTok. Depois, todos os posts são automáticos."
+            )}
+
+        pages = ctx_obj.pages
+        page = pages[0] if pages else ctx_obj.new_page()
 
         def _close():
             try:
-                if using_cdp and browser:
-                    browser.close()
-                elif ctx_obj:
+                if ctx_obj:
                     ctx_obj.close()
             except Exception:
                 pass
@@ -167,6 +180,17 @@ def postar_tiktok(video_path: str, caption: str, dry_run: bool = False) -> dict:
 
             page.wait_for_timeout(2000)
 
+            if no_publish:
+                print(f"\n  ✅ Upload + caption prontos. NÃO publicado (modo revisão).")
+                print(f"  → Revise no Chrome e clique 'Publicar' manualmente se estiver OK.")
+                print(f"  → Pressione Enter aqui para fechar o Chrome...")
+                try:
+                    input()
+                except Exception:
+                    page.wait_for_timeout(60000)
+                _close()
+                return {"ok": True, "msg": "Modo revisão — upload pronto, publicação manual"}
+
             print(f"  → Publicando...")
             posted = False
             for sel in [SEL_POST_BTN, 'button[class*="post"]', 'button[class*="submit"]']:
@@ -206,6 +230,7 @@ def main():
     parser.add_argument("--caption", default="", help="Texto/caption do post TikTok")
     parser.add_argument("--post-date", default="", help="Data do post (YYYY-MM-DD) para ler caption do JSON")
     parser.add_argument("--dry-run", action="store_true", help="Preview sem publicar")
+    parser.add_argument("--no-publish", action="store_true", help="Upload+caption mas NÃO publica (revisão manual)")
     args = parser.parse_args()
 
     caption = args.caption
@@ -220,7 +245,7 @@ def main():
         caption = "#AuraDecore #Japandi #DecorTikTok #CasaMinimalista #WabiSabi"
         print(f"  ⚠️  Caption não fornecido — usando hashtags padrão")
 
-    result = postar_tiktok(args.video, caption, dry_run=args.dry_run)
+    result = postar_tiktok(args.video, caption, dry_run=args.dry_run, no_publish=args.no_publish)
 
     if result["ok"]:
         print(f"\n  ✅ {result['msg']}")

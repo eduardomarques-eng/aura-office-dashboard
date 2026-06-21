@@ -1,4 +1,4 @@
-vicio desgraçado viu import httpx
+import httpx
 import sys
 
 try:

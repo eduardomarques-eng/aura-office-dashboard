@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-setup_edge_tiktok.py — Abre Edge para Eduardo fazer login TikTok (executar 1x)
+setup_chrome_tiktok.py — Abre Chrome com perfil limpo para login TikTok (1x)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Cria o perfil Edge dedicado para automação TikTok.
-Edge funciona com Playwright mesmo com Chrome aberto (executáveis separados).
+Usa perfil NOVO (sem crash recovery dialog) — diferente do perfil principal.
+Chrome e Edge rodam em paralelo sem conflito.
 
-Uso: python setup_edge_tiktok.py
+Uso: python setup_chrome_tiktok.py
 """
 import os
 import pathlib
@@ -21,11 +21,11 @@ try:
 except Exception:
     pass
 
-EDGE_PROFILE = str(pathlib.Path(__file__).parent / "tiktok-edge-profile")
-TIKTOK_LOGIN = "https://www.tiktok.com/login"
-TIKTOK_STUDIO = "https://www.tiktok.com/tiktokstudio/upload"
+CHROME_PROFILE = str(pathlib.Path(__file__).parent / "tiktok-chrome-profile")
+TIKTOK_LOGIN   = "https://www.tiktok.com/login"
+TIKTOK_STUDIO  = "https://www.tiktok.com/tiktokstudio/upload"
 
-EDGE_ARGS = [
+CHROME_ARGS = [
     "--no-sandbox",
     "--no-first-run",
     "--disable-session-crashed-bubble",
@@ -33,78 +33,78 @@ EDGE_ARGS = [
     "--disable-restore-session-state",
     "--hide-crash-restore-bubble",
     "--disable-features=TranslateUI",
+    "--disable-blink-features=AutomationControlled",
 ]
-
-
-def _safe_url(page):
-    try:
-        return page.url
-    except Exception:
-        return ""
-
-
-def _safe_text(page):
-    try:
-        return page.inner_text("body")
-    except Exception:
-        return ""
 
 
 def setup():
     from playwright.sync_api import sync_playwright
 
-    print("\n  Aura Decore — Setup TikTok Edge")
-    print("  ==================================")
-    print(f"  Perfil: {EDGE_PROFILE}")
-    print("\n  Abrindo Microsoft Edge...")
+    profile_path = pathlib.Path(CHROME_PROFILE)
+    profile_path.mkdir(parents=True, exist_ok=True)
+
+    print("\n  Aura Decore — Setup TikTok Chrome")
+    print("  ===================================")
+    print(f"  Perfil: {CHROME_PROFILE}")
+    print("  (Perfil separado — nao afeta seu Chrome principal)\n")
+    print("  Abrindo Google Chrome...")
 
     with sync_playwright() as p:
         try:
             ctx = p.chromium.launch_persistent_context(
-                user_data_dir=EDGE_PROFILE,
-                channel="msedge",
+                user_data_dir=CHROME_PROFILE,
+                channel="chrome",
                 headless=False,
-                args=EDGE_ARGS,
+                args=CHROME_ARGS,
                 timeout=30000,
             )
         except Exception as e:
-            print(f"\n  ERRO ao abrir Edge: {e}")
-            return
+            print(f"\n  ERRO ao abrir Chrome: {e}")
+            print("  Tentando Microsoft Edge...")
+            try:
+                EDGE_PROFILE = str(pathlib.Path(__file__).parent / "tiktok-edge-profile")
+                pathlib.Path(EDGE_PROFILE).mkdir(parents=True, exist_ok=True)
+                ctx = p.chromium.launch_persistent_context(
+                    user_data_dir=EDGE_PROFILE,
+                    channel="msedge",
+                    headless=False,
+                    args=CHROME_ARGS,
+                    timeout=30000,
+                )
+                print("  Edge aberto como fallback.")
+            except Exception as e2:
+                print(f"\n  ERRO Edge tambem falhou: {e2}")
+                return
 
-        # Usar página existente se houver (evita abrir nova aba desnecessária)
         pages = ctx.pages
         page = pages[0] if pages else ctx.new_page()
 
+        # Checar se já logado
         try:
-            print("  Navegando para TikTok Studio...")
+            print("  Verificando login no TikTok Studio...")
             page.goto(TIKTOK_STUDIO, wait_until="domcontentloaded", timeout=25000)
-            time.sleep(2)
-
-            url = _safe_url(page)
-            body = _safe_text(page)
-
-            already_logged = (
-                "tiktokstudio" in url and
-                ("upload" in url or any(w in body for w in ["Seleciona", "arrasta", "carregar", "Select", "drag"]))
-            )
-
-            if already_logged:
-                print("\n  TikTok ja logado! Upload page OK.")
-                print(f"  Perfil: {EDGE_PROFILE}")
-                print("\n  Pode usar: python tiktok_chrome_post.py --video video.mp4 ...")
+            time.sleep(3)
+            url = page.url
+            body = ""
+            try:
+                body = page.inner_text("body")
+            except Exception:
+                pass
+            if "tiktokstudio" in url and any(w in body for w in ["Select", "Seleciona", "drag", "arrasta", "upload", "carregar"]):
+                print("\n  TikTok ja logado! Studio acessivel.")
+                print(f"  Perfil: {CHROME_PROFILE}")
+                print("\n  Use: python tiktok_chrome_post.py --video video.mp4 --caption '...'")
                 ctx.close()
                 return
-
         except Exception as e:
             print(f"  Aviso ao checar Studio: {e}")
 
         # Navegar para login
         try:
-            print("  TikTok nao logado. Abrindo pagina de login...")
             page.goto(TIKTOK_LOGIN, wait_until="domcontentloaded", timeout=20000)
             page.wait_for_timeout(3000)
             
-            # Tenta preencher as credenciais
+            # Tenta preencher as credenciais se houver suporte da página e inputs visíveis
             tiktok_email = os.getenv("TIKTOK_EMAIL", "auras.de@gmail.com")
             tiktok_pass = os.getenv("TIKTOK_PASSWORD", "Edu@2020")
             
@@ -139,11 +139,11 @@ def setup():
                 
             print(f"  Credenciais do TikTok preenchidas ({tiktok_email}).")
         except Exception as e:
-            print(f"  Aviso ao navegar/preencher login: {e}")
+            print(f"  Aviso ao preencher credenciais TikTok: {e}")
 
-        print("\n  FACA LOGIN NO TIKTOK NA JANELA DO EDGE AGORA.")
+        print("\n  FACA LOGIN NO TIKTOK NA JANELA DO CHROME AGORA.")
         print("  Se necessário, resolva o quebra-cabeça (captcha) ou digite o código de verificação.")
-        print("  O script detecta quando voce logar (max 5 min).\n")
+        print("  O script detecta o login automaticamente (max 5 min).\n")
 
         max_wait = 300
         start = time.time()
@@ -151,21 +151,18 @@ def setup():
 
         while time.time() - start < max_wait:
             try:
-                url = _safe_url(page)
+                url = page.url
                 if not url:
-                    print("  Edge foi fechado antes do login.")
-                    ctx.close()
-                    return
+                    break
                 if "tiktok.com/login" not in url and "tiktok.com" in url:
                     logged_in = True
                     break
                 elapsed = int(time.time() - start)
-                if elapsed % 30 == 0 and elapsed > 0:
-                    print(f"  Aguardando login... {elapsed}s / {max_wait}s")
+                if elapsed > 0 and elapsed % 30 == 0:
+                    print(f"  Aguardando... {elapsed}s")
                 time.sleep(2)
             except Exception:
-                # Se a página fechou, sair
-                print("  Edge foi fechado antes do login.")
+                print("  Chrome fechado antes do login.")
                 try:
                     ctx.close()
                 except Exception:
@@ -173,18 +170,18 @@ def setup():
                 return
 
         if logged_in:
-            print(f"\n  Login detectado! URL: {_safe_url(page)}")
+            print(f"\n  Login detectado! ({page.url[:60]})")
             try:
                 page.goto(TIKTOK_STUDIO, wait_until="domcontentloaded", timeout=20000)
                 time.sleep(2)
-                print("\n  Login confirmado! Perfil Edge salvo.")
-                print(f"  Perfil: {EDGE_PROFILE}")
-                print("\n  Pronto. Use:")
-                print("  python tiktok_chrome_post.py --video video.mp4 --caption '...'")
-            except Exception as e:
-                print(f"\n  Logado (verificacao falhou: {e}). Perfil salvo.")
+                print("\n  Login confirmado! Perfil Chrome salvo.")
+            except Exception:
+                print("\n  Logado. Perfil salvo.")
+            print(f"  Perfil: {CHROME_PROFILE}")
+            print("\n  Pronto. Agora use:")
+            print("  python tiktok_chrome_post.py --video video.mp4 --caption '...'")
         else:
-            print("\n  Timeout 5 min. Execute novamente.")
+            print("\n  Timeout. Execute novamente.")
 
         try:
             ctx.close()

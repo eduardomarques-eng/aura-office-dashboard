@@ -1,0 +1,142 @@
+{
+  "name": "WF24 — Neuro Nurturing: Lead → Sequência Automática",
+  "nodes": [
+    {
+      "name": "Shopify Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "position": [240, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "shopify-lead-event",
+        "responseMode": "onReceived",
+        "responseData": "allEntries"
+      },
+      "notes": "Recebe: customers/create (novo cliente) e orders/paid (compra confirmada)"
+    },
+    {
+      "name": "Extrair Dados do Lead",
+      "type": "n8n-nodes-base.code",
+      "position": [460, 300],
+      "parameters": {
+        "jsCode": "const data = $json;\nconst customer = data.customer || data;\nconst order = data.order;\n\n// Detecta evento\nlet evento = 'customers/create';\nif (order && order.financial_status === 'paid') evento = 'orders/paid';\n\n// Extrai telefone (campo phone ou default_address.phone)\nlet phone = customer.phone || customer.default_address?.phone || '';\nphone = phone.replace(/[^0-9]/g, '');\nif (phone && !phone.startsWith('55')) phone = '55' + phone;\n\nreturn [{\n  json: {\n    phone,\n    nome: customer.first_name || '',\n    sobrenome: customer.last_name || '',\n    email: customer.email || '',\n    evento,\n    orders_count: customer.orders_count || 0,\n    total_spent: customer.total_spent || '0',\n    last_order_at: order?.created_at || null,\n    produto: order?.line_items?.[0]?.title || '',\n    order_id: order?.id || null,\n  }\n}];"
+      }
+    },
+    {
+      "name": "Tem Telefone?",
+      "type": "n8n-nodes-base.if",
+      "position": [680, 300],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.phone }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST /promo/nurture",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [900, 220],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAILWAY_URL }}/promo/nurture",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "phone",        "value": "={{ $json.phone }}" },
+            { "name": "nome",         "value": "={{ $json.nome }}" },
+            { "name": "evento",       "value": "={{ $json.evento }}" },
+            { "name": "orders_count", "value": "={{ $json.orders_count }}" },
+            { "name": "total_spent",  "value": "={{ $json.total_spent }}" },
+            { "name": "last_order_at","value": "={{ $json.last_order_at }}" },
+            { "name": "produto",      "value": "={{ $json.produto }}" }
+          ]
+        },
+        "notes": "Retorna: { stage, message, cupom, lead_score, schedule_next }"
+      }
+    },
+    {
+      "name": "Delay Anti-Spam (3-6s)",
+      "type": "n8n-nodes-base.wait",
+      "position": [1120, 220],
+      "parameters": {
+        "amount": "={{ Math.floor(Math.random() * 3) + 3 }}",
+        "unit": "seconds"
+      }
+    },
+    {
+      "name": "Enviar WhatsApp (WPP Connect)",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1340, 220],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAILWAY_URL }}/whatsapp/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "phone",   "value": "={{ $('POST /promo/nurture').first().json.phone }}" },
+            { "name": "message", "value": "={{ $('POST /promo/nurture').first().json.message }}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Registrar no Vault",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1560, 220],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAILWAY_URL }}/vault/log",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "agent",   "value": "promo" },
+            { "name": "action",  "value": "nurture_sent" },
+            { "name": "phone",   "value": "={{ $('POST /promo/nurture').first().json.phone }}" },
+            { "name": "stage",   "value": "={{ $('POST /promo/nurture').first().json.stage }}" },
+            { "name": "score",   "value": "={{ $('POST /promo/nurture').first().json.lead_score }}" }
+          ]
+        },
+        "notes": "Registra disparo para evitar duplicatas e controlar frequência"
+      }
+    },
+    {
+      "name": "Sem Telefone → Skip",
+      "type": "n8n-nodes-base.noOp",
+      "position": [900, 420],
+      "parameters": {},
+      "notes": "Lead sem número de telefone — nurturing só por email (Klaviyo)"
+    }
+  ],
+  "connections": {
+    "Shopify Webhook Trigger":      { "main": [[ {"node": "Extrair Dados do Lead", "type": "main", "index": 0} ]] },
+    "Extrair Dados do Lead":        { "main": [[ {"node": "Tem Telefone?", "type": "main", "index": 0} ]] },
+    "Tem Telefone?":                { "main": [
+      [ {"node": "POST /promo/nurture", "type": "main", "index": 0} ],
+      [ {"node": "Sem Telefone → Skip", "type": "main", "index": 0} ]
+    ]},
+    "POST /promo/nurture":          { "main": [[ {"node": "Delay Anti-Spam (3-6s)", "type": "main", "index": 0} ]] },
+    "Delay Anti-Spam (3-6s)":       { "main": [[ {"node": "Enviar WhatsApp (WPP Connect)", "type": "main", "index": 0} ]] },
+    "Enviar WhatsApp (WPP Connect)":{ "main": [[ {"node": "Registrar no Vault", "type": "main", "index": 0} ]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  }
+}

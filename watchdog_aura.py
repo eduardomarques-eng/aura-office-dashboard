@@ -44,7 +44,22 @@ SYS_PYTHON  = pathlib.Path(r"C:\Users\erick\AppData\Local\Programs\Python\Python
 
 PYTHON = str(VENV_PYTHON) if VENV_PYTHON.exists() else str(SYS_PYTHON)
 
+# ── Carrega .env para detectar URLs remotas ───────────────────────────────────
+_env_file = BACKEND_DIR / ".env"
+if _env_file.exists():
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(dotenv_path=_env_file, override=False)
+    except ImportError:
+        pass
+
 # ── Serviços monitorados ───────────────────────────────────────────────────────
+wpp_url = os.getenv("WPPCONNECT_URL", "")
+n8n_url = os.getenv("N8N_BASE_URL", "")
+
+is_wpp_local = "localhost" in wpp_url or "127.0.0.1" in wpp_url or not wpp_url
+is_n8n_local = "localhost" in n8n_url or "127.0.0.1" in n8n_url or not n8n_url
+
 SERVICES = {
     "backend": {
         "port":        8000,
@@ -54,8 +69,11 @@ SERVICES = {
         "restart_max": 10,
         "cooldown":    8,
         "process":     None,
-    },
-    "wppconnect": {
+    }
+}
+
+if is_wpp_local:
+    SERVICES["wppconnect"] = {
         "port":        21465,
         "check_url":   "http://localhost:21465",
         "cmd":         ["npm", "run", "start"],
@@ -63,8 +81,10 @@ SERVICES = {
         "restart_max": 5,
         "cooldown":    12,
         "process":     None,
-    },
-    "n8n": {
+    }
+
+if is_n8n_local:
+    SERVICES["n8n"] = {
         "port":        5678,
         "check_url":   "http://localhost:5678/healthz",
         "cmd":         [r"C:\Users\erick\AppData\Roaming\npm\n8n.cmd", "start"],
@@ -72,8 +92,7 @@ SERVICES = {
         "restart_max": 5,
         "cooldown":    15,
         "process":     None,
-    },
-}
+    }
 
 restart_counts = {k: 0 for k in SERVICES}
 _stop_event = threading.Event()

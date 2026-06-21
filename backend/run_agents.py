@@ -27,9 +27,16 @@ load_dotenv(HERE / ".env", override=True)
 AGENTS = {
     "social": {
         "file": "social_agent.py",
-        "desc": "Postagem diária IG/FB (captions via Gemini)",
+        "desc": "Postagem diária 5 canais: IG + FB Comercial + FB Pessoal + Pinterest + TikTok",
         "needs": ["GOOGLE_AI_KEY", "FB_PAGE_TOKEN"],
         "schedule": "09:08 diário",
+    },
+    "social-dry": {
+        "file": "social_agent.py",
+        "desc": "Preview conteúdo diário sem publicar (todos os 5 canais)",
+        "needs": ["GOOGLE_AI_KEY"],
+        "args": ["--dry-run"],
+        "schedule": "sob demanda",
     },
     "creative": {
         "file": "creative_agent.py",
@@ -43,6 +50,40 @@ AGENTS = {
         "needs": ["META_APP_ID"],
         "schedule": "08:09 diário (health check)",
     },
+    "pinterest-token": {
+        "file": "get_pinterest_token.py",
+        "desc": "OAuth Pinterest API v5 — salva PINTEREST_ACCESS_TOKEN no .env",
+        "needs": ["PINTEREST_APP_ID", "PINTEREST_APP_SECRET"],
+        "schedule": "manual (renovar quando expirar)",
+    },
+    "fb-pessoal-test": {
+        "file": "fb_pessoal_chrome_post.py",
+        "desc": "Testa automação Chrome FB Pessoal @auras.decore (dry-run)",
+        "needs": [],
+        "args": ["--dry-run", "--caption", "Teste de automação Aura Decore"],
+        "schedule": "sob demanda",
+    },
+    "canva-db-init": {
+        "file": "canva_design_db.py",
+        "desc": "Inicializa banco Canva e gera calendário 90 dias (63 designs PT-BR)",
+        "needs": [],
+        "args": ["calendar"],
+        "schedule": "manual (recriar quando novos designs forem adicionados)",
+    },
+    "canva-status": {
+        "file": "canva_design_db.py",
+        "desc": "Status do calendário de publicações Canva",
+        "needs": [],
+        "args": ["status"],
+        "schedule": "diário (monitoramento)",
+    },
+    "canva-today": {
+        "file": "canva_design_db.py",
+        "desc": "Posts Canva agendados para hoje",
+        "needs": [],
+        "args": ["next"],
+        "schedule": "09:00 diário",
+    },
     "google-status": {
         "file": "google_ai.py",
         "args": ["status"],
@@ -54,6 +95,20 @@ AGENTS = {
         "file": "meta_check.py",
         "desc": "Diagnóstico Meta Pixel + CAPI",
         "needs": ["META_PIXEL_ID", "META_CAPI_TOKEN"],
+        "schedule": "sob demanda",
+    },
+    "copy-produtos": {
+        "file": "product_copy_agent.py",
+        "desc": "Copy editorial Japandi para todos os produtos (<1400 chars)",
+        "needs": ["SHOPIFY_ADMIN_TOKEN"],
+        "args": [],
+        "schedule": "terça 10h (n8n workflow 10) ou manual",
+    },
+    "copy-preview": {
+        "file": "product_copy_agent.py",
+        "desc": "Preview de copy sem alterar Shopify",
+        "needs": ["SHOPIFY_ADMIN_TOKEN"],
+        "args": ["--dry-run", "--limit", "5"],
         "schedule": "sob demanda",
     },
 }

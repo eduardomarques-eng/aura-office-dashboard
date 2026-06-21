@@ -97,7 +97,7 @@ async def _llm(system: str, user: str, max_tokens: int = 500) -> str:
             from anthropic import Anthropic
             a = Anthropic(api_key=ANTHROPIC_KEY)
             r = a.messages.create(
-                model="claude-sonnet-4-6", max_tokens=max_tokens,
+                model="claude-3-5-sonnet-20240620", max_tokens=max_tokens,
                 system=system, messages=[{"role": "user", "content": user}],
             )
             return r.content[0].text.strip()
@@ -266,6 +266,61 @@ async def executar_post(slot: dict, produto: str = "", salvar_vault: bool = True
 
     if salvar_vault:
         _salvar_post_vault(resultado_final)
+
+    # 5. Envia notificação automática via WhatsApp para Eduardo Marques
+    try:
+        from whatsapp_agent import send_whatsapp_message
+        phone_raw = os.getenv("EDUARDO_PHONE", "")
+        if phone_raw:
+            phones = [p.strip() for p in phone_raw.split(",") if p.strip()]
+            if phones:
+                target_phone = phones[0]
+                data_hora = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                status_geral = "✅ Sucesso"
+                falhas = []
+                status_plataformas = []
+
+                for r in resultados:
+                    plat_name = r.get("plataforma", "desconhecida").title()
+                    status = r.get("status")
+                    if status == "publicado":
+                        status_plataformas.append(f"- {plat_name}: ✅ Sucesso (ID: {r.get('post_id')})")
+                    elif status == "salvo_para_stories":
+                        status_plataformas.append(f"- {plat_name}: 📲 Salvo para stories (publicação manual)")
+                    else:
+                        status_plataformas.append(f"- {plat_name}: ❌ Erro: {r.get('detalhe', 'Desconhecido')}")
+                        falhas.append(f"{plat_name}: {r.get('detalhe', 'Desconhecido')}")
+                        status_geral = "⚠️ Concluído com alertas/erros"
+
+                legenda = copy.get("texto", "")
+                resumo_legenda = legenda[:120] + "..." if len(legenda) > 120 else legenda
+                erros_section = ""
+                sugestao = "Tudo pronto e rodando perfeitamente! 🌿"
+                if falhas:
+                    erros_section = "\n⚠️ *Erros / Problemas:*\n" + "\n".join(f"• {f}" for f in falhas) + "\n"
+                    sugestao = "Revisar logs do servidor para corrigir os erros nas plataformas com falha. 🛠️"
+
+                report_msg = (
+                    f"🌿 *Relatório de Publicação — Aura Decore* 🌿\n\n"
+                    f"Status: {status_geral}\n"
+                    f"📅 Horário: {data_hora}\n\n"
+                    f"📱 *Plataformas:*\n"
+                    + "\n".join(status_plataformas) + "\n"
+                    f"{erros_section}\n"
+                    f"📝 *Resumo do Conteúdo:*\n"
+                    f"• Tipo: {tipo.upper()}\n"
+                    f"• Pilar: {pilar}\n"
+                    f"• Tema: {tema}\n"
+                    f"• Produto: {produto or 'Geral'}\n"
+                    f"• Legenda: \"{resumo_legenda}\"\n\n"
+                    f"💡 *Sugestão de Ação:*\n{sugestao}"
+                )
+
+                # Cria uma task assíncrona para não travar o fluxo principal
+                asyncio.create_task(send_whatsapp_message(target_phone, report_msg))
+                print(f"[SOCIAL] Notificação WhatsApp enviada para Eduardo ({target_phone})")
+    except Exception as e_notif:
+        print(f"[WARN] Erro ao enviar notificação WhatsApp de post: {e_notif}")
 
     return resultado_final
 

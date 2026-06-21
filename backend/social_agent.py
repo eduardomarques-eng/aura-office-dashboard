@@ -720,6 +720,35 @@ def _marcar_canva_publicado(pub_id: int, post_id: str = "", erro: str = ""):
         pass
 
 
+def enviar_whatsapp_notificacao(mensagem: str):
+    """Envia mensagem de notificação para Eduardo Marques via WPPConnect."""
+    url = os.getenv("WPPCONNECT_URL", "http://localhost:21465")
+    session = os.getenv("WPPCONNECT_SESSION", "aura-decore")
+    token = os.getenv("WPPCONNECT_TOKEN", "")
+    phone_raw = os.getenv("EDUARDO_PHONE", "")
+    if not token or not phone_raw:
+        print("  ⚠️  WPPConnect token ou telefone do Eduardo ausente. Notificação não enviada.")
+        return
+    
+    # Suporta múltiplos números separados por vírgula (usa o primeiro válido)
+    phones = [p.strip() for p in phone_raw.split(",") if p.strip()]
+    if not phones:
+        print("  ⚠️  Nenhum número de telefone válido encontrado em EDUARDO_PHONE.")
+        return
+    
+    target_phone = phones[0]
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    payload = {"phone": target_phone, "message": mensagem, "isGroup": False}
+    try:
+        r = httpx.post(f"{url}/api/{session}/send-message", json=payload, headers=headers, timeout=20)
+        if r.status_code in (200, 201):
+            print(f"  ✅ Notificação de publicação enviada com sucesso para Eduardo ({target_phone})")
+        else:
+            print(f"  ❌ Erro ao enviar notificação WhatsApp (status {r.status_code}): {r.text}")
+    except Exception as e:
+        print(f"  ❌ Falha de conexão ao enviar notificação WhatsApp: {e}")
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main(dry_run: bool = False, date_str: str = "", tiktok_video: str = ""):
@@ -868,6 +897,13 @@ def main(dry_run: bool = False, date_str: str = "", tiktok_video: str = ""):
 
     # ── 5. Publicar em todos os 5 canais ──
     print(f"\n  [4/4] Publicando em 5 canais...")
+    
+    ig = {"ok": False, "msg": "Não executado"}
+    fb = {"ok": False, "msg": "Não executado"}
+    fbp = {"ok": False, "msg": "Não executado"}
+    pin = {"ok": False, "msg": "Não executado"}
+    tt = {"ok": False, "msg": "Não executado"}
+    
     image_url = img.get("url", "")
     produto_url = produto.get("url", STORE_URL)
 
@@ -936,6 +972,87 @@ def main(dry_run: bool = False, date_str: str = "", tiktok_video: str = ""):
     print("\n" + "=" * 62)
     print("  CONCLUÍDO — 5 CANAIS PROCESSADOS")
     print("=" * 62)
+
+    # ── 6. Enviar notificação WhatsApp para Eduardo Marques ──
+    try:
+        data_hora = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        status_geral = "✅ Sucesso"
+        falhas = []
+        status_plataformas = []
+        
+        if ig.get("ok"):
+            status_plataformas.append(f"- Instagram @auradecore: ✅ Sucesso (ID: {ig.get('id')})")
+        else:
+            status_plataformas.append(f"- Instagram @auradecore: ❌ Erro: {ig.get('msg', 'Desconhecido')}")
+            falhas.append(f"Instagram: {ig.get('msg', 'Desconhecido')}")
+            status_geral = "⚠️ Concluído com alertas/erros"
+            
+        if fb.get("ok"):
+            status_plataformas.append(f"- Facebook Comercial: ✅ Sucesso (ID: {fb.get('id')})")
+        else:
+            status_plataformas.append(f"- Facebook Comercial: ❌ Erro: {fb.get('msg', 'Desconhecido')}")
+            falhas.append(f"Facebook Comercial: {fb.get('msg', 'Desconhecido')}")
+            status_geral = "⚠️ Concluído com alertas/erros"
+            
+        if FB_PESSOAL_CHROME_ENABLED:
+            if fbp.get("ok"):
+                status_plataformas.append(f"- Facebook Pessoal @auras.decore: ✅ Sucesso")
+            else:
+                status_plataformas.append(f"- Facebook Pessoal @auras.decore: ❌ Erro: {fbp.get('msg', 'Desconhecido')}")
+                falhas.append(f"Facebook Pessoal: {fbp.get('msg', 'Desconhecido')}")
+                status_geral = "⚠️ Concluído com alertas/erros"
+        else:
+            status_plataformas.append(f"- Facebook Pessoal @auras.decore: ⏭️ Desabilitado")
+            
+        if PINTEREST_API_READY:
+            if pin.get("ok"):
+                status_plataformas.append(f"- Pinterest @auradecoracao: ✅ Sucesso (ID: {pin.get('id')})")
+            else:
+                status_plataformas.append(f"- Pinterest @auradecoracao: ❌ Erro: {pin.get('msg', 'Desconhecido')}")
+                falhas.append(f"Pinterest: {pin.get('msg', 'Desconhecido')}")
+                status_geral = "⚠️ Concluído com alertas/erros"
+        else:
+            status_plataformas.append(f"- Pinterest @auradecoracao: ⏭️ Desativado (API não configurada)")
+            
+        if TIKTOK_CHROME_ENABLED:
+            if tiktok_video:
+                if tt.get("ok"):
+                    status_plataformas.append(f"- TikTok @decore.aura: ✅ Sucesso ({tt.get('msg', 'Publicado')})")
+                else:
+                    status_plataformas.append(f"- TikTok @decore.aura: ❌ Erro: {tt.get('msg', 'Desconhecido')}")
+                    falhas.append(f"TikTok: {tt.get('msg', 'Desconhecido')}")
+                    status_geral = "⚠️ Concluído com alertas/erros"
+            else:
+                status_plataformas.append(f"- TikTok @decore.aura: ⏭️ Ignorado (vídeo não fornecido)")
+        else:
+            status_plataformas.append(f"- TikTok @decore.aura: ⏭️ Desabilitado")
+
+        resumo_legenda = legenda_ig[:120] + "..." if len(legenda_ig) > 120 else legenda_ig
+        erros_section = ""
+        sugestao = "Tudo pronto e rodando perfeitamente! 🌿"
+        if falhas:
+            erros_section = "\n⚠️ *Erros / Problemas:*\n" + "\n".join(f"• {f}" for f in falhas) + "\n"
+            sugestao = "Revisar logs do servidor para corrigir os erros nas plataformas com falha. 🛠️"
+
+        report_msg = (
+            f"🌿 *Relatório de Publicação — Aura Decore* 🌿\n\n"
+            f"Status: {status_geral}\n"
+            f"📅 Horário: {data_hora}\n\n"
+            f"📱 *Plataformas:*\n"
+            + "\n".join(status_plataformas) + "\n"
+            f"{erros_section}\n"
+            f"📝 *Resumo do Conteúdo:*\n"
+            f"• Tipo: {tipo.upper()}\n"
+            f"• Pilar: {pilar}\n"
+            f"• Tema: {tema}\n"
+            f"• Produto: {produto['name']} — {produto['price']}\n"
+            f"• Legenda: \"{resumo_legenda}\"\n\n"
+            f"💡 *Sugestão de Ação:*\n{sugestao}"
+        )
+        
+        enviar_whatsapp_notificacao(report_msg)
+    except Exception as e_notif:
+        print(f"  ❌ Erro ao compor/enviar notificação de publicação: {e_notif}")
 
 
 if __name__ == "__main__":

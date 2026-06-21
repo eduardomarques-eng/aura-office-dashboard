@@ -16,10 +16,7 @@
       "name": "Quarta 9h — Sprint Dev",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [
-        180,
-        300
-      ]
+      "position": [180, 300]
     },
     {
       "parameters": {
@@ -36,14 +33,11 @@
       "name": "Dia 1 7h — Atualização Sazonal",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [
-        180,
-        500
-      ]
+      "position": [180, 500]
     },
     {
       "parameters": {
-        "url": "https://web-production-f1cb5.up.railway.app/crew/run",
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/crew/run",
         "method": "POST",
         "sendBody": true,
         "bodyContentType": "json",
@@ -53,14 +47,11 @@
       "name": "POST /crew/run — shopify_dev",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        420,
-        300
-      ]
+      "position": [420, 300]
     },
     {
       "parameters": {
-        "url": "https://web-production-f1cb5.up.railway.app/crew/run",
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/crew/run",
         "method": "POST",
         "sendBody": true,
         "bodyContentType": "json",
@@ -70,14 +61,11 @@
       "name": "POST /crew/run — seasonal_update",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        420,
-        500
-      ]
+      "position": [420, 500]
     },
     {
       "parameters": {
-        "url": "https://web-production-f1cb5.up.railway.app/crew/run",
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/crew/run",
         "method": "POST",
         "sendBody": true,
         "bodyContentType": "json",
@@ -87,10 +75,7 @@
       "name": "POST /crew/run — conversion",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        680,
-        500
-      ]
+      "position": [680, 500]
     },
     {
       "parameters": {
@@ -114,14 +99,11 @@
       "name": "Dev OK?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [
-        660,
-        300
-      ]
+      "position": [660, 300]
     },
     {
       "parameters": {
-        "url": "https://web-production-f1cb5.up.railway.app/agent/message",
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/agent/message",
         "method": "POST",
         "sendBody": true,
         "bodyContentType": "json",
@@ -131,66 +113,33 @@
       "name": "Notificar DEV",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        900,
-        260
-      ]
+      "position": [900, 260]
     }
   ],
   "connections": {
     "Quarta 9h — Sprint Dev": {
       "main": [
-        [
-          {
-            "node": "POST /crew/run — shopify_dev",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "POST /crew/run — shopify_dev", "type": "main", "index": 0}]
       ]
     },
     "Dia 1 7h — Atualização Sazonal": {
       "main": [
-        [
-          {
-            "node": "POST /crew/run — seasonal_update",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "POST /crew/run — seasonal_update", "type": "main", "index": 0}]
       ]
     },
     "POST /crew/run — shopify_dev": {
       "main": [
-        [
-          {
-            "node": "Dev OK?",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "Dev OK?", "type": "main", "index": 0}]
       ]
     },
     "POST /crew/run — seasonal_update": {
       "main": [
-        [
-          {
-            "node": "POST /crew/run — conversion",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "POST /crew/run — conversion", "type": "main", "index": 0}]
       ]
     },
     "Dev OK?": {
       "main": [
-        [
-          {
-            "node": "Notificar DEV",
-            "type": "main",
-            "index": 0
-          }
-        ],
+        [{"node": "Notificar DEV", "type": "main", "index": 0}],
         []
       ]
     }
@@ -199,6 +148,5 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "tags": [],
-  "id": 11
+  "tags": ["shopify", "dev", "sazonal", "cro"]
 }

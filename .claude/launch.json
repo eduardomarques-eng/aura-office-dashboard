@@ -2,10 +2,16 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "aura-backend",
-      "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"],
-      "port": 8000
+      "name": "aura-office-dashboard",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-s", ".", "-l", "3500"],
+      "port": 3500
+    },
+    {
+      "name": "aura-social-hub",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-s", "C:/Users/erick/.gemini/antigravity-ide/scratch/aura-social-hub", "-l", "3501"],
+      "port": 3501
     }
   ]
 }

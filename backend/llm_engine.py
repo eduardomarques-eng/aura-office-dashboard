@@ -2,6 +2,14 @@
 # Cascata: Groq/70b → Groq/8b → OpenRouter → Google AI → Anthropic → Ollama
 # Importado por main.py, whatsapp_agent.py e qualquer outro módulo
 
+# ── Desabilita telemetria indesejada (deve ser feito ANTES de qualquer import) ─
+import os as _os_telem
+_os_telem.environ.setdefault("OTEL_SDK_DISABLED", "true")
+_os_telem.environ.setdefault("CREWAI_TELEMETRY_OPT_OUT", "true")
+_os_telem.environ.setdefault("CREWAI__TELEMETRY_OPT_OUT", "true")  # alias alternativo
+_os_telem.environ.setdefault("ANONYMIZED_TELEMETRY", "false")
+_os_telem.environ.setdefault("LITELLM_TELEMETRY", "false")
+
 import asyncio
 import os
 import pathlib as _pl
@@ -128,7 +136,7 @@ async def llm(
             loop = asyncio.get_event_loop()
             resp = await asyncio.wait_for(
                 loop.run_in_executor(None, lambda: ac.messages.create(
-                    model="claude-sonnet-4-6",
+                    model="claude-3-5-sonnet-20240620",
                     max_tokens=max_tokens,
                     system=system,
                     messages=messages,

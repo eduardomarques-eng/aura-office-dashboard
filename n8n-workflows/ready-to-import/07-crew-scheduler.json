@@ -1,66 +1,42 @@
-{
+﻿{
   "name": "Aura Decore · 07 · Scheduler Crews — Automação Semanal",
   "description": "Executa as crews automaticamente nos horários corretos: ECHO auditoria domingo 20h, NEXUS mineração quarta 9h, GUARD financeiro segunda 8h.",
   "nodes": [
     {
       "parameters": {
         "rule": {
-          "interval": [
-            {
-              "field": "cronExpression",
-              "expression": "0 8 * * 1"
-            }
-          ]
+          "interval": [{ "field": "cronExpression", "expression": "0 8 * * 1" }]
         }
       },
       "id": "cron-guard",
       "name": "Cron — GUARD segunda 8h",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [
-        200,
-        200
-      ]
+      "position": [200, 200]
     },
     {
       "parameters": {
         "rule": {
-          "interval": [
-            {
-              "field": "cronExpression",
-              "expression": "0 9 * * 3"
-            }
-          ]
+          "interval": [{ "field": "cronExpression", "expression": "0 9 * * 3" }]
         }
       },
       "id": "cron-nexus",
       "name": "Cron — NEXUS quarta 9h",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [
-        200,
-        380
-      ]
+      "position": [200, 380]
     },
     {
       "parameters": {
         "rule": {
-          "interval": [
-            {
-              "field": "cronExpression",
-              "expression": "0 20 * * 0"
-            }
-          ]
+          "interval": [{ "field": "cronExpression", "expression": "0 20 * * 0" }]
         }
       },
       "id": "cron-echo",
       "name": "Cron — ECHO domingo 20h",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [
-        200,
-        560
-      ]
+      "position": [200, 560]
     },
     {
       "parameters": {
@@ -69,14 +45,8 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            {
-              "name": "crew_type",
-              "value": "financial"
-            },
-            {
-              "name": "context",
-              "value": "Análise financeira automática de segunda-feira — MEI, ROAS, caixa, chargebacks."
-            }
+            { "name": "crew_type", "value": "financial" },
+            { "name": "context",   "value": "Análise financeira automática de segunda-feira — MEI, ROAS, caixa, chargebacks." }
           ]
         }
       },
@@ -84,10 +54,7 @@
       "name": "Executar Crew Financeira",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [
-        460,
-        200
-      ]
+      "position": [460, 200]
     },
     {
       "parameters": {
@@ -96,14 +63,8 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            {
-              "name": "crew_type",
-              "value": "mining"
-            },
-            {
-              "name": "context",
-              "value": "Mineração semanal de quarta-feira — tendências Pinterest, Google Trends BR, novos fornecedores Dropi/Habitoo."
-            }
+            { "name": "crew_type", "value": "mining" },
+            { "name": "context",   "value": "Mineração semanal de quarta-feira — tendências Pinterest, Google Trends BR, novos fornecedores Dropi/Habitoo." }
           ]
         }
       },
@@ -111,10 +72,7 @@
       "name": "Executar Crew Mineração",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [
-        460,
-        380
-      ]
+      "position": [460, 380]
     },
     {
       "parameters": {
@@ -123,14 +81,8 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            {
-              "name": "crew_type",
-              "value": "audit"
-            },
-            {
-              "name": "context",
-              "value": "Auditoria semanal de domingo — score de todos os agentes, diagnóstico técnico, performance de ads."
-            }
+            { "name": "crew_type", "value": "audit" },
+            { "name": "context",   "value": "Auditoria semanal de domingo — score de todos os agentes, diagnóstico técnico, performance de ads." }
           ]
         }
       },
@@ -138,10 +90,7 @@
       "name": "Executar Crew Auditoria",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [
-        460,
-        560
-      ]
+      "position": [460, 560]
     },
     {
       "parameters": {
@@ -150,18 +99,9 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            {
-              "name": "event",
-              "value": "crew_result"
-            },
-            {
-              "name": "type",
-              "value": "financial"
-            },
-            {
-              "name": "result",
-              "value": "={{ $json.result }}"
-            }
+            { "name": "event",  "value": "crew_result" },
+            { "name": "type",   "value": "financial" },
+            { "name": "result", "value": "={{ $json.result }}" }
           ]
         }
       },
@@ -169,10 +109,7 @@
       "name": "Vault → Resultado GUARD",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [
-        700,
-        200
-      ]
+      "position": [700, 200]
     },
     {
       "parameters": {
@@ -181,18 +118,9 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            {
-              "name": "event",
-              "value": "crew_result"
-            },
-            {
-              "name": "type",
-              "value": "mining"
-            },
-            {
-              "name": "result",
-              "value": "={{ $json.result }}"
-            }
+            { "name": "event",  "value": "crew_result" },
+            { "name": "type",   "value": "mining" },
+            { "name": "result", "value": "={{ $json.result }}" }
           ]
         }
       },
@@ -200,10 +128,7 @@
       "name": "Vault → Resultado NEXUS",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [
-        700,
-        380
-      ]
+      "position": [700, 380]
     },
     {
       "parameters": {
@@ -212,18 +137,9 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            {
-              "name": "event",
-              "value": "crew_result"
-            },
-            {
-              "name": "type",
-              "value": "audit"
-            },
-            {
-              "name": "result",
-              "value": "={{ $json.result }}"
-            }
+            { "name": "event",  "value": "crew_result" },
+            { "name": "type",   "value": "audit" },
+            { "name": "result", "value": "={{ $json.result }}" }
           ]
         }
       },
@@ -231,83 +147,17 @@
       "name": "Vault → Resultado ECHO",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [
-        700,
-        560
-      ]
+      "position": [700, 560]
     }
   ],
   "connections": {
-    "Cron — GUARD segunda 8h": {
-      "main": [
-        [
-          {
-            "node": "Executar Crew Financeira",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Cron — NEXUS quarta 9h": {
-      "main": [
-        [
-          {
-            "node": "Executar Crew Mineração",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Cron — ECHO domingo 20h": {
-      "main": [
-        [
-          {
-            "node": "Executar Crew Auditoria",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Executar Crew Financeira": {
-      "main": [
-        [
-          {
-            "node": "Vault → Resultado GUARD",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Executar Crew Mineração": {
-      "main": [
-        [
-          {
-            "node": "Vault → Resultado NEXUS",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Executar Crew Auditoria": {
-      "main": [
-        [
-          {
-            "node": "Vault → Resultado ECHO",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
+    "Cron — GUARD segunda 8h":  { "main": [[{ "node": "Executar Crew Financeira",  "type": "main", "index": 0 }]] },
+    "Cron — NEXUS quarta 9h":   { "main": [[{ "node": "Executar Crew Mineração",   "type": "main", "index": 0 }]] },
+    "Cron — ECHO domingo 20h":  { "main": [[{ "node": "Executar Crew Auditoria",   "type": "main", "index": 0 }]] },
+    "Executar Crew Financeira": { "main": [[{ "node": "Vault → Resultado GUARD",   "type": "main", "index": 0 }]] },
+    "Executar Crew Mineração":  { "main": [[{ "node": "Vault → Resultado NEXUS",   "type": "main", "index": 0 }]] },
+    "Executar Crew Auditoria":  { "main": [[{ "node": "Vault → Resultado ECHO",    "type": "main", "index": 0 }]] }
   },
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "tags": [],
-  "id": 7
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "auradecore" }, { "name": "scheduler" }]
 }

@@ -1,0 +1,49 @@
+{
+  "name": "Aura Decore · 27 · Remarketing e Follow-up Automático",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 10 * * *" }]
+        }
+      },
+      "id": "cron-daily",
+      "name": "Cron 10h diário",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/promo/trigger-followups",
+        "method": "POST",
+        "options": {}
+      },
+      "id": "trigger-followups-backend",
+      "name": "Disparar Follow-ups Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [450, 300]
+    }
+  ],
+  "connections": {
+    "Cron 10h diário": {
+      "main": [
+        [
+          {
+            "node": "Disparar Follow-ups Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [
+    { "name": "auradecore" },
+    { "name": "marketing" },
+    { "name": "followup" },
+    { "name": "whatsapp" }
+  ]
+}

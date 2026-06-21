@@ -58,7 +58,7 @@ UNIVERSAL_METRICS = [
 # ── Definição do DNA de cada agente ────────────────────────────────────────────
 ALL_AGENTS_DNA: dict[str, dict] = {
     "ive": {
-        "nome": "IVE", "cargo": "CEO · Estratégia", "modelo": "claude-opus-4-7",
+        "nome": "IVE", "cargo": "CEO · Estratégia", "modelo": "claude-3-opus-20240229",
         "skill_focus": ["tomada_decisao", "delegacao", "analise_estrategica", "comunicacao_eduardo"],
         "metricas_primarias": ["decisoes_semana", "acuracia_previsao", "tempo_resposta_eduardo"],
         "persona_adaptacao": "Coordenadora que evolui com dados reais de vendas e comportamento da Ana Clara",
@@ -70,7 +70,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["guard", "nexus", "vera", "luna", "echo", "sol"],
     },
     "guard": {
-        "nome": "GUARD", "cargo": "CFO · Protetor Financeiro", "modelo": "claude-opus-4-7",
+        "nome": "GUARD", "cargo": "CFO · Protetor Financeiro", "modelo": "claude-3-opus-20240229",
         "skill_focus": ["analise_financeira", "controle_mei", "alertas_risco", "veto_gastos"],
         "metricas_primarias": ["faturamento_acumulado_mei", "roas_semanal", "margem_bruta", "caixa_atual"],
         "persona_adaptacao": "CFO que aprende padrões de gasto e antecipa riscos antes que ocorram",
@@ -82,7 +82,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["ive", "kai", "sol", "fina"],
     },
     "nexus": {
-        "nome": "NEXUS", "cargo": "Mineração · Produtos", "modelo": "claude-sonnet-4-6",
+        "nome": "NEXUS", "cargo": "Mineração · Produtos", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["pesquisa_aliexpress", "analise_tendencias", "score_neuroarquitetura", "curadoria_fornecedor"],
         "metricas_primarias": ["produtos_minerados_semana", "score_medio", "taxa_aprovacao_kai", "tendencias_identificadas"],
         "persona_adaptacao": "Radar que aprende quais categorias a Ana Clara compra mais e prioriza buscas",
@@ -94,7 +94,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["kai", "vera", "mira"],
     },
     "kai": {
-        "nome": "KAI", "cargo": "Produtos · Curadoria", "modelo": "claude-sonnet-4-6",
+        "nome": "KAI", "cargo": "Produtos · Curadoria", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["analise_margem", "curadoria_portfolio", "pausa_produtos", "negociacao_fornecedor"],
         "metricas_primarias": ["produtos_ativos", "margem_media_portfolio", "produtos_pausados_mes", "rotatividade"],
         "persona_adaptacao": "Curador que aprende quais produtos convertem melhor para a Ana Clara específica",
@@ -106,7 +106,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["nexus", "vera", "theo", "guard"],
     },
     "vera": {
-        "nome": "VERA", "cargo": "Copy · Textos", "modelo": "claude-sonnet-4-6",
+        "nome": "VERA", "cargo": "Copy · Textos", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["headline_impacto", "copy_produto", "email_nutricao", "gatilhos_emocionais"],
         "metricas_primarias": ["copys_criadas_semana", "taxa_aprovacao_ive", "conversao_email", "ctr_anuncio"],
         "persona_adaptacao": "Copywriter que aprende quais palavras e emoções convertem a Ana Clara",
@@ -119,7 +119,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["luna", "nox", "mira", "sol"],
     },
     "luna": {
-        "nome": "LUNA", "cargo": "Design · Visual", "modelo": "claude-sonnet-4-6",
+        "nome": "LUNA", "cargo": "Design · Visual", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["identidade_visual", "briefing_criativo", "brand_kit", "consistencia_visual"],
         "metricas_primarias": ["briefings_semana", "assets_aprovados", "consistencia_paleta", "tempo_producao"],
         "persona_adaptacao": "Diretora criativa que aprende quais estilos visuais geram mais engajamento da Ana Clara",
@@ -131,7 +131,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["arte", "nox", "vera", "dev"],
     },
     "nox": {
-        "nome": "NOX", "cargo": "Conteúdo · Reels", "modelo": "claude-sonnet-4-6",
+        "nome": "NOX", "cargo": "Conteúdo · Reels", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["roteiro_reel", "hook_primeiros_3s", "calendario_conteudo", "mix_estrategico"],
         "metricas_primarias": ["posts_semana", "engajamento_medio", "alcance", "saves_compartilhamentos"],
         "persona_adaptacao": "Criador que aprende quais hooks param o scroll da Ana Clara às 21h",
@@ -144,7 +144,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["vera", "luna", "arte", "feed"],
     },
     "rex": {
-        "nome": "REX", "cargo": "Tráfego · Meta Ads", "modelo": "claude-sonnet-4-6",
+        "nome": "REX", "cargo": "Tráfego · Meta Ads", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["gestao_ads", "otimizacao_roas", "criativo_performance", "segmentacao"],
         "metricas_primarias": ["roas", "cac", "ctr", "cpm", "frequencia"],
         "persona_adaptacao": "Gestor de ads que aprende quais criativos e audiências convertem a Ana Clara",
@@ -157,7 +157,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["luna", "arte", "vera", "guard", "sol"],
     },
     "theo": {
-        "nome": "THEO", "cargo": "Shopify · Técnico", "modelo": "claude-sonnet-4-6",
+        "nome": "THEO", "cargo": "Shopify · Técnico", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["shopify_admin", "pixel_meta", "pagespeed", "checkout_otimizacao"],
         "metricas_primarias": ["pagespeed_mobile", "taxa_checkout", "produtos_atualizados", "erros_pixel"],
         "persona_adaptacao": "Técnico que aprende quais mudanças na loja aumentam conversão diretamente",
@@ -170,7 +170,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["kai", "vera", "pipe", "dev"],
     },
     "echo": {
-        "nome": "ECHO", "cargo": "Auditor · Semanal", "modelo": "claude-sonnet-4-6",
+        "nome": "ECHO", "cargo": "Auditor · Semanal", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["auditoria_agentes", "score_performance", "identificacao_gaps", "kaizen"],
         "metricas_primarias": ["score_medio_equipe", "melhorias_implementadas", "gaps_identificados", "evolucao_semanal"],
         "persona_adaptacao": "Auditor que aprende onde o sistema tem gargalos e propõe Kaizen concreto",
@@ -182,7 +182,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["ive", "guard", "todos"],
     },
     "lena": {
-        "nome": "LENA", "cargo": "Atendimento · CX", "modelo": "claude-sonnet-4-6",
+        "nome": "LENA", "cargo": "Atendimento · CX", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["atendimento_whatsapp", "resolucao_conflito", "fidelizacao", "hero_framework"],
         "metricas_primarias": ["csat", "tempo_resposta_medio_h", "tickets_resolvidos", "taxa_recompra"],
         "persona_adaptacao": "Atendente que aprende as dúvidas e objeções mais frequentes da Ana Clara",
@@ -195,7 +195,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["guard", "sol", "zara"],
     },
     "sol": {
-        "nome": "SOL", "cargo": "Vendas · CRO", "modelo": "claude-sonnet-4-6",
+        "nome": "SOL", "cargo": "Vendas · CRO", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["recuperacao_carrinho", "upsell_bundle", "funil_conversao", "ltv"],
         "metricas_primarias": ["conversao", "ticket_medio", "recovery_rate", "ltv", "recompra"],
         "persona_adaptacao": "CRO que aprende em qual momento da jornada a Ana Clara abandona o carrinho",
@@ -208,7 +208,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["kai", "vera", "theo", "rex"],
     },
     "zara": {
-        "nome": "ZARA", "cargo": "Community · Instagram", "modelo": "claude-sonnet-4-6",
+        "nome": "ZARA", "cargo": "Community · Instagram", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["dm_management", "ugc_incentivo", "embaixadoras", "engajamento_organico"],
         "metricas_primarias": ["seguidores", "dm_response_time_h", "ugc_gerado_mes", "embaixadoras_ativas"],
         "persona_adaptacao": "Community manager que aprende quais interações criam fãs da Aura Decore",
@@ -220,7 +220,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["nox", "luna", "feed", "lena"],
     },
     "mira": {
-        "nome": "MIRA", "cargo": "SEO · Pesquisa", "modelo": "claude-sonnet-4-6",
+        "nome": "MIRA", "cargo": "SEO · Pesquisa", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["keyword_research", "seo_shopify", "gsc_analise", "pinterest_seo"],
         "metricas_primarias": ["visitas_organicas_mes", "keywords_top10", "impressoes_gsc", "ctr_organico"],
         "persona_adaptacao": "SEO que aprende quais termos a Ana Clara usa para buscar decoração",
@@ -232,7 +232,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["vera", "theo", "nox"],
     },
     "pipe": {
-        "nome": "PIPE", "cargo": "Automação · n8n", "modelo": "claude-sonnet-4-6",
+        "nome": "PIPE", "cargo": "Automação · n8n", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["n8n_workflows", "webhooks", "integracao_apis", "logs_retry"],
         "metricas_primarias": ["workflows_ativos", "taxa_sucesso_webhook", "erros_por_dia", "tempo_execucao_workflow"],
         "persona_adaptacao": "Engenheiro que aprende quais automações economizam mais tempo da operação",
@@ -244,7 +244,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["theo", "feed", "nexus", "ive"],
     },
     "arte": {
-        "nome": "ARTE", "cargo": "Criativo · IA Visual", "modelo": "claude-sonnet-4-6",
+        "nome": "ARTE", "cargo": "Criativo · IA Visual", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["pollinations_prompts", "imagens_produto", "lifestyle_creative", "brand_consistency"],
         "metricas_primarias": ["imagens_geradas_dia", "aprovacao_luna", "assets_publicados", "tempo_geracao"],
         "persona_adaptacao": "Studio visual que aprende quais prompts geram imagens que a Ana Clara salva",
@@ -256,7 +256,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["luna", "nox", "feed", "theo"],
     },
     "feed": {
-        "nome": "FEED", "cargo": "Publicador · Redes Sociais", "modelo": "claude-sonnet-4-6",
+        "nome": "FEED", "cargo": "Publicador · Redes Sociais", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["publicacao_instagram", "publicacao_facebook", "agendamento", "relatorio_post"],
         "metricas_primarias": ["posts_publicados_dia", "taxa_sucesso", "alcance_estimado", "falhas"],
         "persona_adaptacao": "Publicador que aprende os melhores horários e formatos para cada canal",
@@ -268,7 +268,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["vera", "arte", "nox", "zara"],
     },
     "dev": {
-        "nome": "DEV", "cargo": "Desenvolvedor · Shopify", "modelo": "claude-sonnet-4-6",
+        "nome": "DEV", "cargo": "Desenvolvedor · Shopify", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["liquid_css", "cro_shopify", "pagespeed", "tema_sazonal"],
         "metricas_primarias": ["deployments_semana", "pagespeed_depois", "taxa_conversao_loja", "erros_js"],
         "persona_adaptacao": "Dev que aprende quais mudanças no tema aumentam conversão real",
@@ -280,7 +280,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["pipe", "theo", "luna"],
     },
     "vega": {
-        "nome": "VEGA", "cargo": "Videomaker · Motion Director", "modelo": "claude-sonnet-4-6",
+        "nome": "VEGA", "cargo": "Videomaker · Motion Director", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["roteiro_video", "motion_graphics", "reels_tiktok", "storytelling_visual"],
         "metricas_primarias": ["videos_semana", "views_medio", "retencao_30s", "compartilhamentos"],
         "persona_adaptacao": "Videomaker que aprende quais narrativas visuais capturam a Ana Clara em 3 segundos",
@@ -293,7 +293,7 @@ ALL_AGENTS_DNA: dict[str, dict] = {
         "colaboradores_diretos": ["nox", "luna", "arte", "feed"],
     },
     "fina": {
-        "nome": "FINA", "cargo": "Finanças Operacional · Pagamentos PJ", "modelo": "claude-sonnet-4-6",
+        "nome": "FINA", "cargo": "Finanças Operacional · Pagamentos PJ", "modelo": "claude-3-5-sonnet-20240620",
         "skill_focus": ["pagamentos_fornecedores", "controle_caixa", "relatorio_mensal", "nubank_pj"],
         "metricas_primarias": ["contas_pagas_prazo", "saldo_caixa", "fornecedores_ativos", "inadimplencia"],
         "persona_adaptacao": "Tesoureira que aprende o fluxo de caixa real da Aura Decore mês a mês",
@@ -645,7 +645,7 @@ Seja específico, prático e baseado em dados. Responda APENAS com o JSON."""
 
         try:
             resp = client.messages.create(
-                model="claude-sonnet-4-6",
+                model="claude-3-5-sonnet-20240620",
                 max_tokens=400,
                 messages=[{"role": "user", "content": prompt}]
             )
@@ -736,7 +736,7 @@ Escreva um resumo executivo de 3-4 linhas em português, direto ao ponto, com o 
 Tom: profissional, confiante, orientado a dados."""
 
         resp = client.messages.create(
-            model="claude-opus-4-7",
+            model="claude-3-opus-20240229",
             max_tokens=300,
             messages=[{"role": "user", "content": resumo_prompt}]
         )

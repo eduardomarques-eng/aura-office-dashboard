@@ -77,6 +77,11 @@ CREATE TABLE IF NOT EXISTS clientes (
     ultimo_pedido   TEXT,
     aceita_mkt      INTEGER DEFAULT 1,
     notas           TEXT DEFAULT '',
+    interesse       TEXT,
+    dores           TEXT,
+    produtos_visualizados TEXT,
+    objecoes        TEXT,
+    nivel_engajamento TEXT,
     criado_em       TEXT DEFAULT (datetime('now','localtime')),
     atualizado_em   TEXT DEFAULT (datetime('now','localtime'))
 );

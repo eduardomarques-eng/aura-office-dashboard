@@ -1,19 +1,19 @@
 {
-  "name": "Aura Decore · 03 · WhatsApp Business → LENA/GUARD/SOL/ZARA",
+  "name": "Aura Decore · 03 · WhatsApp Business (WPPConnect) → LENA/GUARD/SOL/ZARA",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "zapi-whatsapp",
+        "path": "wppconnect-whatsapp",
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "wh-zapi",
-      "name": "Webhook Z-API",
+      "id": "wh-wppconnect",
+      "name": "Webhook WPPConnect",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [160, 400],
-      "webhookId": "zapi-whatsapp"
+      "webhookId": "wppconnect-whatsapp"
     },
     {
       "parameters": {
@@ -140,21 +140,21 @@
         "responseBody": "={{ JSON.stringify({ status: 'ok', agent: $node['Backend: processa mensagem'].json.agent, intent: $node['Backend: processa mensagem'].json.intent }) }}"
       },
       "id": "respond-ok",
-      "name": "Responder Z-API",
+      "name": "Responder WPPConnect",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [1660, 400]
     }
   ],
   "connections": {
-    "Webhook Z-API":               { "main": [[{ "node": "É mensagem própria?",         "type": "main", "index": 0 }]] },
-    "É mensagem própria?":         { "main": [[{ "node": "Ignorar mensagem própria",    "type": "main", "index": 0 }], [{ "node": "Extrair campos", "type": "main", "index": 0 }]] },
-    "Extrair campos":              { "main": [[{ "node": "Backend: processa mensagem",  "type": "main", "index": 0 }]] },
-    "Backend: processa mensagem":  { "main": [[{ "node": "Escalou para GUARD?",         "type": "main", "index": 0 }]] },
-    "Escalou para GUARD?":         { "main": [[{ "node": "Criar tarefa GUARD (alta prioridade)", "type": "main", "index": 0 }], [{ "node": "Escalou para SOL?", "type": "main", "index": 0 }]] },
-    "Criar tarefa GUARD (alta prioridade)": { "main": [[{ "node": "Responder Z-API",   "type": "main", "index": 0 }]] },
-    "Escalou para SOL?":           { "main": [[{ "node": "Criar tarefa SOL (carrinho)", "type": "main", "index": 0 }], [{ "node": "Responder Z-API", "type": "main", "index": 0 }]] },
-    "Criar tarefa SOL (carrinho)": { "main": [[{ "node": "Responder Z-API",            "type": "main", "index": 0 }]] }
+    "Webhook WPPConnect": { "main": [[{ "node": "É mensagem própria?", "type": "main", "index": 0 }]] },
+    "É mensagem própria?": { "main": [[{ "node": "Ignorar mensagem própria", "type": "main", "index": 0 }], [{ "node": "Extrair campos", "type": "main", "index": 0 }]] },
+    "Extrair campos": { "main": [[{ "node": "Backend: processa mensagem", "type": "main", "index": 0 }]] },
+    "Backend: processa mensagem": { "main": [[{ "node": "Escalou para GUARD?", "type": "main", "index": 0 }]] },
+    "Escalou para GUARD?": { "main": [[{ "node": "Criar tarefa GUARD (alta prioridade)", "type": "main", "index": 0 }], [{ "node": "Escalou para SOL?", "type": "main", "index": 0 }]] },
+    "Criar tarefa GUARD (alta prioridade)": { "main": [[{ "node": "Responder WPPConnect", "type": "main", "index": 0 }]] },
+    "Escalou para SOL?": { "main": [[{ "node": "Criar tarefa SOL (carrinho)", "type": "main", "index": 0 }], [{ "node": "Responder WPPConnect", "type": "main", "index": 0 }]] },
+    "Criar tarefa SOL (carrinho)": { "main": [[{ "node": "Responder WPPConnect", "type": "main", "index": 0 }]] }
   },
   "settings": { "executionOrder": "v1" },
   "tags": [{ "name": "auradecore" }, { "name": "atendimento" }, { "name": "whatsapp" }, { "name": "lena" }]

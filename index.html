@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -1521,7 +1521,7 @@ const WORKFLOWS = {
   sol:   ['Recovery carrinho D+1/D+3/D+7','Upsell checkout','Frete grátis > R$299'],
   zara:  ['DMs Instagram < 1h','Cupom FOTO15 p/ UGC','Identificar embaixadoras'],
   mira:  ['Keyword cauda longa','Schema Product','Pinterest SEO'],
-  pipe:  ['17 workflows n8n ativos','Z-API webhook LENA','Cron auditoria Dom 20h'],
+  pipe:  ['17 workflows n8n ativos','WPPConnect webhook LENA','Cron auditoria Dom 20h'],
   arte:  ['3 criativos/dia Pollinations','Prompt japandi 8k','Assets para FEED'],
   feed:  ['Post 3x/dia IG+FB','Graph API Comercial','Chrome MCP FB Pessoal'],
   dev:   ['Sprint quarta 9h','CRO snippets live','Backup tema antes de mexer'],
@@ -1544,7 +1544,7 @@ const THOUGHTS = {
   sol:   ['Recuperando carrinhos...','Testando upsell R$299...','Otimizando funil...'],
   zara:  ['Respondendo DMs...','Engajando seguidores...','Curando UGC...'],
   mira:  ['Pesquisando keywords...','Auditando GSC...','Otimizando schema...'],
-  pipe:  ['17 workflows ativos...','Validando webhook Z-API...','Deploy n8n...'],
+  pipe:  ['17 workflows ativos...','Validando webhook WPPConnect...','Deploy n8n...'],
   arte:  ['Gerando criativo Pollinations...','Prompt japandi 8k...','Enviando para FEED...'],
   feed:  ['Postando no Instagram...','Graph API FB Comercial...','Chrome MCP FB Pessoal...'],
   dev:   ['Sprint Shopify...','CRO snippets...','Backup tema live...'],
@@ -2171,7 +2171,7 @@ const IDE_ACTIONS = {
   pipe: [
     {ico:'⚙️',  lbl:'Status n8n',          cmd:'verifique status de todos os workflows n8n ativos'},
     {ico:'📡', lbl:'Webhook Shopify',      cmd:'configure webhook Shopify: novo pedido → notifica IVE'},
-    {ico:'🤖', lbl:'Bot WhatsApp',         cmd:'mapeie integração Z-API → LENA para atendimento automático'},
+    {ico:'🤖', lbl:'Bot WhatsApp',         cmd:'mapeie integração WPPConnect → LENA para atendimento automático'},
     {ico:'🔄', lbl:'Sync vault',           cmd:'sincronize estado dos agentes com o vault Obsidian'},
   ],
   nox:  [
@@ -2226,7 +2226,7 @@ const IDE_DESCS = {
   sol:   'CRO + Recovery. D+1 AURA10 (15% recovery). Bundle +35% ticket. Frete grátis ≥R$299. Pós-compra D+7 = UGC.',
   zara:  'Community Instagram @auras.decore. DMs <1h. Identifica embaixadoras (3+ compras → AURAEMBAIXADORA20). UGC incentivado.',
   mira:  'SEO orgânico. Cauda longa "vaso japandi cerâmica brasil" > termos genéricos. GSC + Pinterest SEO + schema Shopify.',
-  pipe:  'Engenheiro n8n. 17 workflows ATIVOS. Z-API LENA. Retry backoff 1min/5min/15min. Reconectar Z-API se >6h inativo.',
+  pipe:  'Engenheiro n8n. 17 workflows ATIVOS. WPPConnect LENA. Retry backoff 1min/5min/15min. Reconectar WPPConnect se >6h inativo.',
   nox:   'Diretor de conteúdo. Mix 40% educativo / 30% inspiracional / 30% produto. Posts 10h30/14h30/19h30. Hook visual <3s.',
   arte:  'Estúdio IA visual. Pollinations.ai (flux). 3 criativos/dia: 1 produto, 1 lifestyle, 1 story. Fundo linho > fundo branco.',
   feed:  'Publicador automático. 3 canais: IG @auras.decore + FB Comercial (Graph API) + FB Pessoal (Chrome MCP). Alerta em 2 falhas.',

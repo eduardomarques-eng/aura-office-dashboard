@@ -1,25 +1,17 @@
-{
+﻿{
   "name": "Aura Decore · 05 · Auditoria semanal ECHO (domingo 20h)",
   "nodes": [
     {
       "parameters": {
         "rule": {
-          "interval": [
-            {
-              "field": "cronExpression",
-              "expression": "0 20 * * 0"
-            }
-          ]
+          "interval": [{ "field": "cronExpression", "expression": "0 20 * * 0" }]
         }
       },
       "id": "cron-sun-20h",
       "name": "Cron dom 20h",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [
-        200,
-        300
-      ]
+      "position": [200, 300]
     },
     {
       "parameters": {
@@ -30,10 +22,7 @@
       "name": "Coleta KPIs Shopify",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        400,
-        200
-      ]
+      "position": [400, 200]
     },
     {
       "parameters": {
@@ -44,10 +33,7 @@
       "name": "Saúde das integrações",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        400,
-        400
-      ]
+      "position": [400, 400]
     },
     {
       "parameters": {
@@ -56,18 +42,13 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"crew_type\": \"audit\",\n  \"context\": \"KPIs: {{JSON.stringify($node['Coleta KPIs Shopify'].json)}}. Saúde: {{JSON.stringify($node['Saúde das integrações'].json)}}. Audite os 15 agentes (incluir SOL/ZARA/MIRA/PIPE no relatório).\"\n}",
-        "options": {
-          "timeout": 600000
-        }
+        "options": { "timeout": 600000 }
       },
       "id": "run-audit-crew",
       "name": "Roda Crew Auditoria",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        600,
-        300
-      ]
+      "position": [600, 300]
     },
     {
       "parameters": {
@@ -81,66 +62,15 @@
       "name": "Loga no vault",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        800,
-        300
-      ]
+      "position": [800, 300]
     }
   ],
   "connections": {
-    "Cron dom 20h": {
-      "main": [
-        [
-          {
-            "node": "Coleta KPIs Shopify",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Saúde das integrações",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Coleta KPIs Shopify": {
-      "main": [
-        [
-          {
-            "node": "Roda Crew Auditoria",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Saúde das integrações": {
-      "main": [
-        [
-          {
-            "node": "Roda Crew Auditoria",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Roda Crew Auditoria": {
-      "main": [
-        [
-          {
-            "node": "Loga no vault",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
+    "Cron dom 20h":          { "main": [[{ "node": "Coleta KPIs Shopify",  "type": "main", "index": 0 }, { "node": "Saúde das integrações", "type": "main", "index": 0 }]] },
+    "Coleta KPIs Shopify":   { "main": [[{ "node": "Roda Crew Auditoria",  "type": "main", "index": 0 }]] },
+    "Saúde das integrações": { "main": [[{ "node": "Roda Crew Auditoria",  "type": "main", "index": 0 }]] },
+    "Roda Crew Auditoria":   { "main": [[{ "node": "Loga no vault",        "type": "main", "index": 0 }]] }
   },
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "tags": [],
-  "id": 5
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "auradecore" }, { "name": "auditoria" }, { "name": "echo" }]
 }

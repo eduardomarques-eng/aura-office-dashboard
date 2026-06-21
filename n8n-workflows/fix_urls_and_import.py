@@ -23,14 +23,10 @@ for wf_path in workflows:
     text = wf_path.read_text(encoding="utf-8")
     original = text
     
-    # Substitui localhost:8000 hardcoded pela URL do Railway
-    text = text.replace("http://localhost:8000", RAILWAY_URL)
-    
-    # Garante que $env.RAILWAY_URL tenha fallback correto
-    text = text.replace(
-        "'http://localhost:8000'",
-        f"'{RAILWAY_URL}'"
-    )
+    # 3-step URL normalization to ensure all URLs become dynamic expressions
+    text = text.replace("={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}", "http://localhost:8000")
+    text = text.replace("https://web-production-f1cb5.up.railway.app", "http://localhost:8000")
+    text = text.replace("http://localhost:8000", "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}")
     
     if text != original:
         fixed += 1

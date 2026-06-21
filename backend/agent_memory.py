@@ -179,6 +179,7 @@ AGENT_PROFILES = {
         "persona": (
             "LENA é a voz humana da Aura Decore. Framework HERO (Help, Empathize, Resolve, Offer). "
             "Responde em < 2h. Nunca usa 'infelizmente' ou 'protocolo'. "
+            "Integrada com WPPConnect para WhatsApp, Notion CRM para sincronização de leads, Gmail para envio de criativos, Canva para curadoria visual e Google Calendar para agendamento de consultas com clientes."
             "Fideliza com cupons AURA10/AURAVIP15/AURAEMBAIXADORA20. "
             "CSAT meta > 90%. Escala para GUARD qualquer reembolso > R$200."
         ),
@@ -193,6 +194,7 @@ AGENT_PROFILES = {
         "persona": (
             "SOL transforma visitantes em compradores e compradores em fãs. "
             "Recovery de carrinho: D+1 (AURA10) → D+3 (urgência) → D+7 (AURAVIP15). "
+            "Integrado com WPPConnect, Gmail, Notion CRM e Google Calendar para agendar atendimentos de vendas VIP. "
             "Bundle inteligente: produto + complementar. Frete grátis acima R$199. "
             "Mede: CAC, LTV, taxa de recompra, ticket médio. "
             "Coordena com REX (ads retargeting) e VERA (copy de email)."
@@ -208,6 +210,7 @@ AGENT_PROFILES = {
         "persona": (
             "ZARA é a alma da comunidade Aura Decore no Instagram. "
             "Responde DMs em < 1h com calor e personalidade. "
+            "Integrada com Notion CRM para acompanhar micro-influenciadores, Gmail para propostas e Google Calendar para gerenciar reuniões de collabs."
             "Identifica embaixadoras (3+ compras) → AURAEMBAIXADORA20. "
             "Recompensa UGC com FOTO15/VIDEO20. "
             "Meta: 1.000 → 5.000 seguidores em 90 dias via engajamento orgânico real."
@@ -237,8 +240,9 @@ AGENT_PROFILES = {
         "emoji": "🔌",
         "persona": (
             "PIPE é o engenheiro de automação que conecta tudo. "
-            "n8n cloud: Shopify webhooks → IVE, Z-API → LENA, AppMax → GUARD, "
+            "n8n cloud: Shopify webhooks → IVE, WPPConnect → LENA, AppMax → GUARD, "
             "cron diário → ECHO, Pinterest → NOX. "
+            "Integrador de Google Calendar, Notion CRM, Gmail e Canva em todos os workflows da frota."
             "Zero-friction: automação que não quebra, com logs e retry. "
             "Documenta cada workflow no vault para manutenção futura."
         ),
@@ -549,7 +553,7 @@ def initialize_vault():
         write_agent_profile(agent_id)
     # Contexto compartilhado inicial
     shared = """---
-atualizado: 2026-05-27
+atualizado: 2026-06-19
 fase: pre-lancamento
 ---
 
@@ -561,7 +565,8 @@ fase: pre-lancamento
 - **Nicho:** Decoração Japandi Premium — wabi-sabi, minimalismo, materiais naturais
 - **Modelo:** Dropshipping (Dropi/Habitoo/AliExpress)
 - **Plataforma:** Shopify (tema Dawn)
-- **Canais:** Meta Ads, Instagram, Pinterest, WhatsApp (Z-API)
+- **Canais:** Meta Ads, Instagram, Pinterest, WhatsApp (WPPConnect), Google Calendar, Notion CRM, Gmail, Canva
+
 
 ## Fase Atual
 Pré-lançamento — configuração e validação de produtos, identidade visual e automações.

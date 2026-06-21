@@ -43,9 +43,9 @@ NOW_STR     = NOW.strftime("%Y-%m-%d %H:%M")
 DATE_STR    = NOW.strftime("%Y-%m-%d")
 WEEK_STR    = f"Semana {NOW.isocalendar()[1]}/{NOW.year}"
 
-def is_port_open(port: int) -> bool:
+def is_port_open(port: int, host: str = "127.0.0.1") -> bool:
     try:
-        with socket.create_connection(("127.0.0.1", port), timeout=2.0):
+        with socket.create_connection((host, port), timeout=2.0):
             return True
     except:
         return False
@@ -58,10 +58,22 @@ def info(msg):print(f"  [INFO] {msg}")
 
 # ── 1. Coletar status real do sistema ─────────────────────────────────────────
 async def get_system_status() -> dict:
+    import urllib.parse
+    wpp_url = os.getenv("WPPCONNECT_URL", "http://localhost:21465")
+    n8n_url = os.getenv("N8N_BASE_URL", "http://localhost:5678")
+    
+    wpp_parsed = urllib.parse.urlparse(wpp_url)
+    wpp_host = wpp_parsed.hostname or "127.0.0.1"
+    wpp_port = wpp_parsed.port or (443 if wpp_parsed.scheme == "https" else 80)
+    
+    n8n_parsed = urllib.parse.urlparse(n8n_url)
+    n8n_host = n8n_parsed.hostname or "127.0.0.1"
+    n8n_port = n8n_parsed.port or (443 if n8n_parsed.scheme == "https" else 80)
+
     status = {
         "backend_up":    is_port_open(8000),
-        "wpp_up":        is_port_open(21465),
-        "n8n_up":        is_port_open(5678),
+        "wpp_up":        is_port_open(wpp_port, wpp_host),
+        "n8n_up":        is_port_open(n8n_port, n8n_host),
         "ollama_up":     is_port_open(11434),
         "backend_data":  {},
         "wpp_session":   "unknown",
@@ -96,7 +108,7 @@ async def get_system_status() -> dict:
             try:
                 headers = {"X-N8N-API-KEY": n8n_key}
                 async with httpx.AsyncClient(timeout=8) as hc:
-                    r = await hc.get("http://localhost:5678/api/v1/workflows", headers=headers)
+                    r = await hc.get(f"{n8n_url}/api/v1/workflows", headers=headers)
                     if r.status_code == 200:
                         wfs = r.json().get("data", [])
                         status["n8n_workflows"] = len(wfs)
@@ -115,9 +127,9 @@ def update_central_md(status: dict):
         return
 
     n8n_status = (
-        f"n8n LOCAL ({status['n8n_active']}/{status['n8n_workflows']} workflows ativos · porta 5678)"
+        f"n8n Azure ({status['n8n_active']}/{status['n8n_workflows']} workflows ativos · n8n.auradecore.com.br)"
         if status["n8n_up"] else
-        "n8n LOCAL OFFLINE - iniciar com: n8n start"
+        "n8n Azure OFFLINE - verificar container na VM"
     )
     wpp_st = status["wpp_session"]
     wpp_icon = "OK" if wpp_st in ("CONNECTED", "isLogged") else "WARN"
@@ -466,7 +478,15 @@ async def ensure_n8n_running(status: dict):
         ok(f"n8n ja esta rodando ({status['n8n_active']}/{status['n8n_workflows']} workflows ativos)")
         return
 
-    info("n8n offline — tentando iniciar...")
+    n8n_url = os.getenv("N8N_BASE_URL", "http://localhost:5678")
+    import urllib.parse
+    n8n_host = urllib.parse.urlparse(n8n_url).hostname or "127.0.0.1"
+
+    if n8n_host not in ("127.0.0.1", "localhost"):
+        fail(f"n8n remoto ({n8n_host}) esta offline ou inacessivel. Verifique o status da VM Azure.")
+        return
+
+    info("n8n local offline — tentando iniciar...")
     import subprocess
     try:
         n8n_cmd = r"C:\Users\erick\AppData\Roaming\npm\n8n.cmd"
@@ -496,6 +516,7 @@ async def activate_n8n_workflows(status: dict):
         info("n8n offline — pulando ativacao de workflows")
         return
 
+    n8n_url = os.getenv("N8N_BASE_URL", "http://localhost:5678")
     n8n_key = os.getenv("N8N_API_KEY", "")
     if not n8n_key:
         info("N8N_API_KEY nao configurada — pulando ativacao automatica")
@@ -507,7 +528,7 @@ async def activate_n8n_workflows(status: dict):
 
     try:
         async with httpx.AsyncClient(timeout=15) as hc:
-            r = await hc.get("http://localhost:5678/api/v1/workflows", headers=headers)
+            r = await hc.get(f"{n8n_url}/api/v1/workflows", headers=headers)
             if r.status_code != 200:
                 fail(f"Nao foi possivel listar workflows n8n: {r.status_code}")
                 return
@@ -523,7 +544,7 @@ async def activate_n8n_workflows(status: dict):
                 if not wf_active:
                     try:
                         r2 = await hc.patch(
-                            f"http://localhost:5678/api/v1/workflows/{wf_id}",
+                            f"{n8n_url}/api/v1/workflows/{wf_id}",
                             headers=headers,
                             json={"active": True},
                         )

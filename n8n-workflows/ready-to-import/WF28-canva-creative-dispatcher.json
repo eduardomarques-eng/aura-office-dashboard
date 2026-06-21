@@ -1,0 +1,53 @@
+{
+  "name": "Aura Decore · 28 · Disparador de Criativos Canva",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "send-creative",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook: Enviar Criativo",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/agent/send-creative",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phone\": \"{{ $json.body.phone || '' }}\",\n  \"email\": \"{{ $json.body.email || '' }}\",\n  \"design_id\": \"{{ $json.body.design_id || '' }}\",\n  \"lead_name\": \"{{ $json.body.lead_name || '' }}\",\n  \"caption\": \"{{ $json.body.caption || '' }}\"\n}",
+        "options": {}
+      },
+      "id": "call-backend-dispatcher",
+      "name": "Disparar via Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [450, 300]
+    }
+  ],
+  "connections": {
+    "Webhook: Enviar Criativo": {
+      "main": [
+        [
+          {
+            "node": "Disparar via Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [
+    { "name": "auradecore" },
+    { "name": "canva" },
+    { "name": "gmail" },
+    { "name": "whatsapp" }
+  ]
+}
