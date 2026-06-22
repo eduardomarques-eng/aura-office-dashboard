@@ -1875,6 +1875,7 @@ async def whatsapp_webhook(request: Request):
             "intent":    intent,
             "escalated": result.get("escalated", False),
             "reply":     reply,
+            "sent":      result.get("sent", False),
         }
     except Exception as e:
         import traceback

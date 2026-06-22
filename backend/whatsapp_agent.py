@@ -603,22 +603,50 @@ async def _llm(system: str, messages: list, max_tokens: int = 350) -> str:
 def _wpp_headers() -> dict:
     return {"Authorization": f"Bearer {WPP_TOKEN}", "Content-Type": "application/json"}
 
-async def _wpp_send(phone: str, message: str):
-    """Envia mensagem via WPPConnect."""
+async def _wpp_send(phone: str, message: str) -> bool:
+    """Envia mensagem via WPPConnect. Retorna True se enviou com sucesso."""
     if not WPP_TOKEN:
-        print("[WPPConnect] WPP_TOKEN não configurado!")
-        return
+        print("[WPPConnect] ERRO: WPPCONNECT_TOKEN não configurado!")
+        return False
+    if "localhost" in WPP_URL or "127.0.0.1" in WPP_URL:
+        print(f"[WPPConnect] ERRO: WPPCONNECT_URL aponta para localhost ({WPP_URL}) — configure a URL do servidor!")
+        return False
+
     url = f"{WPP_URL}/api/{WPP_SESSION}/send-message"
-    print(f"[WPPConnect] Enviando para {phone} via {url}...")
-    try:
-        async with httpx.AsyncClient(timeout=10) as hc:
-            r = await hc.post(url, json={"phone": phone, "message": message, "isGroup": False}, headers=_wpp_headers())
-            if r.status_code in (200, 201):
-                print(f"[WPPConnect] Mensagem enviada com sucesso para {phone}")
-            else:
-                print(f"[WPPConnect] Falha ao enviar para {phone}: {r.status_code} - {r.text}")
-    except Exception as e:
-        print(f"[WPPConnect] Erro excepcional ao enviar para {phone}: {e}")
+    phone_clean = phone.replace("@c.us", "").replace("@s.whatsapp.net", "")
+    if not phone_clean.startswith("55"):
+        phone_clean = f"55{phone_clean}"
+
+    print(f"[WPPConnect] Enviando para {phone_clean} via {url}...")
+    for attempt in range(3):
+        try:
+            async with httpx.AsyncClient(timeout=15) as hc:
+                r = await hc.post(
+                    url,
+                    json={"phone": phone_clean, "message": message, "isGroup": False},
+                    headers=_wpp_headers(),
+                )
+                if r.status_code in (200, 201):
+                    print(f"[WPPConnect] ✅ Mensagem enviada para {phone_clean}")
+                    return True
+                else:
+                    print(f"[WPPConnect] ⚠️ HTTP {r.status_code} para {phone_clean}: {r.text[:200]}")
+                    if r.status_code == 401:
+                        print("[WPPConnect] Token inválido! Verifique WPPCONNECT_TOKEN no .env")
+                        return False
+                    if r.status_code == 404:
+                        print(f"[WPPConnect] Sessão '{WPP_SESSION}' não encontrada. Verifique WPPCONNECT_SESSION")
+                        return False
+        except httpx.ConnectError as e:
+            print(f"[WPPConnect] ❌ Erro de conexão (tentativa {attempt+1}/3): {e}")
+            if attempt < 2:
+                await asyncio.sleep(2)
+        except Exception as e:
+            print(f"[WPPConnect] ❌ Erro inesperado (tentativa {attempt+1}/3): {type(e).__name__}: {e}")
+            if attempt < 2:
+                await asyncio.sleep(2)
+    print(f"[WPPConnect] ❌ Falha definitiva ao enviar para {phone_clean} após 3 tentativas")
+    return False
 
 async def send_whatsapp_message(phone: str, message: str):
     """Função pública para enviar mensagens de WhatsApp pelo WPPConnect."""
@@ -804,13 +832,22 @@ async def process_message(phone: str, text: str, name: str = "", message_id: str
 
 
 async def handle_incoming(phone: str, text: str, name: str = "", message_id: str = "") -> dict:
-    """Função pública: processa + envia resposta via WPPConnect."""
+    """Função pública: processa + envia resposta via WPPConnect.
+    O envio é AGUARDADO (não fire-and-forget) para garantir entrega.
+    """
+    # Indica digitação em background (não bloqueia processamento)
     asyncio.create_task(_wpp_typing(phone))
     await asyncio.sleep(1.5)
 
     result = await process_message(phone, text, name, message_id)
 
-    if result["reply"]:
-        asyncio.create_task(_wpp_send(phone, result["reply"]))
+    if result.get("reply"):
+        # Awaita o envio — não usa create_task para não perder erros
+        sent = await _wpp_send(phone, result["reply"])
+        result["sent"] = sent
+        if not sent:
+            print(f"[WA] ⚠️ Resposta gerada mas NÃO enviada para {phone}. Reply: {result['reply'][:80]}")
+    else:
+        result["sent"] = False
 
     return result

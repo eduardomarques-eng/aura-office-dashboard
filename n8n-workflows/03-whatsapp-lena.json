@@ -44,11 +44,11 @@
       "parameters": {
         "values": {
           "string": [
-            { "name": "phone",      "value": "={{$json.phone || $json.from}}" },
-            { "name": "name",       "value": "={{$json.senderName || $json.pushName || ''}}" },
-            { "name": "messageId",  "value": "={{$json.messageId || $json.id?.id || ''}}" },
-            { "name": "message",    "value": "={{$json.text?.message || $json.message || $json.body || ''}}" },
-            { "name": "msgType",    "value": "={{$json.type || 'chat'}}" }
+            { "name": "phone",      "value": "={{ ($json.phone || $json.from || '').replace('@c.us','').replace('@s.whatsapp.net','') }}" },
+            { "name": "name",       "value": "={{ $json.senderName || $json.pushName || '' }}" },
+            { "name": "messageId",  "value": "={{ typeof $json.id === 'object' ? ($json.id._serialized || $json.id.id || '') : ($json.messageId || $json.id || '') }}" },
+            { "name": "message",    "value": "={{ $json.text?.message || $json.body || $json.message || $json.content || '' }}" },
+            { "name": "msgType",    "value": "={{ $json.type || 'chat' }}" }
           ]
         }
       },
@@ -57,6 +57,31 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [560, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{ $json.message }}", "operation": "isNotEmpty" }
+          ]
+        }
+      },
+      "id": "has-message",
+      "name": "Tem mensagem?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [760, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"ignored\", \"reason\": \"empty_message\" }"
+      },
+      "id": "ignore-empty",
+      "name": "Ignorar mensagem vazia",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [960, 600]
     },
     {
       "parameters": {
@@ -70,19 +95,64 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($node['Extrair campos'].json) }}"
+        "jsonBody": "={{ JSON.stringify($node['Extrair campos'].json) }}",
+        "options": {
+          "timeout": 30000
+        }
       },
       "id": "call-backend",
       "name": "Backend: processa mensagem",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [780, 400]
+      "position": [960, 400]
     },
     {
       "parameters": {
         "conditions": {
           "string": [
-            { "value1": "={{$json.agent}}", "operation": "equal", "value2": "guard" }
+            { "value1": "={{ $json.reply }}", "operation": "isNotEmpty" },
+            { "value1": "={{ $json.sent }}", "operation": "notEqual", "value2": "true" }
+          ],
+          "combineOperation": "all"
+        }
+      },
+      "id": "needs-send",
+      "name": "Resposta pendente de envio?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1180, 400],
+      "notes": "Se backend não enviou (sent=false ou ausente), n8n envia diretamente"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.WPPCONNECT_URL || 'https://wpp.auradecore.com.br' }}/api/={{ $env.WPPCONNECT_SESSION || 'aura-decore' }}/send-message",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.WPPCONNECT_TOKEN || '$2b$10$rZ2qdn2TTSZ7UmtCz1_e9eLgmCaoZyWAn_u9RSOGm4cEtit3r.ajy' }}" },
+            { "name": "Content-Type",  "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phone\": \"{{ $node['Extrair campos'].json.phone.startsWith('55') ? $node['Extrair campos'].json.phone : '55' + $node['Extrair campos'].json.phone }}\",\n  \"message\": \"{{ $node['Backend: processa mensagem'].json.reply }}\",\n  \"isGroup\": false\n}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "wpp-send",
+      "name": "WPP: Enviar resposta LENA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1400, 300],
+      "notes": "GARANTIA DE ENVIO: n8n envia direto se o backend não conseguiu"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{ $node['Backend: processa mensagem'].json.agent }}", "operation": "equal", "value2": "guard" }
           ]
         }
       },
@@ -90,7 +160,7 @@
       "name": "Escalou para GUARD?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [1000, 400]
+      "position": [1400, 500]
     },
     {
       "parameters": {
@@ -98,63 +168,48 @@
         "method": "POST",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"agent_id\": \"guard\",\n  \"title\": \"Reembolso: {{ $node['Extrair campos'].json.phone }}\",\n  \"description\": \"Cliente {{ $node['Extrair campos'].json.name || $node['Extrair campos'].json.phone }} solicitou reembolso: {{ $node['Extrair campos'].json.message }}\",\n  \"priority\": \"high\",\n  \"execute_now\": true\n}"
+        "jsonBody": "={\n  \"agent_id\": \"guard\",\n  \"title\": \"Reembolso: {{ $node['Extrair campos'].json.phone }}\",\n  \"description\": \"{{ $node['Extrair campos'].json.name || $node['Extrair campos'].json.phone }} solicitou reembolso: {{ $node['Extrair campos'].json.message }}\",\n  \"priority\": \"high\",\n  \"execute_now\": true\n}"
       },
       "id": "notify-guard",
-      "name": "Criar tarefa GUARD (alta prioridade)",
+      "name": "Criar tarefa GUARD",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1220, 260]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "string": [
-            { "value1": "={{$json.agent}}", "operation": "equal", "value2": "sol" }
-          ]
-        }
-      },
-      "id": "is-sol",
-      "name": "Escalou para SOL?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
-      "position": [1220, 500]
-    },
-    {
-      "parameters": {
-        "url": "={{ $env.RAILWAY_URL || 'https://web-production-f1cb5.up.railway.app' }}/tasks",
-        "method": "POST",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"agent_id\": \"sol\",\n  \"title\": \"Recuperação carrinho: {{ $node['Extrair campos'].json.phone }}\",\n  \"description\": \"Cliente {{ $node['Extrair campos'].json.name || $node['Extrair campos'].json.phone }} mostrou interesse mas não finalizou: {{ $node['Extrair campos'].json.message }}\",\n  \"priority\": \"medium\",\n  \"execute_now\": true\n}"
-      },
-      "id": "notify-sol",
-      "name": "Criar tarefa SOL (carrinho)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [1440, 420]
+      "position": [1620, 400]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ status: 'ok', agent: $node['Backend: processa mensagem'].json.agent, intent: $node['Backend: processa mensagem'].json.intent }) }}"
+        "responseBody": "={{ JSON.stringify({ status: 'ok', agent: $node['Backend: processa mensagem'].json.agent, intent: $node['Backend: processa mensagem'].json.intent, sent: true }) }}"
       },
       "id": "respond-ok",
       "name": "Responder WPPConnect",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1660, 400]
+      "position": [1840, 400]
     }
   ],
   "connections": {
-    "Webhook WPPConnect": { "main": [[{ "node": "É mensagem própria?", "type": "main", "index": 0 }]] },
-    "É mensagem própria?": { "main": [[{ "node": "Ignorar mensagem própria", "type": "main", "index": 0 }], [{ "node": "Extrair campos", "type": "main", "index": 0 }]] },
-    "Extrair campos": { "main": [[{ "node": "Backend: processa mensagem", "type": "main", "index": 0 }]] },
-    "Backend: processa mensagem": { "main": [[{ "node": "Escalou para GUARD?", "type": "main", "index": 0 }]] },
-    "Escalou para GUARD?": { "main": [[{ "node": "Criar tarefa GUARD (alta prioridade)", "type": "main", "index": 0 }], [{ "node": "Escalou para SOL?", "type": "main", "index": 0 }]] },
-    "Criar tarefa GUARD (alta prioridade)": { "main": [[{ "node": "Responder WPPConnect", "type": "main", "index": 0 }]] },
-    "Escalou para SOL?": { "main": [[{ "node": "Criar tarefa SOL (carrinho)", "type": "main", "index": 0 }], [{ "node": "Responder WPPConnect", "type": "main", "index": 0 }]] },
-    "Criar tarefa SOL (carrinho)": { "main": [[{ "node": "Responder WPPConnect", "type": "main", "index": 0 }]] }
+    "Webhook WPPConnect":         { "main": [[{ "node": "É mensagem própria?", "type": "main", "index": 0 }]] },
+    "É mensagem própria?":        { "main": [
+      [{ "node": "Ignorar mensagem própria", "type": "main", "index": 0 }],
+      [{ "node": "Extrair campos", "type": "main", "index": 0 }]
+    ]},
+    "Extrair campos":             { "main": [[{ "node": "Tem mensagem?", "type": "main", "index": 0 }]] },
+    "Tem mensagem?":              { "main": [
+      [{ "node": "Backend: processa mensagem", "type": "main", "index": 0 }],
+      [{ "node": "Ignorar mensagem vazia", "type": "main", "index": 0 }]
+    ]},
+    "Backend: processa mensagem": { "main": [[{ "node": "Resposta pendente de envio?", "type": "main", "index": 0 }]] },
+    "Resposta pendente de envio?":{ "main": [
+      [{ "node": "WPP: Enviar resposta LENA", "type": "main", "index": 0 }],
+      [{ "node": "Escalou para GUARD?", "type": "main", "index": 0 }]
+    ]},
+    "WPP: Enviar resposta LENA":  { "main": [[{ "node": "Escalou para GUARD?", "type": "main", "index": 0 }]] },
+    "Escalou para GUARD?":        { "main": [
+      [{ "node": "Criar tarefa GUARD", "type": "main", "index": 0 }],
+      [{ "node": "Responder WPPConnect", "type": "main", "index": 0 }]
+    ]},
+    "Criar tarefa GUARD":         { "main": [[{ "node": "Responder WPPConnect", "type": "main", "index": 0 }]] }
   },
   "settings": { "executionOrder": "v1" },
   "tags": [{ "name": "auradecore" }, { "name": "atendimento" }, { "name": "whatsapp" }, { "name": "lena" }]
