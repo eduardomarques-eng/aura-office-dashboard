@@ -627,6 +627,17 @@ async def _wpp_send(phone: str, message: str) -> bool:
                     headers=_wpp_headers(),
                 )
                 if r.status_code in (200, 201):
+                    # WPP responde 200 mesmo em erro lógico (ex.: número inexistente,
+                    # sessão desconectada). Validar o status do CORPO, não só o HTTP.
+                    try:
+                        body = r.json()
+                    except Exception:
+                        body = {}
+                    body_status = str(body.get("status", "")).lower()
+                    if body_status in ("error", "disconnected"):
+                        print(f"[WPPConnect] ⚠️ Falha lógica para {phone_clean}: {body.get('message', r.text[:160])}")
+                        # Erros lógicos (número não existe, sessão off) não se resolvem com retry
+                        return False
                     print(f"[WPPConnect] ✅ Mensagem enviada para {phone_clean}")
                     return True
                 else:
@@ -648,9 +659,10 @@ async def _wpp_send(phone: str, message: str) -> bool:
     print(f"[WPPConnect] ❌ Falha definitiva ao enviar para {phone_clean} após 3 tentativas")
     return False
 
-async def send_whatsapp_message(phone: str, message: str):
-    """Função pública para enviar mensagens de WhatsApp pelo WPPConnect."""
-    await _wpp_send(phone, message)
+async def send_whatsapp_message(phone: str, message: str) -> bool:
+    """Função pública para enviar mensagens de WhatsApp pelo WPPConnect.
+    Retorna True se a entrega foi confirmada."""
+    return await _wpp_send(phone, message)
 
 async def send_whatsapp_image_base64(phone: str, file_path: str, caption: str = ""):
     """Envia imagem local via WPPConnect codificada em base64."""

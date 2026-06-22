@@ -136,7 +136,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"phone\": \"{{ $node['Extrair campos'].json.phone.startsWith('55') ? $node['Extrair campos'].json.phone : '55' + $node['Extrair campos'].json.phone }}\",\n  \"message\": \"{{ $node['Backend: processa mensagem'].json.reply }}\",\n  \"isGroup\": false\n}",
+        "jsonBody": "={{ JSON.stringify({ phone: ($node['Extrair campos'].json.phone.startsWith('55') ? $node['Extrair campos'].json.phone : '55' + $node['Extrair campos'].json.phone), message: $node['Backend: processa mensagem'].json.reply, isGroup: false }) }}",
         "options": {
           "timeout": 15000
         }
@@ -168,7 +168,7 @@
         "method": "POST",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"agent_id\": \"guard\",\n  \"title\": \"Reembolso: {{ $node['Extrair campos'].json.phone }}\",\n  \"description\": \"{{ $node['Extrair campos'].json.name || $node['Extrair campos'].json.phone }} solicitou reembolso: {{ $node['Extrair campos'].json.message }}\",\n  \"priority\": \"high\",\n  \"execute_now\": true\n}"
+        "jsonBody": "={{ JSON.stringify({ agent_id: 'guard', title: 'Reembolso: ' + $node['Extrair campos'].json.phone, description: ($node['Extrair campos'].json.name || $node['Extrair campos'].json.phone) + ' solicitou reembolso: ' + $node['Extrair campos'].json.message, priority: 'high', execute_now: true }) }}"
       },
       "id": "notify-guard",
       "name": "Criar tarefa GUARD",
